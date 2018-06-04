@@ -8,6 +8,7 @@ usgs = findUSGS(clip_unit = xxx)
 
 ## This works for now bt well need to figure out how to read from an external directory
 ## Well also need to find a way to automatically update the folder. It looks like a cron job linked to Google Drive might work...
+
 data = get_nomads(dir = "/Users/mikejohnson", comids = nhd$ids)
 
 ## Define USGS icon
@@ -16,12 +17,15 @@ usgsIcon = makeIcon(
   iconWidth = 40, iconHeight = 20,
   iconAnchorX = 20, iconAnchorY = 10)
 
+## Define New SL
+sl = nhd$flowlines[nhd$flowlines$comid == nhd$ids[1],]
+
 ## Set Map
 m = leaflet() %>%
   addProviderTiles(providers$CartoDB.Positron, group = "CartoDB") %>%
   addProviderTiles(providers$Esri.WorldImagery, group = "Imagery") %>%
   addPolylines(data = nhd$flowlines,
-               color = ifelse(nhd$flowlines$comid == nhd$ids[1], 'red','blue'),
+               color = 'blue',
                weight = nhd$flowlines$streamorde,
                label = paste0(paste0(nhd$flowlines$gnis_name),
                               paste0(" COMID:", nhd$flowlines$comid)),
@@ -38,10 +42,24 @@ m = leaflet() %>%
     options = layersControlOptions(collapsed = TRUE)
   ) %>%
 
+  addPolylines(data = sl,
+               color = 'red',
+               weight = 6) %>%  ## ADD SINGLE LINE SHP !!!
+
   addScaleBar("bottomleft")
+
+m
 
 
 ## Get HUC8 digits in AOI
 
 huc8 = unique(substring(nhd$flowlines$reachcode,1,8))
+
+## Ploting the data
+
+plot(data[data$comid == nhd$ids[1],]$cms,
+     type = "l",
+     col = 'blue',
+     lwd =3,
+     main = paste0("Streamflow (cfs)\nCOMID: ", nhd$id[1] ))
 
