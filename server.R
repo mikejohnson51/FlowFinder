@@ -1,24 +1,24 @@
 library(shiny)
-library(leaflet)
-library(dplyr)
-library(ggmap)
-library(sp)
-library(rgdal)
+#library(leaflet)
+#library(dplyr)
+#library(ggmap)
+#library(sp)
+#library(rgdal)
 library(HydroData)
 
 shinyServer(function(input, output, session) {
   
-  # Definie Initial Map
+  # Define Initial Map
   output$map <- renderLeaflet({
     leaflet() %>%
       addLayersControl(
-        baseGroups = c("CartoDB","Imagery"),
-        overlayGroups = c("USGS Stations", "NHD Flowlines", "AOI"),
+        baseGroups = c("Basemap","Imagery"),
+        overlayGroups = c("USGS Stations", "NHD Flowlines"),
         options = layersControlOptions(collapsed = TRUE)
       ) %>%
-      addProviderTiles(providers$CartoDB.Positron, group = "CartoDB") %>%
+      addProviderTiles(providers$CartoDB.Positron, group = "Basemap") %>%
       addProviderTiles(providers$Esri.WorldImagery, group = "Imagery") %>%
-      addScaleBar("bottomright") %>%
+      addScaleBar("bottomleft") %>%
       setView(lng = -93.85, lat = 37.45, zoom = 4)
   })
   
@@ -44,6 +44,7 @@ shinyServer(function(input, output, session) {
     }
     
     flow <<- nhd$flowlines
+    ids <<-  flow$comid  ## you'll need this for the NWM subset
     
     # Catch error when no stations are in AOI
     stats <<- tryCatch({
@@ -53,6 +54,7 @@ shinyServer(function(input, output, session) {
       return(NA)
     }
     )
+
   }
   
   update_map = function(LAT, LONG) {
@@ -67,15 +69,28 @@ shinyServer(function(input, output, session) {
                    popupOptions = c(className = "stream_popup"), 
                    group = "NHD Flowlines"
       ) %>%
-      addCircleMarkers(lng = as.numeric(LONG), lat = as.numeric(LAT), radius = 6, color = 'red', stroke = FALSE, fillOpacity = 0.5)
+      addCircleMarkers(lng = as.numeric(LONG), lat = as.numeric(LAT), radius = 6, color = 'green', stroke = FALSE, fillOpacity = 0.5)
     
     # Don't try and map USGS stations if there are none  
     if(typeof(stats) == "S4") {
       leafletProxy("map") %>%
         addMarkers(data = stats,
-                   icon = usgsIcon,
-                   group = "USGS Stations"
-        )
+                   icon = leaflet::makeIcon(
+                     iconUrl= "https://upload.wikimedia.org/wikipedia/commons/0/08/USGS_logo.png",
+                     iconWidth = 40, iconHeight = 20,
+                     iconAnchorX = 20, iconAnchorY = 10),
+                   
+                   group = "USGS Stations",
+                   popup = pop <- paste(
+                     paste("<strong>Site Number:</strong>",
+                       paste0('<a href=',sprintf(
+                           "https://waterdata.usgs.gov/nwis/inventory/?site_no=%s",stats$site_no),'>',stats$site_no,"</a>")
+                     ),
+                     paste("<strong>NHD COMID:</strong>", stats$feature_id),
+                     paste("<strong>Site Name:</strong>", stats$site_name),
+                     sep = "<br/>"
+                   ) )
+      
     }
   }
   
@@ -85,8 +100,8 @@ shinyServer(function(input, output, session) {
   
   calc_bounds <- function(lat, lon) {
     dl = ((5/2)/69) / cos(lat * pi/180)
-    south = lat - df
-    north = lat + df
+    south = lat - ((5/2)/69)
+    north = lat + ((5/2)/69)
     west  = lon - dl
     east  = lon + dl
     coords = data.frame(south = south, north = north, west = west, east = east)
@@ -103,7 +118,7 @@ shinyServer(function(input, output, session) {
                   cbind("Number of Flowlines: ", length(flowlines)),
                   cbind("Largest Stream Order: ", max_order),
                   cbind("Total Area (SqMi): ", 25),
-                  cbind("Unique HUC6 units: ", length(unique(as.numeric(na.omit(unique(substr(flowlines$reachcode,1,6))))))))
+                  cbind("Unique HUC8 units: ", paste(unique(as.numeric(na.omit(unique(substr(flowlines$reachcode,1,8))))), collapse = ", ")))
     colnames(table) = c('Statistic', 'Value')
     output$Flowlines = renderTable(table, striped = TRUE)
     
@@ -190,8 +205,11 @@ shinyServer(function(input, output, session) {
     print(id)
     leafletProxy("map") %>%
       clearGroup("NHD Flowlines") %>%
+      setView(lng = mean(flow@lines[flow$comid == id][[1]]@Lines[[1]]@coords[,1]),
+              lat = mean(flow@lines[flow$comid == id][[1]]@Lines[[1]]@coords[,2]), 
+              zoom = 14) %>% 
       addPolylines(data = flow, color = ~ifelse(flow$comid == id, "red", "blue"), 
-                   weight = flow$streamorde,
+                   weight = ~ifelse(flow$comid == id, 15, flow$streamorde),
                    popup = paste0(paste0(flow@data$gnis_name),
                                   paste0(" COMID:", flow$comid)),
                    popupOptions = c(className = "stream_popup"), 
