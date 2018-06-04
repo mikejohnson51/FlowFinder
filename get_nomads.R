@@ -2,16 +2,16 @@
 #'
 #'This function accesses the NOAA Nomads server to download the most up to date forecast NetCDF files.
 #'These files cover the spatial domain of the continential United States. These files will be stored in the
-#''./FlowlineFinder' subfolder of he specified directory. Each time this function is run the old files will be removed.
-#' Therefore if you see something interesting be sure to save the data elsewhere!
+#''./FlowlineFinder' subfolder of the specified directory. Each time this function is run the old files will be removed.
+#' So, if you see something interesting be sure to save the data elsewhere!
 #'
 #' @examples
-#' get_nomdads()
+#' get_nomads(dir = "mikejohnson/desktop")
 #' @author
 #' Mike Johnson
 #' @export
 #' @return
-#' This fuction saves the 18 NetCDF files related to the most recent short term forecast to the NetCDFs/Current folder.
+#' This fuction saves the 18 NetCDF files related to the most recent forecasts.
 
 get_nomads = function(dir = NULL,
                       type = NULL,
