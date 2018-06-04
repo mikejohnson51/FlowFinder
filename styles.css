@@ -1,0 +1,183 @@
+:root {
+  --header: #0069b5;
+  --tab-background: #005593;
+  --title-text-color: #0073c6;
+}
+
+* {
+  font-family: 'Source Sans Pro',sans-serif !important;
+}
+
+input[type="number"] {
+  max-width: 80%;
+}
+
+div.outer {
+  position: fixed;
+  top: 41px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+  padding: 0;
+}
+
+/* Customize fonts */
+body, label, input, button, select { 
+  font-family: 'Helvetica Neue', Helvetica;
+  font-weight: 200;
+}
+h1, h2, h3, h4 { font-weight: 400; }
+
+#controls,
+#cur_l{
+  /* Appearance */
+  background-color: transparent;
+  padding: 0 0px 0px 0px;
+  cursor: move;
+  /* Fade out while not hovering */
+  z-index: 99999;
+  border: none !important;
+}
+
+/* If not using map tiles, show a white background */
+.leaflet-container {
+  background-color: white !important;
+}
+
+.leaflet-top.leaflet-left {
+    right: 10px;
+    left: auto !important;
+    top: auto !important;
+    bottom: 60px;
+}
+
+.leaflet-top.leaflet-right {
+    top: auto !important;
+    bottom: 10px;
+    left: 10px;
+    right: auto;
+}
+
+#place,
+#do {
+    float: left;
+}
+
+#place{
+    padding-right: 40px;
+    border-radius: 2px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2),0 -1px 0px rgba(0,0,0,0.02);
+    width: 392px;
+    height: 48px;
+    line-height: 24px;
+    font-size: 15px;
+}
+
+#do {
+    background: transparent !important;
+    border: none;
+    margin-left: -45px;
+    height: 48px;
+}
+#do::before {
+    content: "\1F50D";
+}
+.form-group {
+    margin-bottom: 0px !important;
+}
+
+
+#current_loc::before {
+    content: "\2295";
+}
+
+#current_loc {
+    background-clip: padding-box;
+    border: 2px solid rgba(0,0,0,0.2);
+    width: 33px;
+    height: 33px;
+    font-size: larger;
+    padding: 0;
+    line-height: 30px;
+    font-weight: bold;
+}
+
+.container-fluid > .navbar-collapse, .container-fluid > .navbar-header, .container > .navbar-collapse, .container > .navbar-header, .nav > li {
+    float: left !important
+}
+
+.navbar {
+  max-height: 50px;
+}
+
+.navbar-nav > li > a {
+    line-height: 20px !important;
+    padding-top: 15px !important;
+    padding-bottom: 15px !important;
+    margin-left: 10px;
+}
+
+.navbar-nav {
+    margin: 0px -15px !important;
+}
+.navbar-default {
+    /*background-color: #00b580 !important;*/
+    background-color: var(--header) !important;
+    /*border-color: #00b580 !important;*/
+    border-color: var(--header) !important;
+}
+.navbar-default .navbar-brand {
+    color: white !important;
+    font-weight: bold;
+}
+.navbar-default .navbar-nav > li > a {
+    color: white !important;
+}
+
+.navbar-default .navbar-nav > .active > a, .navbar-default .navbar-nav > .active > a:focus, .navbar-default .navbar-nav > .active > a:hover {
+    color: white !important;
+    /*background-color: #009368 !important;*/
+    background-color: var(--tab-background) !important;
+}
+
+.navbar-default .navbar-brand:focus, .navbar-default .navbar-brand:hover {
+    color: white !important;
+}
+
+#server_problems {
+    top: 110px !important;
+    bottom: auto !important;
+    left: 10px !important;
+    right: auto !important;
+    position: fixed;
+    z-index: 999999999;
+    color: white;
+    font-weight: bold;
+    background: red;
+    padding: 0;
+    border: none;
+    opacity: 0.7;
+    margin-top: 3px;
+}
+
+#data_loc,
+#stream {
+    font-size: 150%;
+    font-weight: bold;
+    color: var(--title-text-color);
+    background: none;
+    border: none;
+}
+
+.table-striped > tbody > tr:nth-of-type(2n+1) {
+    /*background-color: #d7fff3;*/
+    background-color: #e8f5ff;
+}
+
+.stream_popup .leaflet-popup-content-wrapper {
+    cursor: pointer;
+    color: blue;
+    text-decoration: underline;
+}
+
