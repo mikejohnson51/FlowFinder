@@ -69,7 +69,6 @@ shinyServer(function(input, output, session) {
                    highlight = highlightOptions(
                      weight = 10,
                      color = "#666",
-                     dashArray = "",
                      fillOpacity = 0.7,
                      bringToFront = TRUE)
       ) %>%
@@ -222,7 +221,6 @@ shinyServer(function(input, output, session) {
                    highlight = highlightOptions(
                      weight = 10,
                      color = "#666",
-                     dashArray = "",
                      fillOpacity = 0.7,
                      bringToFront = TRUE)
       )
