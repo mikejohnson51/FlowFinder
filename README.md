@@ -6,4 +6,4 @@ Of particular interest is the abilty to find nearby NHD reaches in the feild.
 
 Much of the data processing and gathering is driven by the [HydroData](http://mikejohnson51.github.io/HydroData/) and NWM packages with a interface driven by R Shiny.
 
-
+![](https://github.com/mikejohnson51/FlowlineFinder/blob/master/img/hovering.gif)
