@@ -41,3 +41,7 @@ m = leaflet() %>%
   addScaleBar("bottomleft")
 
 
+## Get HUC8 digits in AOI
+
+huc8 = unique(substring(nhd$flowlines$reachcode,1,8))
+
