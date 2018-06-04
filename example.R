@@ -57,9 +57,12 @@ huc8 = unique(substring(nhd$flowlines$reachcode,1,8))
 
 ## Ploting the data
 
-plot(data[data$comid == nhd$ids[1],]$cms,
+plot( x = data[data$comid == nhd$ids[1],]$dateTime,
+      y = data[data$comid == nhd$ids[1],]$cms,
      type = "l",
      col = 'blue',
      lwd =3,
-     main = paste0("Streamflow (cfs)\nCOMID: ", nhd$id[1] ))
+     main = paste0("Streamflow (cfs)\nCOMID: ", nhd$id[1] ),
+     ylab = "streamflow (cfs)",
+     xlab = 'Date and Time')
 
