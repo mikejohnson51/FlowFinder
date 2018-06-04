@@ -13,6 +13,8 @@
 #' @return
 #' This fuction saves the 18 NetCDF files related to the most recent forecasts.
 
+dir = "/Users/mikejohnson/Documents/GitHub/FlowlineFinder"
+
 get_nomads = function(dir = NULL,
                       type = NULL,
                       time = NULL,
@@ -22,6 +24,7 @@ get_nomads = function(dir = NULL,
   if (!dir.exists(paste0(dir, "/FlowlineFinder"))) {
     dir.create(paste0(dir, "/FlowlineFinder"))
   }
+
   dir = paste0(dir, "/FlowlineFinder")
 
   date = format(Sys.Date(), tz = "GMT")
@@ -56,7 +59,9 @@ get_nomads = function(dir = NULL,
       "/"
     ) ## set base URL
 
-  fileList = lapply(regmatches(readLines(base.url), gregexpr('(\").*?(\")', files, perl = TRUE)), function(y)
+  files = readLines(base.url)
+
+  fileList = lapply(regmatches(files, gregexpr('(\").*?(\")', files, perl = TRUE)), function(y)
     gsub("^\"|\"$", "", y)) ## subset file names
 
   fileList = fileList[grep("channel", fileList)] ## Extract channel data
