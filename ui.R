@@ -1,40 +1,73 @@
+library(shiny)
 library(leaflet)
-library(ggmap)
+library(shinythemes)
 
-fluidPage(
-  
-  tags$head(
-    tags$script(src="getIP.js")
-  ),
-  
-  # Application title
-  titlePanel("Flowline Finder"),
-  
-  # Sidebar with a slider input for number of bins
-  sidebarLayout(
-    sidebarPanel(
-      
-      textInput(inputId = 'place', label = 'Location', ""),
-      
-      sliderInput("AOIwidth",
-                  "width of bounding box (miles):",
-                  min = 1,
-                  max = 50,
-                  value = 10, post = ' miles'),
-      
-      sliderInput("AOIheight",
-                  "height of bounding box (miles):",
-                  min = 1,
-                  max = 50,
-                  value = 10, post = ' miles'),
-      tableOutput("stations"),
-      tableOutput("Flowlines")
-      
-    ),
-    
-    # Show a plot of the generated distribution
-    mainPanel(
-      leafletOutput("map", height = "600px", width = "100%")
+shinyUI(navbarPage("Flowline Finder", id="nav",
+  tabPanel("Interactive map",
+    div(class="outer",
+      tags$head(
+        includeCSS("styles.css"),
+        includeScript("gomap.js")
+      ),
+      # Get geolocation if possible
+      tags$script('
+        $(document).ready(function () {
+          navigator.geolocation.getCurrentPosition(onSuccess, onError);
+          function onError (err) {
+            Shiny.onInputChange("geolocation", false);
+          }
+         function onSuccess (position) {
+            setTimeout(function () {
+                document.getElementById("current_loc").style.color = "blue";
+                var coords = position.coords;
+                console.log(coords);
+                Shiny.onInputChange("geolocation", true);
+                Shiny.onInputChange("lat", coords.latitude);
+                Shiny.onInputChange("long", coords.longitude);
+            }, 1100)
+         }
+        });
+      '),
+      #Enter button activates search, only on focus
+      tags$script('
+        document.addEventListener("keypress", function(event) {
+          if (event.keyCode === 13 || event.which === 13) {
+            var dummyEl = document.getElementById("place");
+            var isFocused = (document.activeElement === dummyEl);
+            if (isFocused) {
+              document.getElementById("do").click();
+            }
+          }
+        });
+      '),  
+      leafletOutput("map", width="100%", height="100%"),
+      verbatimTextOutput(outputId = "server_problems"),
+      absolutePanel(style="display:inline-block", id = "controls", class = "panel panel-default", fixed = TRUE,
+        draggable = TRUE, top = 60, left = 10, right = "auto", bottom = "auto",
+        width = 430, height = "auto",
+        textInput(inputId = 'place', label = NULL, ""),
+        actionButton("do", "")
+      ),
+      absolutePanel(id = "cur_l", class = "panel panel-default", fixed = TRUE,
+                    draggable = FALSE, bottom = 105, right = 13, left = "auto", top = "auto",
+                    width = 30, height = "auto",
+                    actionButton("current_loc", "")
+      )
     )
+  ),
+  tabPanel("Information",
+    verbatimTextOutput("data_loc"),   
+    tableOutput("stations"),
+    tableOutput("Flowlines")
+    #fluidRow(
+    #    column(1, tableOutput("stations")),
+     #   column(1, tableOutput("Flowlines"))
+    #)
+  ),
+  tabPanel("Stream Flow",
+           textOutput("stream"),
+           selectInput(inputId = "flow_selector", label = ,"", choices = ""),
+           actionButton("mark_flowline", "View on Map")
   )
-)
+  
+))
