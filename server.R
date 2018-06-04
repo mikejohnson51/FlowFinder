@@ -12,13 +12,12 @@ shinyServer(function(input, output, session) {
   output$map <- renderLeaflet({
     leaflet() %>%
       addLayersControl(
-        baseGroups = c("CartoDB","Imagery", "OSM"),
+        baseGroups = c("CartoDB","Imagery"),
         overlayGroups = c("USGS Stations", "NHD Flowlines", "AOI"),
         options = layersControlOptions(collapsed = TRUE)
       ) %>%
       addProviderTiles(providers$CartoDB.Positron, group = "CartoDB") %>%
       addProviderTiles(providers$Esri.WorldImagery, group = "Imagery") %>%
-      addTiles(group = "OSM") %>%
       addScaleBar("bottomright") %>%
       setView(lng = -93.85, lat = 37.45, zoom = 4)
   })
