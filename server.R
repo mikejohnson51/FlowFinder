@@ -67,7 +67,14 @@ shinyServer(function(input, output, session) {
                    popup = paste0(paste0(flow@data$gnis_name),
                                   paste0(" COMID:", flow$comid)),
                    popupOptions = c(className = "stream_popup"), 
-                   group = "NHD Flowlines"
+                   group = "NHD Flowlines",
+                   
+                   highlight = highlightOptions(
+                     weight = 10,
+                     color = "#666",
+                     dashArray = "",
+                     fillOpacity = 0.7,
+                     bringToFront = TRUE)
       ) %>%
       addCircleMarkers(lng = as.numeric(LONG), lat = as.numeric(LAT), radius = 6, color = 'green', stroke = FALSE, fillOpacity = 0.5)
     
@@ -213,7 +220,14 @@ shinyServer(function(input, output, session) {
                    popup = paste0(paste0(flow@data$gnis_name),
                                   paste0(" COMID:", flow$comid)),
                    popupOptions = c(className = "stream_popup"), 
-                   group = "NHD Flowlines"
+                   group = "NHD Flowlines",
+                   
+                   highlight = highlightOptions(
+                     weight = 10,
+                     color = "#666",
+                     dashArray = "",
+                     fillOpacity = 0.7,
+                     bringToFront = TRUE)
       )
   })
   
