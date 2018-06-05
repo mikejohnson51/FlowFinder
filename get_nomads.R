@@ -13,17 +13,17 @@
 #' @return
 #' This fuction saves the 18 NetCDF files related to the most recent forecasts.
 
-get_nomads = function(dir = NULL,
+get_nomads = function(dir = "./flowline-app/data/current_nc",
                       type = NULL,
                       time = NULL,
-                      comids = NULL) {
+                      num = 6) {
 
   dir = normalizePath(dir)
-  if (!dir.exists(paste0(dir, "/FlowlineFinder"))) {
-    dir.create(paste0(dir, "/FlowlineFinder"))
+  if (!dir.exists(paste0(dir, "/current_nc"))) {
+    dir.create(paste0(dir, "/current_nc"))
   }
 
-  dir = paste0(dir, "/FlowlineFinder")
+  dir = paste0(dir, "/current_nc")
 
   date = format(strptime(format(Sys.time(), tz = "GMT"),format = "%Y-%m-%d") - 10800, format = "%Y-%m-%d")
   
@@ -62,15 +62,13 @@ files <- tryCatch({
     suppressMessages(readLines(base.url))
   },
   error=function(error_message) {
-    return("No forecast for this time")
+    stop("No new forecast for this time")
   }, 
   
   warning=function(w) {
-    stop("No forecast for this time")
+    stop("No new forecast for this time")
   }
 )
-  
-  #files = readLines(base.url)
 
   fileList = lapply(regmatches(files, gregexpr('(\").*?(\")', files, perl = TRUE)), function(y)
     gsub("^\"|\"$", "", y)) ## subset file names
@@ -102,7 +100,7 @@ files <- tryCatch({
     }
   }
 
-  fileList.fin = head(fileList_time, 6) # Limit to Two day
+  fileList.fin = head(fileList_time, num) # Limit to Two day
 
   urls = paste0(base.url, fileList.fin)
 
@@ -115,81 +113,8 @@ files <- tryCatch({
       )
     }
   }
-
-
-  if (!is.null(comids)) {
-    all.files = list.files(dir, full.names = TRUE)
-    nc <- nc_open(filename = all.files[1])
-
-    comids.all = nc$var$streamflow$dim[[1]]$vals
-
-    comids_of_value = comids[comids %in% comids.all]
-
-    start <- vector(mode = "numeric", length(comids_of_value))
-
-    for (i in 1:length(comids_of_value)) {
-      start[i] = which(comids.all == comids_of_value[i])
-    }
-
-    nc_close(nc)
-
-    df = NULL
-
-    for (i in seq_along(all.files)) {
-      nc = nc_open(filename = all.files[i])
-      values = ncvar_get(nc, varid = "streamflow")
-
-      if (!is.null(dir)) {
-        for (j in 1:length(start)) {
-          df =  rbind(
-            df,
-            data.frame(
-              "NOAA",
-              comids_of_value[j],
-              lubridate::ymd_hms(paste0(date, "-", 15, "-00-00"), tz = 'UTC') + ((((i -
-                                                                                      1) * interval
-              )) * 60 * 60),
-              values[start[j]],
-              stringsAsFactors = FALSE
-            )
-          )
-        }
-
-      } else{
-        forecast_hour = substring(sub(".*tm", "", all.files[i]), 1, 2)
-
-        for (j in 1:length(start)) {
-          df =  rbind(
-            df,
-            data.frame(
-              "NOAA",
-              comids_of_value[j],
-              as.POSIXct(
-                gsub("_", " ", ncatt_get(nc, 0)$model_initialization_time)
-              ),
-              values[start[j]],
-              forecast_hour,
-              "UTC",
-              stringsAsFactors = FALSE
-            )
-          )
-        }
-      }
-      nc_close(nc)
-    }
-
-    if (!is.null(dir)) {
-      colnames(df) = c("agency_cd", "comid", "dateTime", "cms")
-    } else {
-      colnames(df) = c("agency_cd",
-                       "comid",
-                       "dateTime",
-                       "cms",
-                       "Latency",
-                       "tz_cd")
-    }
-
-    df = df[order(df$comid, df$dateTime), ]
-    return(df)
-  }
+  message("Data Downloaded !")
 }
+
+  
+
