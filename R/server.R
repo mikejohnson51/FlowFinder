@@ -64,7 +64,7 @@ shinyServer(function(input, output, session) {
       fitBounds(bounds$west, bounds$south, bounds$east, bounds$north) %>%
       addPolylines(data = flow, color = 'blue', weight = flow$streamorde,
                    popup = paste0(ifelse(is.na(flow@data$gnis_name), "", flow@data$gnis_name),
-                                  paste0(" COMID:", flow$comid)),
+                                  paste0(" COMID: ", flow$comid)),
                    popupOptions = c(className = "stream_popup"), 
                    group = "NHD Flowlines",
                    
@@ -136,7 +136,7 @@ shinyServer(function(input, output, session) {
     output$stations = renderTable(station_data, striped = TRUE)
     
     updateSelectInput(session, inputId = "flow_selector", choices = paste0(paste0(ifelse(is.na(flow@data$gnis_name), "", flow@data$gnis_name)),
-                                                                           paste0(" COMID:", flowlines$comid)))
+                                                                           paste0(" COMID: ", flowlines$comid)))
  
   }
   
