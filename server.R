@@ -163,7 +163,7 @@ shinyServer(function(input, output, session) {
       new_location(input$lat, input$long)
       updateTextInput(session, "place", value = "Current Location")
     } else {
-      error_message(" Your current location can't be determined.  
+      error_message("Your current location can't be determined.  
  Make sure you have given your browser the necessarry permissions. ")
     }
   })

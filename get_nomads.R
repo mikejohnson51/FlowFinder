@@ -13,8 +13,6 @@
 #' @return
 #' This fuction saves the 18 NetCDF files related to the most recent forecasts.
 
-dir = "/Users/mikejohnson/Documents/GitHub/FlowlineFinder"
-
 get_nomads = function(dir = NULL,
                       type = NULL,
                       time = NULL,
@@ -27,10 +25,11 @@ get_nomads = function(dir = NULL,
 
   dir = paste0(dir, "/FlowlineFinder")
 
-  date = format(Sys.Date(), tz = "GMT")
+  date = format(strptime(format(Sys.time(), tz = "GMT"),format = "%Y-%m-%d") - 3600, format = "%Y-%m-%d")
+  
 
   if (is.null(time)) {
-    time = strptime(format(Sys.time(), tz = "GMT"), format = "%Y-%m-%d %H:%M:%S")$hour
+    time = format(strptime(format(Sys.time(), tz = "GMT"),format = "%Y-%m-%d") - 3600, format = "%H")
     startTime = time
   }
 
@@ -59,7 +58,19 @@ get_nomads = function(dir = NULL,
       "/"
     ) ## set base URL
 
-  files = readLines(base.url)
+files <- tryCatch({
+    suppressMessages(readLines(base.url))
+  },
+  error=function(error_message) {
+    return("No forecast for this time")
+  }, 
+  
+  warning=function(w) {
+    stop("No forecast for this time")
+  }
+)
+  
+  #files = readLines(base.url)
 
   fileList = lapply(regmatches(files, gregexpr('(\").*?(\")', files, perl = TRUE)), function(y)
     gsub("^\"|\"$", "", y)) ## subset file names
@@ -179,7 +190,6 @@ get_nomads = function(dir = NULL,
     }
 
     df = df[order(df$comid, df$dateTime), ]
+    return(df)
   }
-
-  return(df)
 }
