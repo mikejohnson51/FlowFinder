@@ -199,9 +199,13 @@ shinyServer(function(input, output, session) {
     #              popup = text,
     #              popupOptions = labelOptions(direction = "bottom"),
     #              group = "flowline_mark")
+    
     text = input$flow_selector
-    id = unlist(strsplit(text, split='COMID:', fixed=TRUE))[2]
+    
+    id = unlist(strsplit(text, split='COMID: ', fixed=TRUE))[2]
+    
     print(id)
+    
     leafletProxy("map") %>%
       clearGroup("NHD Flowlines") %>%
       setView(lng = mean(flow@lines[flow$comid == id][[1]]@Lines[[1]]@coords[,1]),
