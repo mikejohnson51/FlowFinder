@@ -1,6 +1,7 @@
 library(shiny)
 library(HydroData)
 library(ncdf4)
+library(dismo)
 
 
 shinyServer(function(input, output, session) {
@@ -36,7 +37,7 @@ shinyServer(function(input, output, session) {
     )
     
     if (is.na(nhd[1])) {
-      error_message(" Could not find any features in this region. ")
+      error_message("Could not find any features in this region. ")
       return()
     }
     
@@ -172,18 +173,12 @@ shinyServer(function(input, output, session) {
     output$data_loc <- renderText({ input$place })
     
     # Catch any errors due to geocode lookup
-    target_pos = tryCatch({
-      geocode(input$place)
-    }, warning = function(w) {
-      if (grepl("geocode failed with status ZERO_RESULTS", w[1]$message)) {
-        error_message(" Not a valid location. ")
-      } else if (grepl("geocode failed with status OVER_QUERY_LIMIT", w[1]$message)) {
-        error_message(" Google API is not responding.  
- Please wait a few seconds and try again. ")
-      }
-      return(NA)
-    })
-    
+  target_pos = {trash <-  capture.output(
+        suppressMessages( loc <-  dismo::geocode( input$place, output = 'latlon' ) )
+      )
+      target_pos <<- list(lat = loc$lat, lon = loc$lon)
+    }
+      
     if (!is.na(target_pos[1])) {
       error_message("")
       new_location(target_pos$lat, target_pos$lon)
