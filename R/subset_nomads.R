@@ -14,12 +14,19 @@ subset_nomads = function(dir = "./flowline-app/data/current_nc", comids = NULL) 
   }
 
 all.files = list.files(dir, full.names = TRUE)
+date  = substring(basename(all.files[1]),1,8)
+time = gsub('^.*m.t\\s*|\\s*z.*$', '', basename(all.files[1]))
+year = substring(date, 1,4)
+month =substring(date, 5,6)
+day = substring(date, 7,8)
+date = paste(year,month,day, sep ="-")
     
-    if (length(grep(all.files, pattern = "medium")) > 1) {
-    } interval = 6
+  if(length(grep(all.files, pattern = "medium")) > 1){
+    interval = 3
   } else {
     interval = 1
   }
+
   nc <- nc_open(filename = all.files[1])
   
   comids.all = nc$var$streamflow$dim[[1]]$vals
@@ -47,7 +54,7 @@ all.files = list.files(dir, full.names = TRUE)
           data.frame(
             "NOAA",
             comids_of_value[j],
-            lubridate::ymd_hms(paste0(date, "-", 15, "-00-00"), tz = 'UTC') + ((((i -
+            lubridate::ymd_hms(paste0(date, "-", time, "-00-00"), tz = 'UTC') + ((((i -
                                                                                     1) * interval
             )) * 60 * 60),
             values[start[j]],

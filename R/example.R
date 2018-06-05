@@ -66,3 +66,10 @@ plot( x = data[data$comid == nhd$ids[1],]$dateTime,
      ylab = "streamflow (cfs)",
      xlab = 'Date and Time')
 
+
+
+
+##### USING NOMADS_SUBSET
+
+nhd = findNHD(clip_unit = list("UCSB", 10, 10), ids = TRUE)
+

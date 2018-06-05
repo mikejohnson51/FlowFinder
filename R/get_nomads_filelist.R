@@ -85,7 +85,10 @@ files <- tryCatch({
   fileList.fin = head(fileList_time, num) # Limit to Two day
   urls = paste0(base.url, fileList.fin)
   
-  return(urls)
+  return(
+    list(date = gsub("-", "", date),
+         urls = urls)
+    )
 }
 
  
