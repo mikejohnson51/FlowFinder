@@ -24,6 +24,7 @@ shinyServer(function(input, output, session) {
     get_data(LAT, LONG)
     generate_tables(flow, stats)
     update_map(LAT, LONG)
+    updateTextInput(session, "place", placeholder = "Search Flowline Finder")
   }
   
   get_data = function(LAT, LONG) {
@@ -144,14 +145,14 @@ shinyServer(function(input, output, session) {
     if(!is.null(input$lat)){
       #map <- leafletProxy("map")
       #loc = paste(as.numeric(input$lat), as.numeric(input$long), collapse = "")
-      updateTextInput(session, "place", value = "Current Location")
+      updateTextInput(session, "place", placeholder = "Current Location")
       new_location(input$lat, input$long)
       output$data_loc <- renderText({ "Current Location" })
     } else {
         ip_loc = findLatLong()
         if (!is.null(ip_loc$lat)) {
           new_location(ip_loc$lat, ip_loc$lon)
-          updateTextInput(session, "place", value = "IP Based Location")
+          updateTextInput(session, "place", placeholder = "IP Based Location")
           output$data_loc <- renderText({ "IP Based Location" })
         }
     }
