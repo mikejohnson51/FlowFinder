@@ -25,11 +25,11 @@ get_nomads = function(dir = NULL,
 
   dir = paste0(dir, "/FlowlineFinder")
 
-  date = format(strptime(format(Sys.time(), tz = "GMT"),format = "%Y-%m-%d") - 3600, format = "%Y-%m-%d")
+  date = format(strptime(format(Sys.time(), tz = "GMT"),format = "%Y-%m-%d") - 10800, format = "%Y-%m-%d")
   
 
   if (is.null(time)) {
-    time = format(strptime(format(Sys.time(), tz = "GMT"),format = "%Y-%m-%d") - 3600, format = "%H")
+    time = format(strptime(format(Sys.time(), tz = "GMT"),format = "%Y-%m-%d") - 10800, format = "%H")
     startTime = time
   }
 
