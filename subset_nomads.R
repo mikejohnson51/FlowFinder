@@ -1,6 +1,19 @@
 subset_nomads = function(dir = "./flowline-app/data/current_nc", comids = NULL) {
-  if (!is.null(comids)) {
-    all.files = list.files(dir, full.names = TRUE)
+  
+  
+  if (class(comids) == 'numeric') {
+    comids = comids
+    shp = NULL
+  } else if (class(comids) == 'SpatialLinesDataFrame') {
+    shp = comids
+    comids = shp$comid
+  } else if (class(comids) == 'SpatialPolygonsDataFrame' |
+             class(comids) == "SpatialPolygons") {
+    shp = findNHD(clip_unit = comids)
+    comids = shp$comid
+  }
+
+all.files = list.files(dir, full.names = TRUE)
     
     if (length(grep(all.files, pattern = "medium")) > 1) {
     } interval = 6

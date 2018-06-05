@@ -1,0 +1,40 @@
+---
+title: "Get NOMADs"
+theme: flatly
+output: html_document
+---
+
+This document will be used within a cron job to update National Water Model forecasts for the FlowlineFinder application:
+
+First, we will source the needed functions:
+
+```{r}
+source("./get_nomads_filelist.R")
+source("./download_nomads.R")
+```
+
+Then, get a list of most current files on the NOMADs server
+
+```{r}
+fileList = get_nomads_filelist(num  = 6)
+```
+
+Finally we will check if files need to be updated, and, if so, downloaded:
+
+```{r}
+files = list.files("./flowline-app/data/current_nc", full.names = TRUE)
+
+# remove the files not in the list from folder
+file.remove(files[!(basename(files) %in% basename(fileList))])
+
+# remove files in the folder from the file list
+
+fileList = fileList[!(basename(fileList) %in% basename(files))]
+
+if(length(fileList) > 0){
+  download_nomads(fileList = fileList)
+}else {
+  message("No Download needed...")
+}
+
+```

@@ -13,21 +13,15 @@
 #' @return
 #' This fuction saves the 18 NetCDF files related to the most recent forecasts.
 
-get_nomads = function(dir = "./flowline-app/data/current_nc",
+get_nomads_filelist = function(dir = "./flowline-app/data/current_nc",
                       type = NULL,
                       time = NULL,
                       num = 6) {
 
   dir = normalizePath(dir)
-  if (!dir.exists(paste0(dir, "/current_nc"))) {
-    dir.create(paste0(dir, "/current_nc"))
-  }
-
-  dir = paste0(dir, "/current_nc")
 
   date = format(strptime(format(Sys.time(), tz = "GMT"),format = "%Y-%m-%d") - 10800, format = "%Y-%m-%d")
   
-
   if (is.null(time)) {
     time = format(strptime(format(Sys.time(), tz = "GMT"),format = "%Y-%m-%d") - 10800, format = "%H")
     startTime = time
@@ -35,18 +29,6 @@ get_nomads = function(dir = "./flowline-app/data/current_nc",
 
   if (is.null(type)) {
     type = "medium_range"
-  }
-
-  if (class(comids) == 'numeric') {
-    comids = comids
-    shp = NULL
-  } else if (class(comids) == 'SpatialLinesDataFrame') {
-    shp = comids
-    comids = shp$comid
-  } else if (class(comids) == 'SpatialPolygonsDataFrame' |
-             class(comids) == "SpatialPolygons") {
-    shp = findNHD(clip_unit = comids)
-    comids = shp$comid
   }
 
   base.url <-
@@ -101,20 +83,12 @@ files <- tryCatch({
   }
 
   fileList.fin = head(fileList_time, num) # Limit to Two day
-
   urls = paste0(base.url, fileList.fin)
-
-  for (i in seq_along(urls)) {
-    if (!file.exists(paste0(dir, "/", fileList.fin[i]))) {
-      download.file(
-        url = urls[i],
-        mode = "wb",
-        destfile = paste0(dir, "/", fileList.fin[i])
-      )
-    }
-  }
-  message("Data Downloaded !")
+  
+  return(urls)
 }
+
+ 
 
   
 
