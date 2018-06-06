@@ -47,12 +47,12 @@ shinyUI(navbarPage("Flowline Finder", id="nav",
         draggable = TRUE, top = 60, left = 10, right = "auto", bottom = "auto",
         width = 430, height = "auto",
         textInput(inputId = 'place', label = NULL, ""),
-        actionButton("do", "")
+        actionButton("do", "", icon("search"))
       ),
       absolutePanel(id = "cur_l", class = "panel panel-default", fixed = TRUE,
                     draggable = FALSE, bottom = 105, right = 13, left = "auto", top = "auto",
                     width = 30, height = "auto",
-                    actionButton("current_loc", "")
+                    actionButton("current_loc", "", icon = icon("location-arrow"))
       )
     )
   ),

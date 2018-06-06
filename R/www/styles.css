@@ -71,23 +71,24 @@ h1, h2, h3, h4 { font-weight: 400; }
     font-size: 15px;
 }
 
+.fa-search {
+    color: #b2b2b2;
+    font-size: 1.2em;
+}
+
 #do {
     background: transparent !important;
     border: none;
     margin-left: -45px;
     height: 48px;
 }
-#do::before {
-    content: "\1F50D";
-}
+
 .form-group {
     margin-bottom: 0px !important;
 }
 
 
-#current_loc::before {
-    content: "\2295";
-}
+
 
 #current_loc {
     background-clip: padding-box;
