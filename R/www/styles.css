@@ -4,9 +4,6 @@
   --title-text-color: #0073c6;
 }
 
-* {
-  font-family: 'Source Sans Pro',sans-serif !important;
-}
 
 input[type="number"] {
   max-width: 80%;

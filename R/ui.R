@@ -40,6 +40,7 @@ shinyUI(navbarPage("Flowline Finder", id="nav",
           }
         });
       '),  
+      
       leafletOutput("map", width="100%", height="100%"),
       verbatimTextOutput(outputId = "server_problems"),
       absolutePanel(style="display:inline-block", id = "controls", class = "panel panel-default", fixed = TRUE,
