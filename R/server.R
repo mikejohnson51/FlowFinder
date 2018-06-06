@@ -233,16 +233,33 @@ shinyServer(function(input, output, session) {
     text = input$flow_selector
     id = unlist(strsplit(text, split='COMID: ', fixed=TRUE))[2]
     i = match(id, flow@data$comid)
+    data = nwm[nwm$comid == ids[i],]
+    
 
-    plot( x = nwm[nwm$comid == ids[i],]$dateTime,
-          y = nwm[nwm$comid == ids[i],]$cms,
-          type = "l",
+ 
+   plot( x = data$dateTime,
+          y = data$cms,
+          type = "b",
+          pch = 16,
           col = 'blue',
           lwd =3,
-          main = paste0("Streamflow (cfs)\nCOMID: ", ids[i] ),
+          main = paste0(ifelse(is.na(flow$gnis_name[flow$comid == ids[i]]), "", flow@data$gnis_name[flow$comid == ids[i]]),
+                        paste0(" COMID: ", flow$comid[flow$comid == ids[i]])),
           ylab = "streamflow (cfs)",
-          xlab = 'Date and Time')
+          xlab = 'Date and Time', axes = F)
+    axis(1, at= seq(min(data$dateTime), max(data$dateTime), 10800), 
+         labels= seq(min(nwm$dateTime), max(nwm$dateTime), 10800), 
+         cex.axis = .95,
+         lwd = 2
+         )
+    axis(2, at= seq(min(data$cms), max(data$cms), ((max(data$cms) - min(data$cms)) / 10)), 
+         labels= round(seq(min(data$cms), max(data$cms), ((max(data$cms) - min(data$cms)) / 10)), 3), 
+         las = 2,
+         lwd = 2,
+         cex.axis = .8)
   }
+  
+
   
   output$streamFlow <- renderPlot({
     text = input$flow_selector
