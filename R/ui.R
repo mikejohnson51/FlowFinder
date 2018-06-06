@@ -64,7 +64,8 @@ shinyUI(navbarPage("Flowline Finder", id="nav",
            textOutput("stream"),
            selectInput(inputId = "flow_selector", label = ,"", choices = ""),
            actionButton("mark_flowline", "View on Map"),
-           plotOutput("streamFlow")
+           plotOutput("streamFlow"),
+           downloadButton('downloadData', 'Download', icon = icon("download"))
   )
   
 ))

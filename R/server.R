@@ -247,4 +247,20 @@ shinyServer(function(input, output, session) {
     updateStreamFlow(text)
   })
   
+  output$downloadData <- downloadHandler(
+    
+    filename = function() {
+      loc = input$place
+      if (loc == "") {
+        loc = "current_location"
+      }
+      paste(paste(loc, Sys.Date(), sep = '_'), "csv", sep = ".")
+    },
+
+    content = function(file) {
+      write.table(nwm, file, sep = ",",
+                  row.names = FALSE)
+    }
+  )
+  
 })
