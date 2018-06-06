@@ -86,7 +86,8 @@ files <- tryCatch({
   urls = paste0(base.url, fileList.fin)
   
   return(
-    list(date = gsub("-", "", date),
+    list(date = date,
+         startTime = startTime,
          urls = urls)
     )
 }

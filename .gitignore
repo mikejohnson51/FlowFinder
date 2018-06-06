@@ -4,3 +4,5 @@ nomads_download.html
 .RData
 .Ruserdata
 .DS_Store
+.httr-oauth
+token.rds

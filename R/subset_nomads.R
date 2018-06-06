@@ -1,19 +1,8 @@
-subset_nomads = function(dir = "../flowline-app/data/current_nc", comids = NULL) {
+subset_nomads = function(dir = "./flowline-app/data/current_nc", comids = NULL) {
   
   
-  if (class(comids) == 'numeric') {
-    comids = comids
-    shp = NULL
-  } else if (class(comids) == 'SpatialLinesDataFrame') {
-    shp = comids
-    comids = shp$comid
-  } else if (class(comids) == 'SpatialPolygonsDataFrame' |
-             class(comids) == "SpatialPolygons") {
-    shp = findNHD(clip_unit = comids)
-    comids = shp$comid
-  }
-
 all.files = list.files(dir, full.names = TRUE)
+
 date  = substring(basename(all.files[1]),1,8)
 time = gsub('^.*m.t\\s*|\\s*z.*$', '', basename(all.files[1]))
 year = substring(date, 1,4)
@@ -26,7 +15,7 @@ date = paste(year,month,day, sep ="-")
   } else {
     interval = 1
   }
-  print(all.files[1])
+
   nc <- nc_open(filename = all.files[1])
 
   comids.all = nc$var$streamflow$dim[[1]]$vals
@@ -67,14 +56,13 @@ date = paste(year,month,day, sep ="-")
     nc_close(nc)
   }
   
-  if (!is.null(dir)) {
     colnames(df) = c("agency_cd",
                      "comid",
                      "dateTime",
                      "cms")
-  }
   
   df = df[order(df$comid, df$dateTime),]
   
   return(df)
+  
 }

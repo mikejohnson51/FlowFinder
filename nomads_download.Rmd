@@ -9,8 +9,9 @@ This document will be used within a cron job to update National Water Model fore
 First, we will source the needed functions:
 
 ```{r}
+library(ncdf4)
 source("./R/get_nomads_filelist.R")
-source("./R/download_nomads.R")
+source("./R/download_nomads_rda.R")
 ```
 
 Then, get a list of most current files on the NOMADs server
@@ -22,20 +23,36 @@ fileList = get_nomads_filelist(num  = 6)
 Finally we will check if files need to be updated, and, if so, downloaded:
 
 ```{r}
-files = list.files("./flowline-app/data/current_nc", full.names = TRUE)
 
-testFiles = paste0(fileList[[1]], basename(fileList[[2]]))
+load("./flows.rda")
+
+if(!all(
+  fileList$date == nwm$date,
+  fileList$startTime == nwm$time
+)){
+
+#files = list.files("./flowline-app/data/current_nc", full.names = TRUE )
+
+#files = drop_dir('current_nc')
+
+#testFiles = paste0(fileList[[1]], basename(fileList[[3]]))
 
 # remove the files not in the list from folder
-file.remove(files[!(basename(files) %in% testFiles)])
+#file.remove(files[!(basename(files) %in% testFiles)])
+
+#bad = files$name[!(files$name %in% testFiles)]
+#for(i in seq_along(bad)){
+#drop_delete(bad[i])
+#}
 
 # remove files in the folder from the file list
+#fileList[[3]] = fileList[[3]][!(testFiles %in% basename(files))]
 
-fileList[[2]] = fileList[[2]][!(testFiles %in% basename(files))]
+#fileList[[3]] = fileList[[3]][!(testFiles %in% files$name)]
 
-if(length(fileList[[2]] > 0)){
-  download_nomads(fileList = fileList)
-}else {
+#if(length(fileList[[3]] > 0)){
+  download_nomads_rda(fileList = fileList)
+} else {
   message("No Download needed...")
 }
 
