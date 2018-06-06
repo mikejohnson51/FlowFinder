@@ -1,17 +1,13 @@
-subset_nomads_rda = function(rda = "./flowline-app/data/current_nc/flows.rda", comids = NULL) {
+subset_nomads_rda = function(rda = "./flowline-app/data/current_nc", comids = NULL) {
   
   if(!exists("nwm")){
-    load(rda)
+    file = list.files("./flowline-app/data/current_nc", full.names = T)
+    nwm = fst::read_fst(file)
   }
 
-  Q = nwm$flow
-  
-  df = Q[Q$COMID %in% comids, ]
-  
+  df = nwm[nwm$COMID %in% comids, ]
   df = df[order(df$COMID, df$dateTime),]
-  rownames(df) = NULL
-
   return(df)
-  
+
 }
 

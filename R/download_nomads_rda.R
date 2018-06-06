@@ -55,11 +55,13 @@ download_nomads_rda = function(fileList = NULL){
       forecast = 'medium',
       flow = Q
     )
+  
+    name =paste0(date,"_",time,"_medium_.fst")
     
-  save(nwm, file = "./flowline-app/data/current_nc/flows.rda", compress = "xz")
+  fst::write.fst(Q,  path = paste0("./flowline-app/data/current_nc/", name), 100) 
 
   unlink(tmp, recursive = T)
  
-  message(".rda finished!")
+  message(paste0(name," finished!"))
 }
 
