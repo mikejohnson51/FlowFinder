@@ -73,13 +73,13 @@ plot( x = data[data$comid == nhd$ids[1],]$dateTime,
 ##### USING NOMADS_SUBSET
 
 source("./subset_nomads_rda.R")
-nhd = findNHD(clip_unit = list("UCSB", 10, 10), ids = TRUE)
+nhd = HydroData::findNHD(clip_unit = list("UCSB", 10, 10), ids = TRUE)
 df = subset_nomads_rda(comids = nhd$ids)
 
 
 ### NHD upstream
 
-nhd = findNHD(clip_unit = list("Colorado Springs", 10, 10))
+#nhd = findNHD(clip_unit = list("Colorado Springs", 10, 10))
 test = prep_nhd(flines =nhd$flowlines)
 hmm = get_upstream(flines = test)
 xxx = "1529819"

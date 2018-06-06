@@ -20,12 +20,12 @@ get_nomads_filelist = function(dir = "./flowline-app/data/current_nc",
 
   dir = normalizePath(dir)
 
-  date = format(strptime(format(Sys.time(), tz = "GMT"),format = "%Y-%m-%d") - 10800, format = "%Y-%m-%d")
-  
-  if (is.null(time)) {
-    time = format(strptime(format(Sys.time(), tz = "GMT"),format = "%Y-%m-%d") - 10800, format = "%H")
-    startTime = time
-  }
+  date = format(strptime(format(Sys.time(), tz = "GMT"),format = "%Y-%m-%d"), format = "%Y-%m-%d")
+  backup.date = as.Date(date) -1
+  #if (is.null(time)) {
+  #  time = format(strptime(format(Sys.time(), tz = "GMT"),format = "%Y-%m-%d") - 10800, format = "%H")
+  #  startTime = time
+  #}
 
   if (is.null(type)) {
     type = "medium_range"
@@ -44,13 +44,22 @@ files <- tryCatch({
     suppressMessages(readLines(base.url))
   },
   error=function(error_message) {
-    stop("No new forecast for this time")
-  }, 
-  
-  warning=function(w) {
-    stop("No new forecast for this time")
+    base.url1 <-
+      paste0(
+        "http://nomads.ncep.noaa.gov/pub/data/nccf/com/nwm/prod/nwm.",
+        gsub("-", "", backup.date),
+        "/",
+        type,
+        "/"
+      )
+    
+    suppressMessages(readLines(base.url1))
+    date = backup.date
+    
   }
+  
 )
+
 
   fileList = lapply(regmatches(files, gregexpr('(\").*?(\")', files, perl = TRUE)), function(y)
     gsub("^\"|\"$", "", y)) ## subset file names
@@ -82,12 +91,14 @@ files <- tryCatch({
     }
   }
 
-  fileList.fin = head(fileList_time, num) # Limit to Two day
+  fileList.fin = head(fileList_time, num) # Limit number
   urls = paste0(base.url, fileList.fin)
+  
+  time = gsub('^.*m.t\\s*|\\s*z.*$', '', basename(fileList.fin[[1]]))
   
   return(
     list(date = date,
-         startTime = startTime,
+         startTime = time,
          urls = urls)
     )
 }

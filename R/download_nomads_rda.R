@@ -21,9 +21,9 @@ download_nomads_rda = function(fileList = NULL){
       interval = 1
     }
     
-    dates =NULL
+    dates = NULL
     for(i in 1:6){
-      dates = append(dates,  lubridate::ymd_hms(paste0(date, "-", time, "-00-00"), tz = 'UTC') + ((((i -1) * interval)) * 60 * 60))
+      dates = append(dates,  format(lubridate::ymd_hms(paste0(date, "-", time, "-00-00"), tz = 'GMT') + ((((i) * interval)) * 60 * 60), tz ="GMT"))
     }
     
     message("Data Downloaded !")

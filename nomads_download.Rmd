@@ -24,15 +24,28 @@ Check if files need to be updated, and, if so, download them:
 
 ```{r, echo = FALSE}
 
-load("./flowline-app/data/current_nc/flows.rda")
+file = list.files("./flowline-app/data/current_nc", full.names = F)
+if(length(file) >0){
+  ttt = strsplit(list.files("./flowline-app/data/current_nc", full.names = F), "_")[[1]]
+  date = ttt[1]
+  time = ttt[2]
+  forecast = ttt[3]
+} else {
+  date = "XXX"
+  time = "XXX"
+  forecast = "XXX"
+}
 
 if(all(
-  fileList$date == nwm$date,
-  fileList$startTime == nwm$time
+  fileList$date == date,
+  fileList$startTime == time
 )){
   message("No Download needed...")
 } else {
+  file.remove(list.files("./flowline-app/data/current_nc", full.names = T))
   download_nomads_rda(fileList)
 }
+
+
 
 ```
