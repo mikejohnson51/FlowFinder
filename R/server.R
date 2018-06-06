@@ -244,7 +244,7 @@ shinyServer(function(input, output, session) {
           col = 'blue',
           lwd =3,
           main = paste0(ifelse(is.na(flow$gnis_name[flow$comid == ids[i]]), "", flow@data$gnis_name[flow$comid == ids[i]]),
-                        paste0(" COMID: ", flow$comid[flow$comid == ids[i]])),
+                        paste0(" COMID: ", flow$comid[flow$comid == ids[i]],"\nMedium Range National Water Model Forecasts")),
           ylab = "streamflow (cfs)",
           xlab = 'Date and Time', axes = F)
     axis(1, at= seq(min(data$dateTime), max(data$dateTime), 10800), 
@@ -257,6 +257,7 @@ shinyServer(function(input, output, session) {
          las = 2,
          lwd = 2,
          cex.axis = .8)
+    
   }
   
 
