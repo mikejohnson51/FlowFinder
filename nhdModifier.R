@@ -1,15 +1,8 @@
-nhd = findNHD(clip_unit = list("UCSB", 10, 10))
 
-nhd = nhd$flowlines
-
-flines  = nhd@data
-library(sf)
-library(dplyr)
-
-prepare_nhdplus <- function(flines, min_network_size = 2, min_path_length = 1, purge_non_dendritic = TRUE) {
-  if("sf" %in% class(flines)) {
-    warning("removing geometry")
-    flines <- sf::st_set_geometry(flines, NULL)
+prep_nhd <- function(flines, min_network_size = 2, min_path_length = 1, purge_non_dendritic = TRUE) {
+  if(grepl("Spatial",class(flines))) {
+    message("removing geometry")
+    flines <- flines@data
   }
   
   orig_rows <- nrow(flines)
@@ -45,11 +38,19 @@ prepare_nhdplus <- function(flines, min_network_size = 2, min_path_length = 1, p
   # Join ToNode and FromNode along with COMID and Length to get downstream attributes.
   flines <- left_join(flines, select(flines, toCOMID = comid, fromnode), by = c("tonode" = "fromnode"))
   
-  if(!all(flines[["terminalfl"]][which(is.na(flines$toCOMID))] == 1)) {
-    stop("FromNode - ToNode imply terminal flowlines that are not\n flagged terminal.",
-         "Can't assume NA toCOMIDs go to the ocean.")
-  }
+  #if(!all(flines[["terminalfl"]][which(is.na(flines$toCOMID))] == 1)) {
+  #  stop("FromNode - ToNode imply terminal flowlines that are not\n flagged terminal.",
+  #       "Can't assume NA toCOMIDs go to the ocean.")
+  #}
   
   select(flines, -tonode, -fromnode, -terminalfl, -startflag,
          -streamorde, -streamcalc, -terminalpa, -ftype, -pathlength, -divergence)
 }
+
+
+get_upstream <- function(flines) {
+  left_join(select(flines, comid), select(flines, comid, toCOMID),
+            by = c("comid" = "toCOMID")) %>%
+    rename(fromCOMID = comid.y)
+}
+

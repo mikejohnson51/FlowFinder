@@ -77,3 +77,18 @@ source("./R/subset_nomads.R")
 nhd = findNHD(clip_unit = list("UCSB", 10, 10), ids = TRUE)
 
 df = subset_nomads(dir = "./flowline-app/data/current_nc", comids = nhd$ids)
+
+
+### NHD upstream
+
+nhd = findNHD(clip_unit = list("Colorado Springs", 10, 10))
+
+test = prep_nhd(flines =nhd$flowlines)
+hmm = get_upstream(flines = test)
+
+xxx = "1529819"
+
+sum(nhd$flowlines$comid %in% c(xxx, hmm[hmm$comid == xxx,2]))
+
+plot(nhd$flowlines[nhd$flowlines$comid %in% c(xxx, hmm[hmm$comid == xxx, 2]),], col = "blue")
+plot(nhd$flowlines[nhd$flowline$comid == xxx,], col = 'red', add = T)
