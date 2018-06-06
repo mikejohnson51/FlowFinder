@@ -11,15 +11,17 @@ shinyServer(function(input, output, session) {
   # Define Initial Map
   output$map <- renderLeaflet({
     leaflet() %>%
-      addLayersControl(
-        baseGroups = c("Basemap","Imagery"),
-        overlayGroups = c("USGS Stations", "NHD Flowlines"),
-        options = layersControlOptions(collapsed = TRUE)
-      ) %>%
+      
       addProviderTiles(providers$CartoDB.Positron, group = "Basemap") %>%
       addProviderTiles(providers$Esri.WorldImagery, group = "Imagery") %>%
       addScaleBar("bottomleft") %>%
-      setView(lng = -93.85, lat = 37.45, zoom = 4)
+      setView(lng = -93.85, lat = 37.45, zoom = 4) %>%
+      addLayersControl(
+        baseGroups = c("Basemap","Imagery"),
+        overlayGroups = c("USGS Stations", "NHD Flowlines"),
+        options = layersControlOptions(collapsed = TRUE),
+        position = "bottomleft"
+      ) 
   })
   
   new_location = function(LAT, LONG) {
