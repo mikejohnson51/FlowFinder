@@ -72,5 +72,8 @@ plot( x = data[data$comid == nhd$ids[1],]$dateTime,
 
 ##### USING NOMADS_SUBSET
 
+getwd()
+source("./R/subset_nomads.R")
 nhd = findNHD(clip_unit = list("UCSB", 10, 10), ids = TRUE)
 
+df = subset_nomads(dir = "./flowline-app/data/current_nc", comids = nhd$ids)
