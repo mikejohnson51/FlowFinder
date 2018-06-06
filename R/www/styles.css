@@ -87,18 +87,13 @@ h1, h2, h3, h4 { font-weight: 400; }
     margin-bottom: 0px !important;
 }
 
-
-
-
 #current_loc {
     background-clip: padding-box;
     border: 2px solid rgba(0,0,0,0.2);
-    width: 33px;
-    height: 33px;
-    font-size: larger;
+    width: 30px;
+    height: 30px;
     padding: 0;
-    line-height: 30px;
-    font-weight: bold;
+    line-height: 26px;
 }
 
 .container-fluid > .navbar-collapse, .container-fluid > .navbar-header, .container > .navbar-collapse, .container > .navbar-header, .nav > li {
@@ -177,5 +172,11 @@ h1, h2, h3, h4 { font-weight: 400; }
     cursor: pointer;
     color: blue;
     text-decoration: underline;
+}
+
+.leaflet-touch .leaflet-bar a {
+    width: 26px !important;
+    height: 26px !important;
+    line-height: 26px !important;
 }
 

@@ -18,7 +18,7 @@ shinyUI(navbarPage("Flowline Finder", id="nav",
           }
          function onSuccess (position) {
             setTimeout(function () {
-                document.getElementById("current_loc").style.color = "blue";
+                document.getElementById("current_loc").style.color = "#5896e4";
                 var coords = position.coords;
                 console.log(coords);
                 Shiny.onInputChange("geolocation", true);
@@ -50,8 +50,7 @@ shinyUI(navbarPage("Flowline Finder", id="nav",
         actionButton("do", "", icon("search"))
       ),
       absolutePanel(id = "cur_l", class = "panel panel-default", fixed = TRUE,
-                    draggable = FALSE, bottom = 105, right = 13, left = "auto", top = "auto",
-                    width = 30, height = "auto",
+                    draggable = FALSE, bottom = 100, right = 10, left = "auto", top = "auto",
                     actionButton("current_loc", "", icon = icon("location-arrow"))
       )
     )
