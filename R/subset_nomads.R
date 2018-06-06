@@ -1,4 +1,4 @@
-subset_nomads = function(dir = "./flowline-app/data/current_nc", comids = NULL) {
+subset_nomads = function(dir = "../flowline-app/data/current_nc", comids = NULL) {
   
   
   if (class(comids) == 'numeric') {
@@ -26,9 +26,9 @@ date = paste(year,month,day, sep ="-")
   } else {
     interval = 1
   }
-
+  print(all.files[1])
   nc <- nc_open(filename = all.files[1])
-  
+
   comids.all = nc$var$streamflow$dim[[1]]$vals
   
   comids_of_value = comids[comids %in% comids.all]

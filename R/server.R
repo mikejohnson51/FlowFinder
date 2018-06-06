@@ -3,9 +3,11 @@ library(HydroData)
 library(ncdf4)
 library(dismo)
 
+source("subset_nomads.R")
+
 
 shinyServer(function(input, output, session) {
-  
+
   # Define Initial Map
   output$map <- renderLeaflet({
     leaflet() %>%
@@ -44,7 +46,8 @@ shinyServer(function(input, output, session) {
     
     flow <<- nhd$flowlines
     ids <<-  flow$comid  ## you'll need this for the NWM subset
-    
+    #ids <<-  nhd$ids
+    nwm <<- subset_nomads(comids = ids)
     # Catch error when no stations are in AOI
     stats <<- tryCatch({
       suppressMessages(findUSGS(clip_unit = list(LAT, LONG, 5, 5))$nwis)
@@ -91,7 +94,7 @@ shinyServer(function(input, output, session) {
                        paste0('<a href=',sprintf(
                            "https://waterdata.usgs.gov/nwis/inventory/?site_no=%s",stats$site_no),'>',stats$site_no,"</a>")
                      ),
-                     paste("<strong>NHD COMID:</strong>", stats$feature_id),
+                     paste("<strong>NHD COMID:ds <<-  flow$comid</strong>", stats$feature_id),
                      paste("<strong>Site Name:</strong>", stats$site_name),
                      sep = "<br/>"
                    ) )
@@ -187,24 +190,10 @@ shinyServer(function(input, output, session) {
   })
   
   observeEvent(input$mark_flowline, {
-    # text = input$flow_selector
-    # id = unlist(strsplit(text, split='COMID:', fixed=TRUE))[2]
-    # i = match(id, flow@data$comid)
-    # center = round(length(flow@lines[[i]]@Lines[[1]]@coords)/4, digits = 0)
-    # 
-    # leafletProxy("map") %>%
-    #   clearGroup("flowline_mark") %>%
-    #   addMarkers(lng = flow@lines[[i]]@Lines[[1]]@coords[center,1], 
-    #              lat = flow@lines[[i]]@Lines[[1]]@coords[center,2],
-    #              popup = text,
-    #              popupOptions = labelOptions(direction = "bottom"),
-    #              group = "flowline_mark")
-    
+
     text = input$flow_selector
     
     id = unlist(strsplit(text, split='COMID: ', fixed=TRUE))[2]
-    
-    print(id)
     
     leafletProxy("map") %>%
       clearGroup("NHD Flowlines") %>%
@@ -214,7 +203,7 @@ shinyServer(function(input, output, session) {
       addPolylines(data = flow, color = ~ifelse(flow$comid == id, "red", "blue"), 
                    weight = ~ifelse(flow$comid == id, 15, flow$streamorde),
                    popup = paste0(paste0(flow@data$gnis_name),
-                                  paste0(" COMID:", flow$comid)),
+                                  paste0(" COMID: ", flow$comid)),
                    popupOptions = c(className = "stream_popup"), 
                    group = "NHD Flowlines",
                    
@@ -231,12 +220,31 @@ shinyServer(function(input, output, session) {
       return()
     output$stream <- renderText({ input$goto$name })
     choose_flow(input$goto$text)
-    #output$stream <- renderText({ input$goto$text })
     output$stream <- renderText({ input$flow_selector })
   })
   
   observe({
     output$stream <- renderText({ input$flow_selector })
+  })
+  
+  updateStreamFlow = function(text) {
+    text = input$flow_selector
+    id = unlist(strsplit(text, split='COMID: ', fixed=TRUE))[2]
+    i = match(id, flow@data$comid)
+
+    plot( x = nwm[nwm$comid == ids[i],]$dateTime,
+          y = nwm[nwm$comid == ids[i],]$cms,
+          type = "l",
+          col = 'blue',
+          lwd =3,
+          main = paste0("Streamflow (cfs)\nCOMID: ", ids[i] ),
+          ylab = "streamflow (cfs)",
+          xlab = 'Date and Time')
+  }
+  
+  output$streamFlow <- renderPlot({
+    text = input$flow_selector
+    updateStreamFlow(text)
   })
   
 })

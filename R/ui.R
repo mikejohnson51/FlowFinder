@@ -6,8 +6,8 @@ shinyUI(navbarPage("Flowline Finder", id="nav",
   tabPanel("Interactive map",
     div(class="outer",
       tags$head(
-        includeCSS("styles.css"),
-        includeScript("gomap.js")
+        includeCSS("www/styles.css"),
+        includeScript("www/gomap.js")
       ),
       # Get geolocation if possible
       tags$script('
@@ -59,15 +59,12 @@ shinyUI(navbarPage("Flowline Finder", id="nav",
     verbatimTextOutput("data_loc"),   
     tableOutput("stations"),
     tableOutput("Flowlines")
-    #fluidRow(
-    #    column(1, tableOutput("stations")),
-     #   column(1, tableOutput("Flowlines"))
-    #)
   ),
   tabPanel("Stream Flow",
            textOutput("stream"),
            selectInput(inputId = "flow_selector", label = ,"", choices = ""),
-           actionButton("mark_flowline", "View on Map")
+           actionButton("mark_flowline", "View on Map"),
+           plotOutput("streamFlow")
   )
   
 ))

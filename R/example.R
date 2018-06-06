@@ -1,6 +1,6 @@
 
 ## Define a clip_unit
-xxx  =  list ( 38.9142, -104.7749, 5,5)
+xxx  =  list ( 48.9142, -104.7749, 5,5)
 
 ## Get NHD, USGS, and NWM data
 nhd = findNHD(clip_unit = xxx , ids = T)
@@ -9,7 +9,8 @@ usgs = findUSGS(clip_unit = xxx)
 ## This works for now bt well need to figure out how to read from an external directory
 ## Well also need to find a way to automatically update the folder. It looks like a cron job linked to Google Drive might work...
 
-data = get_nomads(dir = "/Users/mikejohnson", comids = nhd$ids)
+#data = get_nomads(dir = "/Users/mikejohnson", comids = nhd$ids)
+data = subset_nomads(comids = nhd$ids)
 
 ## Define USGS icon
 usgsIcon = makeIcon(
