@@ -81,11 +81,13 @@ up_stream = get_upstream(flines = nhd_prep)
 
 xxx = "17595277"
 
-##upstream
-
-plot(nhd$flowlines[nhd$flowlines$comid %in% c(xxx, up_stream[up_stream$comid == xxx, 2]),], col = "blue")
-
-plot(nhd$flowlines[nhd$flowlines$comid %in% c(xxx, nhd_prep[nhd_prep$comid == xxx, 4]),], col = "green", add = T)
 
 
-plot(nhd$flowlines[nhd$flowline$comid == xxx,], col = 'red', add = T)
+#COMID
+plot(nhd$flowlines[nhd$flowline$comid == xxx,], col = 'red')
+#UPSTREAM
+plot(nhd$flowlines[nhd$flowlines$comid %in% c(up_stream[up_stream$comid == xxx, 2]),], col = "blue", add = T)
+#DOWNSTREAM
+plot(nhd$flowlines[nhd$flowlines$comid %in% c(nhd_prep[nhd_prep$comid == xxx, 4]),], col = "green", add = T)
+
+
