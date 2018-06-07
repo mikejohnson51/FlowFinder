@@ -6,11 +6,6 @@ xxx  =  list ( 48.9142, -104.7749, 5,5)
 nhd = findNHD(clip_unit = xxx , ids = T)
 usgs = findUSGS(clip_unit = xxx)
 
-## This works for now bt well need to figure out how to read from an external directory
-## Well also need to find a way to automatically update the folder. It looks like a cron job linked to Google Drive might work...
-
-#data = get_nomads(dir = "/Users/mikejohnson", comids = nhd$ids)
-data = subset_nomads(comids = nhd$ids)
 
 ## Define USGS icon
 usgsIcon = makeIcon(
@@ -80,9 +75,17 @@ df = subset_nomads_rda(comids = nhd$ids)
 ### NHD upstream
 
 #nhd = findNHD(clip_unit = list("Colorado Springs", 10, 10))
-test = prep_nhd(flines =nhd$flowlines)
-hmm = get_upstream(flines = test)
-xxx = "1529819"
-sum(nhd$flowlines$comid %in% c(xxx, hmm[hmm$comid == xxx,2]))
-plot(nhd$flowlines[nhd$flowlines$comid %in% c(xxx, hmm[hmm$comid == xxx, 2]),], col = "blue")
+nhd_prep = prep_nhd(flines = nhd$flowlines)
+
+up_stream = get_upstream(flines = nhd_prep)
+
+xxx = "17595277"
+
+##upstream
+
+plot(nhd$flowlines[nhd$flowlines$comid %in% c(xxx, up_stream[up_stream$comid == xxx, 2]),], col = "blue")
+
+plot(nhd$flowlines[nhd$flowlines$comid %in% c(xxx, nhd_prep[nhd_prep$comid == xxx, 4]),], col = "green", add = T)
+
+
 plot(nhd$flowlines[nhd$flowline$comid == xxx,], col = 'red', add = T)

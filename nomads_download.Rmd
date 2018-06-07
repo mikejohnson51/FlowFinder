@@ -25,14 +25,15 @@ Check if files need to be updated, and, if so, download them:
 ```{r, echo = FALSE}
 
 file = list.files("./flowline-app/data/current_nc", full.names = F)
-if(length(file) >0){
+
+if(length(file) > 0){
   ttt = strsplit(list.files("./flowline-app/data/current_nc", full.names = F), "_")[[1]]
   date = ttt[1]
   time = ttt[2]
   forecast = ttt[3]
 } else {
-  date = "XXX"
-  time = "XXX"
+  date = as.Date("1900-01-01")
+  time = "50"
   forecast = "XXX"
 }
 
