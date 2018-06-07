@@ -63,6 +63,10 @@ shinyUI(
                             absolutePanel(id = "cur_l", class = "panel panel-default", fixed = TRUE,
                                           draggable = FALSE, bottom = 100, right = 10, left = "auto", top = "auto",
                                           actionButton("current_loc", "", icon = icon("location-arrow"))
+                            ),
+                            absolutePanel(id = "reset_buttons", fixed = TRUE,
+                                          draggable = FALSE, top = 60, right = 10, left = "auto", bottom = "auto",
+                                          actionButton("reset", "", icon = icon("undo"))
                             )
                             )
                             ),

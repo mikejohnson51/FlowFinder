@@ -5,7 +5,12 @@ library(dismo)
 library(shinyjs)
 library(DT)
 
+library(data.table)
+library(fst)
+library(dplyr)
+
 source("../subset_nomads_rda.R")
+source("./nhdModifier.R")
 
 
 shinyServer(function(input, output, session) {
@@ -72,6 +77,8 @@ shinyServer(function(input, output, session) {
     if (input$do == 1) {
       updateTextInput(session, "place", value = "")
     }
+    values$up = prep_nhd(flines = values$flow)
+    values$nhd_prep = prep_nhd(flines = values$flow)
   })
   
   # Function to determine bounds
@@ -106,8 +113,15 @@ shinyServer(function(input, output, session) {
       clearGroup("NHD Flowlines") %>%
       fitBounds(bounds$west, bounds$south, bounds$east, bounds$north) %>%
       addPolylines(data = values$flow, color = 'blue', weight = values$flow$streamorde,
-                   popup = paste0(paste0(ifelse(is.na(values$flow@data$gnis_name), "", values$flow@data$gnis_name)),
-                                  paste0(" COMID: ", values$flow$comid)),
+                   #popup = paste0(paste0(ifelse(is.na(values$flow@data$gnis_name), "", values$flow@data$gnis_name)),
+                                 # paste0(" COMID: ", values$flow$comid)),
+                   popup = paste(sep = " ",
+                                 paste0("<b><a class='open-stream'>",paste0(ifelse(is.na(values$flow@data$gnis_name), "", values$flow@data$gnis_name)),
+                                        paste0(" COMID: ", values$flow$comid),"</a></b></br>"),
+                                 '<a class="stream-data"><i class="fa fa-line-chart"></i></a>',
+                                 '<a class="upstream-flow"><i class="fa fa-angle-double-up"></i></a>',
+                                 '<a class="downstream-flow"><i class="fa fa-angle-double-down"></i></a>'
+                   ),
                    popupOptions = c(className = "stream_popup"), 
                    group = "NHD Flowlines",
                    
@@ -115,7 +129,7 @@ shinyServer(function(input, output, session) {
                      weight = 10,
                      color = "#666",
                      fillOpacity = 0.7,
-                     bringToFront = TRUE)
+                     bringToFront = FALSE)
       ) %>%
       addCircleMarkers(lng = as.numeric(values$lon), lat = as.numeric(values$lat), radius = 6, color = 'green', stroke = FALSE, fillOpacity = 0.5)
     
@@ -152,6 +166,55 @@ shinyServer(function(input, output, session) {
                     Make sure you have given your browser the necessarry permissions. ")
     }
     })
+  
+  # Reset Button
+  observeEvent(input$reset, {
+    leafletProxy("map") %>%
+      clearGroup("up-stream") %>%
+      clearGroup("down-stream")
+    })
+  
+  # Used to select flowline from popup
+  observe({
+    if (is.null(input$upStream))
+      return()
+
+    hmm = get_upstream(flines = values$up)
+
+    leafletProxy("map") %>%
+      clearGroup("up-stream") %>%
+      clearGroup("down-stream") %>%
+      addPolylines(data = values$flow[values$flow$comid == input$upStream$comid,],
+                   color = "blue",
+                   opacity = 1,
+                   group = "up-stream",
+                   options = pathOptions(clickable = FALSE))  %>%
+      addPolylines(data = values$flow[values$flow$comid %in% c(hmm[hmm$comid == input$upStream$comid, 2]),], 
+                   color = "#84bd00",
+                   opacity = 1,
+                   group = "up-stream",
+                   options = pathOptions(clickable = FALSE))
+  })
+  
+  observe({
+    if (is.null(input$downStream))
+      return()
+    hmm = get_upstream(flines = values$up)
+    
+    leafletProxy("map") %>%
+      clearGroup("down-stream") %>%
+      clearGroup("up-stream") %>%
+      addPolylines(data = values$flow[values$flow$comid == input$downStream$comid,],
+                   color = "blue",
+                   opacity = 1,
+                   group = "down-stream",
+                   options = pathOptions(clickable = FALSE))  %>%
+      addPolylines(data = values$flow[values$nhd$flowlines$comid %in% c(values$nhd_prep[values$nhd_prep$comid == input$downStream$comid, 4]),],
+                   color = "red",
+                   opacity = 1,
+                   group = "down-stream",
+                   options = pathOptions(clickable = FALSE))
+  })
   
   ########## Information ####################################################################
   
@@ -265,11 +328,7 @@ shinyServer(function(input, output, session) {
       buttons = c('copy', 'csv', 'excel', 'pdf', 'print')
     )
   )
-  
-  # observeEvent(input$flow_selector, {
-  #   updateSearch(DTproxy, keywords = list(global = as.character(input$flow_selector), columns = NULL))
-  # })
-  
+
   DTproxy <- dataTableProxy("tbl")
   
   observeEvent(input$flow_selector, {
