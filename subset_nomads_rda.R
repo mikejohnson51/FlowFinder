@@ -1,4 +1,4 @@
-subset_nomads_rda = function(rda = "./flowline-app/data/current_nc", comids = NULL) {
+subset_nomads_rda = function(comids = NULL) {
   
   if(!exists("nwm")){
     file = list.files("../flowline-app/data/current_nc", full.names = T)

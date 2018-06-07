@@ -40,11 +40,11 @@ get_nomads_filelist = function(dir = "./flowline-app/data/current_nc",
       "/"
     ) ## set base URL
 
-files <- tryCatch({
-    suppressMessages(readLines(base.url))
+tryCatch({
+    files <<- suppressMessages(readLines(base.url))
   },
   error=function(error_message) {
-    base.url1 <-
+    trycatch({base.url <<-
       paste0(
         "http://nomads.ncep.noaa.gov/pub/data/nccf/com/nwm/prod/nwm.",
         gsub("-", "", backup.date),
@@ -53,13 +53,27 @@ files <- tryCatch({
         "/"
       )
     
-    suppressMessages(readLines(base.url1))
-    date = backup.date
+    files <<-suppressMessages(readLines(base.url))
+    date  <<- backup.date
+    
+  })},
+  
+  warning=function(warning_message) {
+    base.url <<-
+      paste0(
+        "http://nomads.ncep.noaa.gov/pub/data/nccf/com/nwm/prod/nwm.",
+        gsub("-", "", backup.date),
+        "/",
+        type,
+        "/"
+      )
+    
+    files <<- suppressMessages(readLines(base.url))
+    date <<- backup.date
     
   }
   
 )
-
 
   fileList = lapply(regmatches(files, gregexpr('(\").*?(\")', files, perl = TRUE)), function(y)
     gsub("^\"|\"$", "", y)) ## subset file names
