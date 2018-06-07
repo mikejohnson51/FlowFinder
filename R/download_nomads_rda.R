@@ -60,7 +60,8 @@ download_nomads_rda = function(fileList = NULL){
     
   fst::write.fst(Q,  path = paste0("./flowline-app/data/current_nc/", name), 100) 
 
-  unlink(tmp, recursive = T)
+  unlink(list.files(tmp, pattern = ".nc$"))
+
  
   message(paste0(name," finished!"))
 }

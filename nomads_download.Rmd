@@ -1,7 +1,8 @@
 ---
 title: "FlowlineFinder Download NOMADs"
-theme: flatly
-output: html_document
+output: 
+  html_document:
+  self_contained: no
 ---
 
 This document will be used within a cron job to update National Water Model forecasts for the FlowlineFinder application:
