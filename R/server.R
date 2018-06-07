@@ -207,7 +207,6 @@ shinyServer(function(input, output, session) {
   
   # Draw Plot
   output$streamFlow <- renderPlot({
-    print(values$data$Q_cms)
     plot( x = values$data$dateTime,
           y = values$data$Q_cms,
           type = "b",
