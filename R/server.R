@@ -38,11 +38,9 @@ shinyServer(function(input, output, session) {
   observeEvent(input$do, {
     # Check if input is likely a lat/lon pair
     split = unlist(strsplit(input$place, split=" ", fixed=TRUE))
-    if (length(split) == 2) {
-      if (!is.na(as.numeric(split[1])) && !is.na(as.numeric(split[2]))) {
+    if ((length(split) == 2) && !is.na(as.numeric(split[1])) && !is.na(as.numeric(split[2])) )  {
         values$lat = as.numeric(split[1])
         values$lon = as.numeric(split[2])
-      }
     } else {
       loc = dismo::geocode( input$place, output = 'latlon' )
       values$lat = loc$lat
