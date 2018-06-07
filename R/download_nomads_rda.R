@@ -22,8 +22,9 @@ download_nomads_rda = function(fileList = NULL){
     }
     
     dates = NULL
+    
     for(i in 1:6){
-      dates = append(dates,  format(lubridate::ymd_hms(paste0(date, "-", time, "-00-00"), tz = 'GMT') + ((((i) * interval)) * 60 * 60), tz ="GMT"))
+      dates = append(dates,  format(lubridate::ymd_hms(paste0(date, "-", time, "-00-00"), tz = 'GMT') + ((((i) * interval)) * 60 * 60), tz ="GMT", format="%Y-%m-%d  %H"))
     }
     
     message("Data Downloaded !")
@@ -44,7 +45,7 @@ download_nomads_rda = function(fileList = NULL){
     }
     
     Q = reshape2::melt(df, id.vars=c("COMID"))
-    Q$variable = lubridate::ymd_hms(Q$variable)
+    Q$variable = lubridate::ymd_h(Q$variable)
     Q$agency_code = "NOAA"
     colnames(Q) = c("COMID", "dateTime", "Q_cms", "agency_code")
     rownames(Q) = NULL
@@ -55,8 +56,8 @@ download_nomads_rda = function(fileList = NULL){
       forecast = 'medium',
       flow = Q
     )
-  
-    name =paste0(date,"_",time,"_medium_.fst")
+
+  name =paste0(date,"_",time,"_medium_.fst")
     
   fst::write.fst(Q,  path = paste0("./flowline-app/data/current_nc/", name), 100) 
 

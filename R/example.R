@@ -67,7 +67,6 @@ plot( x = data[data$comid == nhd$ids[1],]$dateTime,
 
 ##### USING NOMADS_SUBSET
 
-source("./subset_nomads_rda.R")
 nhd = HydroData::findNHD(clip_unit = list("UCSB", 10, 10), ids = TRUE)
 df = subset_nomads_rda(comids = nhd$ids)
 

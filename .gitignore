@@ -6,3 +6,5 @@ nomads_download.html
 .DS_Store
 .httr-oauth
 token.rds
+R/subset_nomads_rda.R
+R/server.R

@@ -9,8 +9,8 @@ library(data.table)
 library(fst)
 library(dplyr)
 
-source("../subset_nomads_rda.R")
-#source("./R/nhdModifier.R")
+source("../R/subset_nomads_rda.R")
+source("../R/nhdModifier.R")
 
 
 shinyServer(function(input, output, session) {
@@ -68,19 +68,22 @@ shinyServer(function(input, output, session) {
     values$flow = values$nhd$flowlines
     values$ids =  values$flow$comid
     values$ids2 = values$nhd$ids
+    
     values$stats = tryCatch({
       suppressMessages(findUSGS(clip_unit = clip)$nwis)
     },
     error=function(error_message) {
       return(NA)
     })
+    
     values$nwm = subset_nomads_rda(comids = values$ids2)
+
     if (input$do == 1) {
       updateTextInput(session, "place", value = "")
     }
     values$up = prep_nhd(flines = values$flow)
     values$nhd_prep = prep_nhd(flines = values$flow)
-  })
+   })
   
   # Function to determine bounds
   calc_bounds <- function(lat, lon) {
@@ -268,6 +271,8 @@ shinyServer(function(input, output, session) {
   })
   
   # Draw Plot
+
+  
   output$streamFlow <- renderPlot({
     plot( x = values$data$dateTime,
           y = values$data$Q_cms,
