@@ -10,7 +10,7 @@ library(fst)
 library(dplyr)
 
 source("../subset_nomads_rda.R")
-source("./nhdModifier.R")
+#source("./R/nhdModifier.R")
 
 
 shinyServer(function(input, output, session) {
@@ -51,6 +51,7 @@ shinyServer(function(input, output, session) {
       values$lat = loc$lat
       values$lon = loc$lon
     }
+    
     clip = list(values$lat, values$lon, 5, 5)
     
     values$nhd = tryCatch({

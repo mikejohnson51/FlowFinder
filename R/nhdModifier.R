@@ -53,17 +53,3 @@ get_upstream <- function(flines) {
             by = c("comid" = "toCOMID")) %>%
     rename(fromCOMID = comid.y)
 }
-
-
-library(dplyr)
-library(HydroData)
-nhd = findNHD(clip_unit = list("Colorado Springs", 10, 10))
-flines = prep_nhd(flines = nhd$flowlines)
-                  
-hmm = get_downstream(fline)
-
-get_downstream = function(flines){
-  flines[["totdasqkm"]][match(flines$toCOMID, flines$comid)]
-}
-
-
