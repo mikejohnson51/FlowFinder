@@ -328,11 +328,13 @@ shinyServer(function(input, output, session) {
   
   # Data tables
   # Proxy used to manipulate search
-  output$tbl = renderDT(
-    values$nwm, extensions = 'Buttons', options = list(
-      dom = 'Bfrtip',
-      buttons = c('copy', 'csv', 'excel', 'pdf', 'print')
-    )
+  output$tbl = DT::renderDataTable(server = FALSE, {
+    DT::datatable(values$nwm, 
+    extensions = 'Buttons', 
+    options = list(dom = 'Bfrtip',
+                   buttons = c('copy', 'csv', 'excel', 'pdf', 'print'),
+                   scroller = TRUE)
+    )}
   )
 
   DTproxy <- dataTableProxy("tbl")
