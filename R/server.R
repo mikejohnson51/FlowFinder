@@ -174,6 +174,7 @@ shinyServer(function(input, output, session) {
   # Reset Button
   observeEvent(input$reset, {
     leafletProxy("map") %>%
+      clearGroup("view-on-map") %>%
       clearGroup("up-stream") %>%
       clearGroup("down-stream")
     })
@@ -188,6 +189,7 @@ shinyServer(function(input, output, session) {
     leafletProxy("map") %>%
       clearGroup("up-stream") %>%
       clearGroup("down-stream") %>%
+      clearGroup("view-on-map") %>%
       addPolylines(data = values$flow[values$flow$comid == input$upStream$comid,],
                    color = "blue",
                    opacity = 1,
@@ -208,6 +210,7 @@ shinyServer(function(input, output, session) {
     leafletProxy("map") %>%
       clearGroup("down-stream") %>%
       clearGroup("up-stream") %>%
+      clearGroup("view-on-map") %>%
       addPolylines(data = values$flow[values$flow$comid == input$downStream$comid,],
                    color = "blue",
                    opacity = 1,
@@ -307,22 +310,15 @@ shinyServer(function(input, output, session) {
   # View on map button
   observeEvent(input$mark_flowline, {
     leafletProxy("map") %>%
-      clearGroup("NHD Flowlines") %>%
       setView(lng = mean(values$flow@lines[values$flow$comid == values$id][[1]]@Lines[[1]]@coords[,1]),
               lat = mean(values$flow@lines[values$flow$comid == values$id][[1]]@Lines[[1]]@coords[,2]), 
               zoom = 14) %>% 
-      addPolylines(data = values$flow, color = ~ifelse(values$flow$comid == values$id, "red", "blue"), 
-                   weight = ~ifelse(values$flow$comid == values$id, 15, values$flow$streamorde),
-                   popup = paste0(paste0(values$flow@data$gnis_name),
-                                  paste0(" COMID: ", values$flow$comid)),
-                   popupOptions = c(className = "stream_popup"), 
-                   group = "NHD Flowlines",
-                   
-                   highlight = highlightOptions(
-                     weight = 10,
-                     color = "#666",
-                     fillOpacity = 0.7,
-                     bringToFront = TRUE)
+      addPolylines(data = values$flow[values$flow$comid == values$id, ], 
+                   color = "red", 
+                   weight = 15,
+                   opacity = 0.9,
+                   options = pathOptions(clickable = FALSE),
+                   group = "view-on-map"
       )
   })
   
