@@ -5,6 +5,8 @@ $(document).on("click", ".stream-data", function(e) {
   var text = aNode.innerHTML;
   var comid = text.split("COMID:").pop();
   $($("#nav a")[2]).tab("show");
+  /* Close popup */
+  document.getElementsByClassName('leaflet-popup-close-button')[0].click();
   Shiny.onInputChange("goto", {
     text : text,
     comid : comid

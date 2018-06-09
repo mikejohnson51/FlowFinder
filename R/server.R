@@ -102,7 +102,7 @@ shinyServer(function(input, output, session) {
       updateTextInput(session, "place", value = paste(input$lat, input$long, sep = " "), placeholder = "Current Location")
       shinyjs::click("do")
     } else if (!is.null(input$getIP)) {
-      updateTextInput(session, "place", value = paste(input$getIP$latitude, input$getIP$longitude, sep = " "), placeholder = "IP Based Location")
+      updateTextInput(session, "place", value = paste(input$getIP$latitude, input$getIP$longitude, sep = " "), placeholder = "Search Flowline Finder")
       shinyjs::click("do")
     }
   })
@@ -243,12 +243,13 @@ shinyServer(function(input, output, session) {
     output$Flowlines = renderTable(table, striped = TRUE)
     
     if(typeof(values$stats) == "S4") {
-      station_data = cbind(values$stats$site_name, values$stats$site_no, round(values$stats$da_sqkm, digits = 0))
+      station_data = cbind(values$stats$site_name, paste0('<a href=',sprintf(
+        "https://waterdata.usgs.gov/nwis/inventory/?site_no=%s",values$stats$site_no),'>',values$stats$site_no,"</a>"), round(values$stats$da_sqkm, digits = 0))
     } else {
       station_data = cbind('NA', 'NA', 'NA')
     }
     colnames(station_data) = c("USGS Site", "Site No.", "Drainage Area (SqKm)")
-    output$stations = renderTable(station_data, striped = TRUE)
+    output$stations = renderTable({station_data}, striped = TRUE, sanitize.text.function = function(x) x)
   })
   
   ########## Stream Flow ####################################################################
@@ -310,6 +311,9 @@ shinyServer(function(input, output, session) {
   # View on map button
   observeEvent(input$mark_flowline, {
     leafletProxy("map") %>%
+      clearGroup("view-on-map") %>%
+      clearGroup("up-stream") %>%
+      clearGroup("down-stream") %>%
       setView(lng = mean(values$flow@lines[values$flow$comid == values$id][[1]]@Lines[[1]]@coords[,1]),
               lat = mean(values$flow@lines[values$flow$comid == values$id][[1]]@Lines[[1]]@coords[,2]), 
               zoom = 14) %>% 
