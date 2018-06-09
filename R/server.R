@@ -152,7 +152,7 @@ shinyServer(function(input, output, session) {
                            paste0('<a href=',sprintf(
                              "https://waterdata.usgs.gov/nwis/inventory/?site_no=%s",values$stats$site_no),'>',values$stats$site_no,"</a>")
                      ),
-                     paste("<strong>NHD COMID:ds <<-  flow$comid</strong>", values$stats$feature_id),
+                     paste("<strong>NHD COMID:</strong>", values$stats$feature_id),
                      paste("<strong>Site Name:</strong>", values$stats$site_name),
                      sep = "<br/>"
                    ) )
