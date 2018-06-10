@@ -1,11 +1,26 @@
-// Click on flowline popup
+// Get COMID from leaflet-popup
+function getCOMID(node){
+  node = document.getElementsByClassName('leaflet-popup-content');
+  var aNode = node[0];
+  var text = aNode.innerHTML;
+  var st1 = text.split("COMID:").pop();
+  var comid = st1.split("</a>")[0];
+  comid = comid.trim();
+  return comid;
+}
+
+// Switch to a different tab
+function showTab(num) {
+  $($("#nav a")[num]).tab("show");
+}
+
+// Click on graph button
 $(document).on("click", ".stream-data", function(e) {
   node = document.getElementsByClassName('open-stream');
   var aNode = node[0];
   var text = aNode.innerHTML;
   var comid = text.split("COMID:").pop();
-  $($("#nav a")[2]).tab("show");
-  /* Close popup */
+  showTab(2);
   document.getElementsByClassName('leaflet-popup-close-button')[0].click();
   Shiny.onInputChange("goto", {
     text : text,
@@ -13,57 +28,34 @@ $(document).on("click", ".stream-data", function(e) {
   });
 });
 
-$(document).on("click", ".upstream-flow", function(e) {
-  Shiny.onInputChange("upStream", {
+// Determine what happens when up/downstream button clicked
+function stream(direction) {
+  Shiny.onInputChange(direction, {
     comid : ""
   });
-  node = document.getElementsByClassName('leaflet-popup-content');
-  var aNode = node[0];
-  var text = aNode.innerHTML;
-  var st1 = text.split("COMID:").pop();
-  var comid = st1.split("</a>")[0];
-  comid = comid.trim();
-  /* Make undo button active */
+  comid = getCOMID();
   var elem = $('#reset_buttons');
   if(!elem.hasClass('active')){
     elem.addClass('active');
   }
-  /* Close popup */
   document.getElementsByClassName('leaflet-popup-close-button')[0].click();
-  Shiny.onInputChange("upStream", {
+  Shiny.onInputChange(direction, {
     comid : comid
   });
-});
+}
 
-$(document).on("click", ".downstream-flow", function(e) {
-  Shiny.onInputChange("downStream", {
-    comid : ""
-  });
-  node = document.getElementsByClassName('leaflet-popup-content');
-  var aNode = node[0];
-  var text = aNode.innerHTML;
-  var st1 = text.split("COMID:").pop();
-  var comid = st1.split("</a>")[0];
-  comid = comid.trim();
-  /* Make undo button active */
-  var elem = $('#reset_buttons');
-  if(!elem.hasClass('active')){
-    elem.addClass('active');
-  }
-  /* Close popup */
-  document.getElementsByClassName('leaflet-popup-close-button')[0].click();
-  Shiny.onInputChange("downStream", {
-    comid : comid
-  });
-});
 
-// Click on flowline popup
+$(document).on("click", ".upstream-flow", function(e) { stream("upStream"); });
+$(document).on("click", ".downstream-flow", function(e) { stream("downStream"); });
+
+
+// View on map button
 $(document).on("click", "#mark_flowline", function(e) {
-  $($("#nav a")[0]).tab("show");
+  showTab(0);
 });
 
+// Reset button
 $(document).on("click", "#reset", function(e) {
-  var elem = $('#reset_buttons');
-  elem.removeClass('active');
+  $('#reset_buttons').removeClass('active');
 });
  
