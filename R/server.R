@@ -83,6 +83,7 @@ shinyServer(function(input, output, session) {
     }
     values$up = prep_nhd(flines = values$flow)
     values$nhd_prep = prep_nhd(flines = values$flow)
+
    })
   
   # Function to determine bounds
@@ -261,8 +262,11 @@ shinyServer(function(input, output, session) {
   
   # Update Drop-Down Options
   observeEvent(input$do, {
+    max_qcms = values$nwm[match(max(values$nwm$Q_cms), values$nwm$Q_cms),]$COMID
+    name = values$flow[values$flow$comid == max_qcms,]$gnis_name
+    e = paste0(paste0(ifelse(is.na(name), "", name)), paste0(" COMID: ", max_qcms))
     updateSelectInput(session, inputId = "flow_selector", choices = paste0(paste0(ifelse(is.na(values$flow@data$gnis_name), "", values$flow@data$gnis_name)),
-                                                                           paste0(" COMID: ", values$flow$comid)))
+                                                                           paste0(" COMID: ", values$flow$comid)), selected = e)
   })
   
   # Set values for current stream
@@ -275,8 +279,6 @@ shinyServer(function(input, output, session) {
   })
   
   # Draw Plot
-
-  
   output$streamFlow <- renderPlot({
     plot( x = values$data$dateTime,
           y = values$data$Q_cms,
@@ -298,7 +300,6 @@ shinyServer(function(input, output, session) {
          las = 2,
          lwd = 2,
          cex.axis = .8)
-
   })
   
   # Used to select flowline from popup
@@ -327,7 +328,6 @@ shinyServer(function(input, output, session) {
   })
   
   # Data tables
-  # Proxy used to manipulate search
   output$tbl = DT::renderDataTable(server = FALSE, {
     DT::datatable(values$nwm, 
     extensions = 'Buttons', 
@@ -336,15 +336,12 @@ shinyServer(function(input, output, session) {
                    scroller = TRUE)
     )}
   )
-
+  # Proxy used to manipulate search
   DTproxy <- dataTableProxy("tbl")
   
-  observeEvent(input$flow_selector, {
-    text = input$flow_selector
-    id = unlist(strsplit(text, split='COMID: ', fixed=TRUE))[2]
+  observe({
+    id = unlist(strsplit(input$flow_selector, split='COMID: ', fixed=TRUE))[2]
     updateSearch(DTproxy, keywords = list(global = id, columns = NULL))
   })
-  
-  
   
   })
