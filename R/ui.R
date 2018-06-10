@@ -15,43 +15,41 @@ shinyUI(
                             # Get geolocation if possible
                             tags$script('
                                         $(document).ready(function () {
-                                        navigator.geolocation.getCurrentPosition(onSuccess, onError);
-                                        function onError (err) {
-                                        Shiny.onInputChange("geolocation", false);
-                                        }
-                                        function onSuccess (position) {
-                                        setTimeout(function () {
-                                        document.getElementById("current_loc").style.color = "#5896e4";
-                                        var coords = position.coords;
-                                        console.log(coords);
-                                        Shiny.onInputChange("geolocation", true);
-                                        Shiny.onInputChange("lat", coords.latitude);
-                                        Shiny.onInputChange("long", coords.longitude);
-                                        }, 1100)
-                                        }
+                                          navigator.geolocation.getCurrentPosition(onSuccess, onError);
+                                          function onError (err) {
+                                            Shiny.onInputChange("geolocation", false);
+                                          }
+                                          function onSuccess (position) {
+                                            setTimeout(function () {
+                                              document.getElementById("current_loc").style.color = "#5896e4";
+                                              var coords = position.coords;
+                                              Shiny.onInputChange("geolocation", true);
+                                              Shiny.onInputChange("lat", coords.latitude);
+                                              Shiny.onInputChange("long", coords.longitude);
+                                            }, 1100)
+                                          }
                                         });
-                                        '),
+                                      '),
                             # Get geolocation if possible
                             tags$script('
                                         $(document).ready(function(){
-                                        $.getJSON("https://json.geoiplookup.io/api?callback=?", function(response) {
-                                        Shiny.onInputChange("getIP", response);
-                                        }, "json");
+                                          $.getJSON("https://json.geoiplookup.io/api?callback=?", function(response) {
+                                            Shiny.onInputChange("getIP", response);
+                                          }, "json");
                                         });
-                                        '),
+                                      '),
                             #Enter button activates search, only on focus
                             tags$script('
                                         document.addEventListener("keypress", function(event) {
-                                        if (event.keyCode === 13 || event.which === 13) {
-                                        var dummyEl = document.getElementById("place");
-                                        var isFocused = (document.activeElement === dummyEl);
-                                        if (isFocused) {
-                                        document.getElementById("do").click();
-                                        }
-                                        }
+                                          if (event.keyCode === 13 || event.which === 13) {
+                                            var dummyEl = document.getElementById("place");
+                                            var isFocused = (document.activeElement === dummyEl);
+                                            if (isFocused) {
+                                              document.getElementById("do").click();
+                                            }
+                                          }
                                         });
-                                        '),  
-                            
+                                      '),  
                             leafletOutput("map", width="100%", height="100%"),
                             verbatimTextOutput(outputId = "server_problems"),
                             absolutePanel(style="display:inline-block", id = "controls", class = "panel panel-default", fixed = TRUE,
