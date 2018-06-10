@@ -26,36 +26,34 @@ h4 { font-weight: 400; }
 *               Header                   *
 *****************************************/
 
- 
 .navbar-header, 
 .nav > li { float: left !important }
 
 .navbar { max-height: 50px; }
 
 .navbar-nav > li > a {
-    line-height: 20px !important;
-    padding-top: 15px !important;
-    padding-bottom: 15px !important;
-    margin-left: 10px;
+  line-height: 20px !important;
+  padding-top: 15px !important;
+  padding-bottom: 15px !important;
+  margin-left: 10px;
 }
 
 .navbar-nav { margin: 0px -15px !important; }
 
 .navbar-default {
-    background-color: var(--header) !important;
-    border-color: var(--header) !important;
+  background-color: var(--header) !important;
+  border-color: var(--header) !important;
 }
-.navbar-default .navbar-brand { font-weight: bold; }
+.navbar-brand { font-weight: bold; }
 
-.navbar-default .navbar-nav > li > a,
-.navbar-default .navbar-brand { color: white !important; }
+.navbar-nav > li > a,
+.navbar-brand { color: white !important; }
 
 .navbar-default .navbar-nav > .active > a { background-color: var(--tab-background) !important; }
 
 /*****************************************
 *               Map                      *
 *****************************************/
-
 
 .outer {
   position: fixed;
@@ -76,77 +74,77 @@ h4 { font-weight: 400; }
 
 /* Zoom Buttons */
 .leaflet-top.leaflet-left {
-    right: 10px;
-    left: auto;
-    top: auto;
-    bottom: 20px;
+  right: 10px;
+  left: auto;
+  top: auto;
+  bottom: 20px;
 }
 
 #place,
 #do { float: left; }
 
 #place {
-    padding-right: 40px;
-    border-radius: 2px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2),0 -1px 0px rgba(0,0,0,0.02);
-    width: 392px;
-    height: 48px;
-    line-height: 24px;
-    font-size: 15px;
+  padding-right: 40px;
+  border-radius: 2px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2),0 -1px 0px rgba(0,0,0,0.02);
+  width: 392px;
+  height: 48px;
+  line-height: 24px;
+  font-size: 15px;
 }
 
 .fa-search {
-    color: #b2b2b2;
-    font-size: 1.2em;
+  color: #b2b2b2;
+  font-size: 1.2em;
 }
 
 #do {
-    background: transparent !important;
-    border: none;
-    margin-left: -45px;
-    height: 48px;
+  background: transparent !important;
+  border: none;
+  margin-left: -45px;
+  height: 48px;
 }
 
 .form-group { margin-bottom: 0px !important; }
 
 #current_loc {
-    background-clip: padding-box;
-    border: 2px solid rgba(0,0,0,0.2);
-    width: 30px;
-    height: 30px;
-    padding: 0;
-    line-height: 26px;
+  background-clip: padding-box;
+  border: 2px solid rgba(0,0,0,0.2);
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  line-height: 26px;
 }
 
 #server_problems {
-    top: 110px !important;
-    bottom: auto !important;
-    left: 10px !important;
-    right: auto !important;
-    position: fixed;
-    z-index: 99999;
-    color: white;
-    font-weight: bold;
-    background: red;
-    padding: 0;
-    border: none;
-    opacity: 0.7;
-    margin-top: 3px;
+  top: 110px;
+  bottom: auto;
+  left: 10px;
+  right: auto;
+  position: fixed;
+  z-index: 99999;
+  color: white;
+  font-weight: bold;
+  background: red;
+  padding: 0;
+  border: none;
+  opacity: 0.7;
+  margin-top: 3px;
 }
 
 #data_loc,
 #stream {
-    font-size: 150%;
-    font-weight: bold;
-    color: var(--title-text-color);
-    background: none;
-    border: none;
+  font-size: 150%;
+  font-weight: bold;
+  color: var(--title-text-color);
+  background: none;
+  border: none;
 }
 
 .leaflet-touch .leaflet-bar a {
-    width: 26px !important;
-    height: 26px !important;
-    line-height: 26px !important;
+  width: 26px !important;
+  height: 26px !important;
+  line-height: 26px !important;
 }
 
 #reset_buttons {
@@ -157,8 +155,8 @@ h4 { font-weight: 400; }
 #reset_buttons.active { display: block; }
 
 .leaflet-popup-content {
-    text-align: center;
-    line-height: 2em;
+  text-align: center;
+  line-height: 2em;
 }
 
 .leaflet-popup-content .fa {
@@ -171,6 +169,8 @@ h4 { font-weight: 400; }
 }
 
 .open-stream { font-size: 14px; }
+
+.open-stream:hover { text-decoration: none; }
 
 .fa-angle-double-up:hover { color: #84bd00; }
 
@@ -187,9 +187,6 @@ h4 { font-weight: 400; }
   font-weight: 600;
   font-size: 2.3em !important;
 }
-
-.open-stream:hover { text-decoration: none; }
-
 
 /*****************************************
 *            Information                 *

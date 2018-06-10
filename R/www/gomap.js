@@ -1,8 +1,6 @@
 // Get stream data from leaflet popup
-function getStream(node){
-  node = document.getElementsByClassName('open-stream');
-  var aNode = node[0];
-  var text = aNode.innerHTML;
+function getStream(){
+  text = document.getElementsByClassName('open-stream')[0].innerHTML;
   var comid = text.split("COMID: ").pop();
   return [text, comid];
 }
