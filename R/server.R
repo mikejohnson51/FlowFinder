@@ -229,8 +229,8 @@ shinyServer(function(input, output, session) {
     output$Flowlines = renderTable(table, striped = TRUE)
     
     if(typeof(values$stats) == "S4") {
-      station_data = cbind(values$stats$site_name, paste0('<a href=',sprintf(
-        "https://waterdata.usgs.gov/nwis/inventory/?site_no=%s",values$stats$site_no),'>',values$stats$site_no,"</a>"), round(values$stats$da_sqkm, digits = 0))
+      station_data = cbind(paste0('<a href=',sprintf(
+        "https://waterdata.usgs.gov/nwis/inventory/?site_no=%s",values$stats$site_no),'>',values$stats$site_name,"</a>"),values$stats$site_no, round(values$stats$da_sqkm, digits = 0))
     } else {
       station_data = cbind('NA', 'NA', 'NA')
     }
@@ -295,10 +295,12 @@ shinyServer(function(input, output, session) {
   })
   
   clearMarkers <- function() {
-    leafletProxy("map", session) %>%
-      clearGroup("view-on-map") %>%
-      clearGroup("up-stream") %>%
-      clearGroup("down-stream")
+    suppressMessages(
+      leafletProxy("map", session) %>%
+        clearGroup("view-on-map") %>%
+        clearGroup("up-stream") %>%
+        clearGroup("down-stream")
+    )
   }
   
   # View on map button
