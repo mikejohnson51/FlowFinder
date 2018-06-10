@@ -64,7 +64,7 @@ shinyServer(function(input, output, session) {
       error_message("Could not find any features in this region. ")
       return()
     }
-    #values$nhd = findNHD(clip_unit = clip)
+
     values$flow = values$nhd$flowlines
     values$ids =  values$flow$comid
     values$ids2 = values$nhd$ids
@@ -79,10 +79,10 @@ shinyServer(function(input, output, session) {
     values$nwm = subset_nomads_rda(comids = values$ids2)
 
     if (input$do == 1) {
-      updateTextInput(session, "place", value = "")
+      updateTextInput(session = session, inputId =  "place", value = "")
     }
-    values$up = prep_nhd(flines = values$flow)
-    values$nhd_prep = prep_nhd(flines = values$flow)
+    
+    values$nhd_prep = suppressWarnings(prep_nhd(flines = values$flow))
 
    })
   
@@ -100,10 +100,10 @@ shinyServer(function(input, output, session) {
   # Move to current location when possible
   observe({
     if(!is.null(input$lat)){
-      updateTextInput(session, "place", value = paste(input$lat, input$long, sep = " "), placeholder = "Current Location")
+      updateTextInput(session = session, inputId =  "place", value = paste(input$lat, input$long, sep = " "), placeholder = "Current Location")
       shinyjs::click("do")
     } else if (!is.null(input$getIP)) {
-      updateTextInput(session, "place", value = paste(input$getIP$latitude, input$getIP$longitude, sep = " "), placeholder = "Search Flowline Finder")
+      updateTextInput(session = session, inputId = "place", value = paste(input$getIP$latitude, input$getIP$longitude, sep = " "), placeholder = "Search Flowline Finder")
       shinyjs::click("do")
     }
   })
@@ -118,8 +118,6 @@ shinyServer(function(input, output, session) {
       clearGroup("NHD Flowlines") %>%
       fitBounds(bounds$west, bounds$south, bounds$east, bounds$north) %>%
       addPolylines(data = values$flow, color = 'blue', weight = values$flow$streamorde,
-                   #popup = paste0(paste0(ifelse(is.na(values$flow@data$gnis_name), "", values$flow@data$gnis_name)),
-                                 # paste0(" COMID: ", values$flow$comid)),
                    popup = paste(sep = " ",
                                  paste0("<b><a class='open-stream'>",paste0(ifelse(is.na(values$flow@data$gnis_name), "", values$flow@data$gnis_name)),
                                         paste0(" COMID: ", values$flow$comid),"</a></b></br>"),
@@ -127,9 +125,8 @@ shinyServer(function(input, output, session) {
                                  '<a class="upstream-flow"><i class="fa fa-angle-double-up"></i></a>',
                                  '<a class="downstream-flow"><i class="fa fa-angle-double-down"></i></a>'
                    ),
-                   popupOptions = c(className = "stream_popup"), 
+                   options = popupOptions(className = "stream_popup"), 
                    group = "NHD Flowlines",
-                   
                    highlight = highlightOptions(
                      weight = 10,
                      color = "#666",
@@ -164,7 +161,7 @@ shinyServer(function(input, output, session) {
   # Current Location Button
   observeEvent(input$current_loc, {
     if(!is.null(input$lat)){
-      updateTextInput(session, "place", value = paste(input$lat, input$long, sep = " "), placeholder = "Current Location")
+      updateTextInput(session = session, inputId =  "place", value = paste(input$lat, input$long, sep = " "), placeholder = "Current Location")
       shinyjs::click("do")
     } else {
       error_message("Your current location can't be determined.  
@@ -185,7 +182,7 @@ shinyServer(function(input, output, session) {
     if (is.null(input$upStream))
       return()
 
-    hmm = get_upstream(flines = values$up)
+    hmm = get_upstream(flines = values$nhd_prep)
 
     leafletProxy("map") %>%
       clearGroup("up-stream") %>%
@@ -206,7 +203,7 @@ shinyServer(function(input, output, session) {
   observe({
     if (is.null(input$downStream))
       return()
-    hmm = get_upstream(flines = values$up)
+    hmm = get_upstream(flines = values$nhd_prep)
     
     leafletProxy("map") %>%
       clearGroup("down-stream") %>%
@@ -265,7 +262,7 @@ shinyServer(function(input, output, session) {
     max_qcms = values$nwm[match(max(values$nwm$Q_cms), values$nwm$Q_cms),]$COMID
     name = values$flow[values$flow$comid == max_qcms,]$gnis_name
     e = paste0(paste0(ifelse(is.na(name), "", name)), paste0(" COMID: ", max_qcms))
-    updateSelectInput(session, inputId = "flow_selector", choices = paste0(paste0(ifelse(is.na(values$flow@data$gnis_name), "", values$flow@data$gnis_name)),
+    updateSelectInput(session = session, inputId = "flow_selector", choices = paste0(paste0(ifelse(is.na(values$flow@data$gnis_name), "", values$flow@data$gnis_name)),
                                                                            paste0(" COMID: ", values$flow$comid)), selected = e)
   })
   
@@ -306,7 +303,7 @@ shinyServer(function(input, output, session) {
   observe({
     if (is.null(input$goto))
       return()
-    updateSelectInput(session, inputId = "flow_selector", selected = input$goto$text)
+    updateSelectInput(session = session, inputId = "flow_selector", selected = input$goto$text)
   })
   
   # View on map button

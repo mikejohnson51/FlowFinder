@@ -55,7 +55,7 @@ shinyUI(
                             absolutePanel(style="display:inline-block", id = "controls", class = "panel panel-default", fixed = TRUE,
                                           draggable = TRUE, top = 60, left = 10, right = "auto", bottom = "auto",
                                           width = 430, height = "auto",
-                                          textInput(inputId = 'place', label = NULL, "National Water Center", placeholder = "Search Flowline Finder"),
+                                          textInput(inputId = 'place', label = NULL, value = "National Water Center", placeholder = "Search Flowline Finder"),
                                           actionButton("do", "", icon("search"))
                             ),
                             absolutePanel(id = "cur_l", class = "panel panel-default", fixed = TRUE,
