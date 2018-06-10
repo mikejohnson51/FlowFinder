@@ -83,6 +83,7 @@ shinyServer(function(input, output, session) {
     }
     
     values$nhd_prep = suppressWarnings(prep_nhd(flines = values$flow))
+    values$hmm = get_upstream(flines = values$nhd_prep)
 
    })
   
@@ -113,8 +114,8 @@ shinyServer(function(input, output, session) {
   # On go, draw map
   observeEvent(input$do, {
     bounds = calc_bounds(values$lat, values$lon)
-    leafletProxy("map") %>%
-      clearMarkers() %>%
+    clearMarkers()
+    leafletProxy("map", session) %>%
       clearGroup("NHD Flowlines") %>%
       fitBounds(bounds$west, bounds$south, bounds$east, bounds$north) %>%
       addPolylines(data = values$flow, color = 'blue', weight = values$flow$streamorde,
@@ -137,13 +138,12 @@ shinyServer(function(input, output, session) {
     
     # Don't try and map USGS stations if there are none  
     if(typeof(values$stats) == "S4") {
-      leafletProxy("map") %>%
+      leafletProxy("map", session) %>%
         addMarkers(data = values$stats,
                    icon = leaflet::makeIcon(
                      iconUrl= "https://upload.wikimedia.org/wikipedia/commons/0/08/USGS_logo.png",
                      iconWidth = 40, iconHeight = 20,
                      iconAnchorX = 20, iconAnchorY = 10),
-                   
                    group = "USGS Stations",
                    popup = pop <- paste(
                      paste("<strong>Site Number:</strong>",
@@ -164,36 +164,28 @@ shinyServer(function(input, output, session) {
       updateTextInput(session = session, inputId =  "place", value = paste(input$lat, input$long, sep = " "), placeholder = "Current Location")
       shinyjs::click("do")
     } else {
-      error_message("Your current location can't be determined.  
-                    Make sure you have given your browser the necessarry permissions. ")
+      error_message(" Your current location can't be determined.  
+                     Make sure you have given your browser the necessarry permissions. ")
     }
     })
   
   # Reset Button
   observeEvent(input$reset, {
-    leafletProxy("map") %>%
-      clearGroup("view-on-map") %>%
-      clearGroup("up-stream") %>%
-      clearGroup("down-stream")
+    clearMarkers()
     })
   
   # Used to select flowline from popup
   observe({
     if (is.null(input$upStream))
       return()
-
-    hmm = get_upstream(flines = values$nhd_prep)
-
-    leafletProxy("map") %>%
-      clearGroup("up-stream") %>%
-      clearGroup("down-stream") %>%
-      clearGroup("view-on-map") %>%
+    clearMarkers()
+    leafletProxy("map", session) %>%
       addPolylines(data = values$flow[values$flow$comid == input$upStream$comid,],
                    color = "blue",
                    opacity = 1,
                    group = "up-stream",
                    options = pathOptions(clickable = FALSE))  %>%
-      addPolylines(data = values$flow[values$flow$comid %in% c(hmm[hmm$comid == input$upStream$comid, 2]),], 
+      addPolylines(data = values$flow[values$flow$comid %in% c(values$hmm[values$hmm$comid == input$upStream$comid, 2]),], 
                    color = "#84bd00",
                    opacity = 1,
                    group = "up-stream",
@@ -203,12 +195,8 @@ shinyServer(function(input, output, session) {
   observe({
     if (is.null(input$downStream))
       return()
-    hmm = get_upstream(flines = values$nhd_prep)
-    
-    leafletProxy("map") %>%
-      clearGroup("down-stream") %>%
-      clearGroup("up-stream") %>%
-      clearGroup("view-on-map") %>%
+    clearMarkers()
+    leafletProxy("map", session) %>%
       addPolylines(data = values$flow[values$flow$comid == input$downStream$comid,],
                    color = "blue",
                    opacity = 1,
@@ -306,12 +294,17 @@ shinyServer(function(input, output, session) {
     updateSelectInput(session = session, inputId = "flow_selector", selected = input$goto$text)
   })
   
-  # View on map button
-  observeEvent(input$mark_flowline, {
-    leafletProxy("map") %>%
+  clearMarkers <- function() {
+    leafletProxy("map", session) %>%
       clearGroup("view-on-map") %>%
       clearGroup("up-stream") %>%
-      clearGroup("down-stream") %>%
+      clearGroup("down-stream")
+  }
+  
+  # View on map button
+  observeEvent(input$mark_flowline, {
+    clearMarkers()
+    leafletProxy("map", session) %>%
       setView(lng = mean(values$flow@lines[values$flow$comid == values$id][[1]]@Lines[[1]]@coords[,1]),
               lat = mean(values$flow@lines[values$flow$comid == values$id][[1]]@Lines[[1]]@coords[,2]), 
               zoom = 14) %>% 
@@ -333,12 +326,13 @@ shinyServer(function(input, output, session) {
                    scroller = TRUE)
     )}
   )
-  # Proxy used to manipulate search
-  DTproxy <- dataTableProxy("tbl")
   
-  observe({
+  # Proxy used to manipulate search
+  DTproxy <- dataTableProxy("tbl", session)
+  
+  observeEvent(input$flow_selector, {
     id = unlist(strsplit(input$flow_selector, split='COMID: ', fixed=TRUE))[2]
-    updateSearch(DTproxy, keywords = list(global = id, columns = NULL))
+    updateSearch(proxy = DTproxy, keywords = list(global = id, columns = NULL))
   })
   
   })
