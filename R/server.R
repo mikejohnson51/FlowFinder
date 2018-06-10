@@ -150,7 +150,7 @@ shinyServer(function(input, output, session) {
                    popup = pop <- paste(
                      paste("<strong>Site Number:</strong>",
                            paste0('<a href=',sprintf(
-                             "https://waterdata.usgs.gov/nwis/inventory/?site_no=%s",values$stats$site_no),'>',values$stats$site_no,"</a>")
+                             "https://waterdata.usgs.gov/nwis/inventory/?site_no=%s",values$stats$site_no),' target="_blank">',values$stats$site_no,"</a>")
                      ),
                      paste("<strong>NHD COMID:</strong>", values$stats$feature_id),
                      paste("<strong>Site Name:</strong>", values$stats$site_name),
@@ -243,7 +243,7 @@ shinyServer(function(input, output, session) {
     
     if(typeof(values$stats) == "S4") {
       station_data = cbind(paste0('<a href=',sprintf(
-        "https://waterdata.usgs.gov/nwis/inventory/?site_no=%s",values$stats$site_no),'>',values$stats$site_name,"</a>"),values$stats$site_no, round(values$stats$da_sqkm, digits = 0))
+        "https://waterdata.usgs.gov/nwis/inventory/?site_no=%s",values$stats$site_no),' target="_blank">',values$stats$site_name,"</a>"),values$stats$site_no, round(values$stats$da_sqkm, digits = 0))
     } else {
       station_data = cbind('NA', 'NA', 'NA')
     }
@@ -341,11 +341,6 @@ shinyServer(function(input, output, session) {
     updateSearch(proxy = DTproxy, keywords = list(global = id, columns = NULL))
   })
   
-  # Used to select flowline from popup
-  observe({
-    if (is.null(input$default_stream))
-      return()
-    updateSearch(proxy = DTproxy, keywords = list(global = input$default_stream$comid, columns = NULL))
-  })
+  
   
   })
