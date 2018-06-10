@@ -12,6 +12,10 @@ library(dplyr)
 source("../R/subset_nomads_rda.R")
 source("../R/nhdModifier.R")
 
+USGSicon = leaflet::makeIcon(
+  iconUrl= "www/USGS_logo.png",
+  iconWidth = 40, iconHeight = 20,
+  iconAnchorX = 20, iconAnchorY = 10)
 
 shinyServer(function(input, output, session) {
   
@@ -140,10 +144,7 @@ shinyServer(function(input, output, session) {
     if(typeof(values$stats) == "S4") {
       leafletProxy("map", session) %>%
         addMarkers(data = values$stats,
-                   icon = leaflet::makeIcon(
-                     iconUrl= "https://upload.wikimedia.org/wikipedia/commons/0/08/USGS_logo.png",
-                     iconWidth = 40, iconHeight = 20,
-                     iconAnchorX = 20, iconAnchorY = 10),
+                   icon = USGSicon,
                    group = "USGS Stations",
                    popup = pop <- paste(
                      paste("<strong>Site Number:</strong>",
