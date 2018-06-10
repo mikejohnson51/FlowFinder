@@ -12,6 +12,7 @@ library(dplyr)
 source("../R/subset_nomads_rda.R")
 source("../R/nhdModifier.R")
 
+# Generate icon for usgs stations
 USGSicon = leaflet::makeIcon(
   iconUrl= "www/USGS_logo.png",
   iconWidth = 40, iconHeight = 20,
@@ -139,7 +140,7 @@ shinyServer(function(input, output, session) {
                      bringToFront = FALSE)
       ) %>%
       addCircleMarkers(lng = as.numeric(values$lon), lat = as.numeric(values$lat), radius = 6, color = 'green', stroke = FALSE, fillOpacity = 0.5)
-    
+      error_message("")
     # Don't try and map USGS stations if there are none  
     if(typeof(values$stats) == "S4") {
       leafletProxy("map", session) %>%
@@ -159,14 +160,24 @@ shinyServer(function(input, output, session) {
     }
   })
   
+  # Fucntion to clear markers
+  clearMarkers <- function() {
+    suppressMessages(
+      leafletProxy("map", session) %>%
+        clearGroup("view-on-map") %>%
+        clearGroup("up-stream") %>%
+        clearGroup("down-stream")
+    )
+  }
+  
   # Current Location Button
   observeEvent(input$current_loc, {
     if(!is.null(input$lat)){
       updateTextInput(session = session, inputId =  "place", value = paste(input$lat, input$long, sep = " "), placeholder = "Current Location")
       shinyjs::click("do")
     } else {
-      error_message(" Your current location can't be determined.  
-                     Make sure you have given your browser the necessarry permissions. ")
+      error_message(" Your current location can't be determined.
+ Make sure you have given your browser the necessarry permissions. ")
     }
     })
   
@@ -175,7 +186,7 @@ shinyServer(function(input, output, session) {
     clearMarkers()
     })
   
-  # Used to select flowline from popup
+  # Mark upstream flows from leaflet popup
   observe({
     if (is.null(input$upStream))
       return()
@@ -193,6 +204,7 @@ shinyServer(function(input, output, session) {
                    options = pathOptions(clickable = FALSE))
   })
   
+  # Mark downstream flows from leaflet popup
   observe({
     if (is.null(input$downStream))
       return()
@@ -295,15 +307,6 @@ shinyServer(function(input, output, session) {
     updateSelectInput(session = session, inputId = "flow_selector", selected = input$goto$text)
   })
   
-  clearMarkers <- function() {
-    suppressMessages(
-      leafletProxy("map", session) %>%
-        clearGroup("view-on-map") %>%
-        clearGroup("up-stream") %>%
-        clearGroup("down-stream")
-    )
-  }
-  
   # View on map button
   observeEvent(input$mark_flowline, {
     clearMarkers()
@@ -336,6 +339,13 @@ shinyServer(function(input, output, session) {
   observeEvent(input$flow_selector, {
     id = unlist(strsplit(input$flow_selector, split='COMID: ', fixed=TRUE))[2]
     updateSearch(proxy = DTproxy, keywords = list(global = id, columns = NULL))
+  })
+  
+  # Used to select flowline from popup
+  observe({
+    if (is.null(input$default_stream))
+      return()
+    updateSearch(proxy = DTproxy, keywords = list(global = input$default_stream$comid, columns = NULL))
   })
   
   })

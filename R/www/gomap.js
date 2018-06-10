@@ -21,6 +21,15 @@ $(document).on("click", "#mark_flowline", function(e) { showTab(0); });
 // Reset button
 $(document).on("click", "#reset", function(e) { $('#reset_buttons').removeClass('active'); });
 
+// Default Search
+$(document).on("click", "#nav > li:nth-child(3) > a:nth-child(1)", function(e) {
+  var text = document.querySelector('.selectize-input .item').dataset.value;
+  var comid = text.split("COMID: ").pop();
+  Shiny.onInputChange("default_stream", {
+    comid : comid
+  });
+});
+
 // Graph button
 $(document).on("click", ".stream-data", function(e) {
   showTab(2);
