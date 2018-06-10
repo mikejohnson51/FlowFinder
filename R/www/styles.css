@@ -194,3 +194,46 @@ h4 { font-weight: 400; }
 *****************************************/
 
 .table-striped > tbody > tr:nth-of-type(2n+1) { background-color: #e8f5ff; }
+
+
+/*****************************************
+*            Queiries                    *
+*****************************************/
+
+@media only screen and (max-width: 473px) {
+  
+  .navbar-default .navbar-brand{ font-size: 14px !important;}
+  
+  #nav { font-size: 12px !important; }
+  
+  #nav > li > a {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+  }
+}
+
+@media only screen and (max-width: 407px) {
+
+  #place { max-width: 350px; }
+  
+  #nav > li > a {
+    padding-left: 6px !important;
+    padding-right: 6px !important;
+  }
+}
+
+@media only screen and (max-width: 371px) {
+  
+  #place { max-width: 320px; }
+
+  .navbar-default .navbar-brand{
+    font-size: 12px !important;
+    padding-left: 8px;
+  }
+}
+
+@media only screen and (max-width: 351px) {
+
+  #nav { font-size: 11px !important; }
+   
+}
