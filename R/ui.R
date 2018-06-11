@@ -83,7 +83,7 @@ shinyUI(
                         plotOutput("streamFlow"),
                         DT::DTOutput('tbl_up'),
                         DT::DTOutput('tbl'),
-                        downloadButton('downloadData', 'Download', icon = icon("download"))
+                        downloadButton('downloadData', ' NHD Download')
                )
                
     )))
