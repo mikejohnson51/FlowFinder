@@ -81,6 +81,7 @@ shinyUI(
                         actionButton("nextCOMID", label = "Next"),
                         actionButton("mark_flowline", "View on Map"),
                         plotOutput("streamFlow"),
+                        DT::DTOutput('tbl_up'),
                         DT::DTOutput('tbl'),
                         downloadButton('downloadData', 'Download', icon = icon("download"))
                )

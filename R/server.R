@@ -342,7 +342,40 @@ shinyServer(function(input, output, session) {
                    group = "view-on-map"
       )
   })
+
+  observe({
+    req(values$flow)
+    upstream = data.frame(Connecting_Stream=NA, Direction=NA)[numeric(0), ]
+    downstream = data.frame(Connecting_Stream=NA, Direction=NA)[numeric(0), ]
+    up = values$flow[values$flow$comid %in% c(values$hmm[values$hmm$comid == values$id, 2]),]
+    down = values$flow[values$flow$comid %in% c(values$nhd_prep[values$nhd_prep$comid == values$id, 4]),]
+    if (length(up) > 0) {
+      upstream = data.frame(paste0(paste0(ifelse(is.na(up$gnis_name), "", up$gnis_name)), paste0(" COMID: ", up$comid)))
+      upstream$direction <- rep("upstream",nrow(upstream))
+      colnames(upstream) = c("Connecting_Stream", "Direction")
+    }
+    if (length(down) > 0) {
+      downstream = data.frame(paste0(paste0(ifelse(is.na(down$gnis_name), "", down$gnis_name)), paste0(" COMID: ", down$comid)))
+      downstream$direction <- rep("downstream",nrow(downstream))
+      colnames(downstream) = c("Connecting_Stream", "Direction")
+    } 
+    values$conn_streams = rbind(upstream, downstream)
+  })
   
+  output$tbl_up <- DT::renderDataTable({
+    df <- values$conn_streams %>%
+      mutate(Action = paste('<a class="go-stream" href="" data-stream="', Connecting_Stream, '"><i class="fa fa-eye"></i></a>', sep=""))
+    action <- DT::dataTableAjax(session, df)
+    
+    DT::datatable(df, options = list(ajax = list(url = action), dom = 't'), escape = FALSE)
+  })
+  
+  observe({
+    if (is.null(input$switchStream))
+      return()
+    updateSelectInput(session = session, inputId = "flow_selector", selected = input$switchStream$stream)
+  })
+
   # Data tables
   output$tbl = DT::renderDataTable(server = FALSE, {
     DT::datatable(values$nwm, 

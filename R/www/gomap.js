@@ -66,4 +66,13 @@ $(document).on("click", "#slide", function(e) {
       icon.removeClass('fa-caret-right');
     }
 });
+
+$(document).on("click", ".go-stream", function(e) {
+  e.preventDefault();
+  $el = $(this);
+  var stream = $el.data("stream");
+  Shiny.onInputChange("switchStream", {
+    stream: stream,
+  });
+});
  
