@@ -400,5 +400,21 @@ shinyServer(function(input, output, session) {
     updateSearch(proxy = DTproxy, keywords = list(global = input$default_stream$comid, columns = NULL))
   })
   
+  output$downloadData <- downloadHandler(
+    filename = function() {
+      paste("flowlines", "zip", sep=".")
+    },
+    content = function(fname) {
+      uid = sample(1:1000000, 1)
+      dir.create(file.path(tempdir(), as.character(uid)), showWarnings = FALSE)
+      temp = paste0(tempdir(),"/",as.character((uid)))
+      setwd(temp)
+      rgdal::writeOGR(obj=values$flow, dsn= temp, layer="nhd", driver="ESRI Shapefile")
+      fs = list.files(path = temp, pattern = 'nhd')
+      zip(zipfile = fname, files = fs )
+    },
+    contentType = "application/zip"
+  )
+  
 
   })
