@@ -77,9 +77,9 @@ shinyUI(
                tabPanel("Stream Flow",
                         textOutput("stream"),
                         selectInput(inputId = "flow_selector", label = ,"", choices = ""),
-                        actionButton("mark_flowline", "View on Map"),
                         actionButton("prevCOMID", label = "Previous"),
                         actionButton("nextCOMID", label = "Next"),
+                        actionButton("mark_flowline", "View on Map"),
                         plotOutput("streamFlow"),
                         DT::DTOutput('tbl'),
                         downloadButton('downloadData', 'Download', icon = icon("download"))
