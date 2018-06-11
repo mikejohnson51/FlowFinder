@@ -263,8 +263,9 @@ shinyServer(function(input, output, session) {
     max_qcms = values$nwm[match(max(values$nwm$Q_cfs), values$nwm$Q_cfs),]$COMID
     name = values$flow[values$flow$comid == max_qcms,]$gnis_name
     e = paste0(paste0(ifelse(is.na(name), "", name)), paste0(" COMID: ", max_qcms))
-    updateSelectInput(session = session, inputId = "flow_selector", choices = paste0(paste0(ifelse(is.na(values$flow@data$gnis_name), "", values$flow@data$gnis_name)),
-                                                                           paste0(" COMID: ", values$flow$comid)), selected = e)
+    values$choices = as.list(paste0(paste0(ifelse(is.na(values$flow@data$gnis_name), "", values$flow@data$gnis_name)),
+                            paste0(" COMID: ", values$flow$comid)))
+    updateSelectInput(session = session, inputId = "flow_selector", choices = values$choices , selected = e)
   })
   
   # Set values for current stream
@@ -294,11 +295,30 @@ shinyServer(function(input, output, session) {
          lwd = 2
     )
     axis(2, at= seq(min(values$data$Q_cfs), max(values$data$Q_cfs), ((max(values$data$Q_cfs) - min(values$data$Q_cfs)) / 10)), 
-         labels= round(seq(min(values$data$Q_cfs), max(values$data$Q_cfs), ((max(values$data$Q_cfs) - min(values$data$Q_cfs)) / 10)), 3), 
+         labels= round(seq(min(values$data$Q_cfs), max(values$data$Q_cfs), ((max(values$data$Q_cfs) - min(values$data$Q_cfs)) / 10)), 1), 
          las = 2,
          lwd = 2,
          cex.axis = .8)
   })
+  
+  # Previous Stream
+  observeEvent(input$prevCOMID, {
+    current <- which(values$choices == input$flow_selector)
+    if(current > 1){
+      updateSelectInput(session, "flow_selector",
+                        selected = values$choices[current - 1])
+    }
+  })
+  
+  # Next Stream
+  observeEvent(input$nextCOMID, {
+    current <- which(values$choices == input$flow_selector)
+    if(current < length(values$choices)){
+      updateSelectInput(session, "flow_selector",
+                        selected = values$choices[current + 1])
+    }
+  })
+  
   
   # Used to select flowline from popup
   observe({
@@ -341,6 +361,11 @@ shinyServer(function(input, output, session) {
     updateSearch(proxy = DTproxy, keywords = list(global = id, columns = NULL))
   })
   
+  observe({
+    if (is.null(input$default_stream))
+      return()
+    updateSearch(proxy = DTproxy, keywords = list(global = input$default_stream$comid, columns = NULL))
+  })
   
-  
+
   })
