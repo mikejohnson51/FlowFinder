@@ -90,3 +90,17 @@ plot(nhd$flowlines[nhd$flowlines$comid %in% c(up_stream[up_stream$comid == xxx, 
 plot(nhd$flowlines[nhd$flowlines$comid %in% c(nhd_prep[nhd_prep$comid == xxx, 4]),], col = "green", add = T)
 
 
+
+
+##### Writing a SHP to ZIP
+
+nhd = findNHD(clip_unit = list("UCSB", 10, 10))
+
+temp = tempdir()
+rgdal::writeOGR(obj=nhd$flowlines, dsn= temp, layer="nhd", driver="ESRI Shapefile")
+
+list.files(temp, pattern = 'nhd', full.names = TRUE)
+
+zip(zipfile = paste0(temp,'/testZip'), files = list.files(temp, pattern = 'nhd', full.names = TRUE) )
+
+list.files(temp, pattern = "testZip", full.name = TRUE)
