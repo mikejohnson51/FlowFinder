@@ -32,22 +32,23 @@ download_nomads_rda = function(fileList = NULL){
     nc <- nc_open(filename = all.files[1])
     
     comids.all = nc$var$streamflow$dim[[1]]$vals
-    values = ncvar_get(nc, varid = "streamflow")
+    values = ncvar_get(nc, varid = "streamflow") * 35.3147
     
     df = data.frame(COMID = comids.all)
     df[,as.character(dates[1])] = values
     
     for (i in 2:length(all.files)) {
       nc = nc_open(filename = all.files[i])
-      vals = ncvar_get(nc, varid = "streamflow")
+      vals = ncvar_get(nc, varid = "streamflow") * 35.3147
       df[, as.character(dates[i])] = vals
       nc_close(nc)
     }
     
     Q = reshape2::melt(df, id.vars=c("COMID"))
+    Q$value = Q$value
     Q$variable = lubridate::ymd_h(Q$variable)
     Q$agency_code = "NOAA"
-    colnames(Q) = c("COMID", "dateTime", "Q_cms", "agency_code")
+    colnames(Q) = c("COMID", "dateTime", "Q_cfs", "agency_code")
     rownames(Q) = NULL
     
     nwm = list(

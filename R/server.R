@@ -260,7 +260,7 @@ shinyServer(function(input, output, session) {
   
   # Update Drop-Down Options
   observeEvent(input$do, {
-    max_qcms = values$nwm[match(max(values$nwm$Q_cms), values$nwm$Q_cms),]$COMID
+    max_qcms = values$nwm[match(max(values$nwm$Q_cfs), values$nwm$Q_cfs),]$COMID
     name = values$flow[values$flow$comid == max_qcms,]$gnis_name
     e = paste0(paste0(ifelse(is.na(name), "", name)), paste0(" COMID: ", max_qcms))
     updateSelectInput(session = session, inputId = "flow_selector", choices = paste0(paste0(ifelse(is.na(values$flow@data$gnis_name), "", values$flow@data$gnis_name)),
@@ -279,7 +279,7 @@ shinyServer(function(input, output, session) {
   # Draw Plot
   output$streamFlow <- renderPlot({
     plot( x = values$data$dateTime,
-          y = values$data$Q_cms,
+          y = values$data$Q_cfs,
           type = "b",
           pch = 16,
           col = 'blue',
@@ -293,8 +293,8 @@ shinyServer(function(input, output, session) {
          cex.axis = .95,
          lwd = 2
     )
-    axis(2, at= seq(min(values$data$Q_cms), max(values$data$Q_cms), ((max(values$data$Q_cms) - min(values$data$Q_cms)) / 10)), 
-         labels= round(seq(min(values$data$Q_cms), max(values$data$Q_cms), ((max(values$data$Q_cms) - min(values$data$Q_cms)) / 10)), 3), 
+    axis(2, at= seq(min(values$data$Q_cfs), max(values$data$Q_cfs), ((max(values$data$Q_cfs) - min(values$data$Q_cfs)) / 10)), 
+         labels= round(seq(min(values$data$Q_cfs), max(values$data$Q_cfs), ((max(values$data$Q_cfs) - min(values$data$Q_cfs)) / 10)), 3), 
          las = 2,
          lwd = 2,
          cex.axis = .8)
