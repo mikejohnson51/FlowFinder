@@ -73,6 +73,13 @@ h4 { font-weight: 400; }
   border: none;
 }
 
+#controls {
+  -webkit-transition: left 0.3s ease-out;  /* Chrome 1-25, Safari 3.2+ */
+     -moz-transition: left 0.3s ease-out;  /* Firefox 4-15 */
+       -o-transition: left 0.3s ease-out;  /* Opera 10.50–12.00 */
+          transition: left 0.3s ease-out;  /* Chrome 26, Firefox 16+, IE 10+, Opera 12.10+ */
+}
+
 /* Zoom Buttons */
 .leaflet-top.leaflet-left {
   right: 10px;
@@ -92,7 +99,12 @@ h4 { font-weight: 400; }
   height: 48px;
   line-height: 24px;
   font-size: 15px;
+  border-bottom-right-radius: 0;
+  border-top-right-radius: 0;
 }
+
+.fa-caret-left,
+.fa-caret-right { color: #b2b2b2;}
 
 .fa-search {
   color: #b2b2b2;
@@ -188,6 +200,22 @@ h4 { font-weight: 400; }
   font-weight: 600;
   font-size: 2.3em !important;
 }
+
+#controls.off {
+  left: -392px !important;
+}
+
+#slide {
+    height: 48px;
+    margin-left: -1px;
+    padding: 0;
+    width: 18px;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    box-shadow: 0 2px 0px rgba(0,0,0,0.2),0 -1px 0px rgba(0,0,0,0.02);
+    border-left: none;
+}
+
 
 /*****************************************
 *            Information                 *

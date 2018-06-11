@@ -53,4 +53,17 @@ function stream(direction) {
     comid : getStream()[1]
   });
 }
+
+$(document).on("click", "#slide", function(e) {
+    console.log('toggle');
+    $('#controls').toggleClass('off');
+    var icon = $('#slide' + ' i');
+    if (icon.hasClass('fa-caret-left')) {
+      icon.addClass('fa-caret-right');
+      icon.removeClass('fa-caret-left');
+    } else {
+      icon.addClass('fa-caret-left');
+      icon.removeClass('fa-caret-right');
+    }
+});
  

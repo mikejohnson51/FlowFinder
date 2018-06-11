@@ -56,7 +56,8 @@ shinyUI(
                                           draggable = TRUE, top = 60, left = 10, right = "auto", bottom = "auto",
                                           width = 430, height = "auto",
                                           textInput(inputId = 'place', label = NULL, value = "", placeholder = "Search Flowline Finder"),
-                                          actionButton("do", "", icon("search"))
+                                          actionButton("do", "", icon("search")),
+                                          actionButton("slide", "", icon = icon("caret-left"))
                             ),
                             absolutePanel(id = "cur_l", class = "panel panel-default", fixed = TRUE,
                                           draggable = FALSE, bottom = 60, right = 10, left = "auto", top = "auto",
