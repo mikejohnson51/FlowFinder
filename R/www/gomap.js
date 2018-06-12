@@ -23,7 +23,7 @@ $(document).on("click", "#reset", function(e) { $('#reset_buttons').removeClass(
 
 // Graph button
 $(document).on("click", ".stream-data", function(e) {
-  showTab(2);
+  showTab(1);
   closePopup();
   Shiny.onInputChange("goto", {
     text : getStream()[0]

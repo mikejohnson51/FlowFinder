@@ -6,7 +6,7 @@ shinyUI(
   tagList(
     useShinyjs(),
     navbarPage("Flowline Finder", id="nav",
-               tabPanel("Interactive map",
+               tabPanel("Map", icon = icon("map"),
                         div(class="outer",
                             tags$head(
                               includeCSS("www/styles.css"),
@@ -69,12 +69,7 @@ shinyUI(
                             )
                             )
                             ),
-               tabPanel("Information",
-                        textOutput("data_loc"),   
-                        tableOutput("stations"),
-                        tableOutput("Flowlines")
-               ),
-               tabPanel("Stream Flow",
+               tabPanel("Data", icon = icon("line-chart"),
                         textOutput("stream"),
                         selectInput(inputId = "flow_selector", label = ,"", choices = ""),
                         actionButton("prevCOMID", label = "Previous"),
@@ -91,6 +86,12 @@ shinyUI(
                         DT::DTOutput('tbl'),
                         downloadButton('downloadCSV', 'Download CSV'),
                         downloadButton('downloadNHD', 'Download NHD')
+               ),
+               tabPanel("Info", icon = icon("info-circle"),
+                        textOutput("data_loc"),   
+                        tableOutput("stations"),
+                        tableOutput("Flowlines")
                )
+               
                
     )))

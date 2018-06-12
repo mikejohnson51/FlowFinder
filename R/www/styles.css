@@ -185,11 +185,11 @@ h4 { font-weight: 400; }
 
 .open-stream:hover { text-decoration: none; }
 
-.fa-angle-double-up:hover { color: #84bd00; }
+.leaflet-popup-content .fa-angle-double-up:hover { color: #84bd00; }
 
-.fa-angle-double-down:hover { color: red; }
+.leaflet-popup-content .fa-angle-double-down:hover { color: red; }
 
-.fa-line-chart:hover { color: #00ADEF; }
+.leaflet-popup-content .fa-line-chart:hover { color: #00ADEF; }
 
 .leaflet-popup-content .fa-angle-double-down { margin-right: 0; }
 
