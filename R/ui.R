@@ -81,7 +81,13 @@ shinyUI(
                         actionButton("nextCOMID", label = "Next"),
                         actionButton("mark_flowline", "View on Map"),
                         plotOutput("streamFlow"),
-                        DT::DTOutput('tbl_up'),
+                        # fluidRow(
+                        #   splitLayout(cellWidths = c("40%", "40%"), DT::DTOutput('tbl_up'), DT::DTOutput('tbl_down'))
+                        # ),
+                        fluidRow(
+                          column(6,DT::DTOutput('tbl_up')),  
+                          column(6,DT::DTOutput('tbl_down'))
+                        ),
                         DT::DTOutput('tbl'),
                         downloadButton('downloadData', ' NHD Download')
                )
