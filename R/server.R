@@ -397,32 +397,21 @@ shinyServer(function(input, output, session) {
     updateSelectInput(session = session, inputId = "flow_selector", selected = input$switchStream$stream)
   })
 
-  # Data tables
-  output$tbl = DT::renderDataTable(server = FALSE, {
-    DT::datatable(values$nwm, 
-    extensions = 'Buttons', 
-    options = list(dom = 'Bfrtip',
-                   buttons = c('copy', 'csv', 'excel', 'pdf', 'print')),
-    selection = 'none',
-    rownames = FALSE
-    )}
+  output$downloadCSV <- downloadHandler(
+    filename = function() {
+      loc = input$place
+      if (loc == "") {
+        loc = "current_location"
+      }
+      paste(paste(loc, Sys.Date(), sep = '_'), "csv", sep = ".")
+    },
+    content = function(file) {
+      write.table(values$nwm, file, sep = ",",
+                  row.names = FALSE)
+    }
   )
   
-  # Proxy used to manipulate search
-  DTproxy <- dataTableProxy("tbl", session)
-  
-  observeEvent(input$flow_selector, {
-    id = unlist(strsplit(input$flow_selector, split='COMID: ', fixed=TRUE))[2]
-    updateSearch(proxy = DTproxy, keywords = list(global = id, columns = NULL))
-  })
-  
-  observe({
-    if (is.null(input$default_stream))
-      return()
-    updateSearch(proxy = DTproxy, keywords = list(global = input$default_stream$comid, columns = NULL))
-  })
-  
-  output$downloadData <- downloadHandler(
+  output$downloadNHD <- downloadHandler(
     filename = function() {
       paste("flowlines", "zip", sep=".")
     },

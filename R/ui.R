@@ -89,7 +89,8 @@ shinyUI(
                           column(6,DT::DTOutput('tbl_down'))
                         ),
                         DT::DTOutput('tbl'),
-                        downloadButton('downloadData', ' NHD Download')
+                        downloadButton('downloadCSV', 'Download CSV'),
+                        downloadButton('downloadNHD', 'Download NHD')
                )
                
     )))
