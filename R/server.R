@@ -366,12 +366,12 @@ shinyServer(function(input, output, session) {
       df <- values$upstream %>%
         mutate(View = paste('<a class="go-stream" href="" data-stream="', Upstream, '"><i class="fa fa-eye"></i></a>', sep=""))
       action <- DT::dataTableAjax(session, df)
-      DT::datatable(df, options = list(ajax = list(url = action), dom = 't'), escape = FALSE)
+      DT::datatable(df, options = list(ajax = list(url = action), dom = 't'), escape = FALSE, selection = 'none')
     } else {
       df <- values$upstream
       df <- rbind(df, "No streams in this AOI")
       colnames(df) = "Upstream"
-      DT::datatable(df, options = list(dom = 't'), escape = FALSE)
+      DT::datatable(df, options = list(dom = 't'), escape = FALSE, selection = 'none')
     }
     
   })
@@ -381,12 +381,12 @@ shinyServer(function(input, output, session) {
       df <- values$downstream %>%
         mutate(View = paste('<a class="go-stream" href="" data-stream="', Downstream, '"><i class="fa fa-eye"></i></a>', sep=""))
       action <- DT::dataTableAjax(session, df)
-      DT::datatable(df, options = list(ajax = list(url = action), dom = 't'), escape = FALSE)
+      DT::datatable(df, options = list(ajax = list(url = action), dom = 't'), escape = FALSE, selection = 'none')
     } else {
       df <- values$downstream
       df <- rbind(df, "No streams in this AOI")
       colnames(df) = "Downstream"
-      DT::datatable(df, options = list(dom = 't'), escape = FALSE)
+      DT::datatable(df, options = list(dom = 't'), escape = FALSE, selection = 'none')
     }
     
   })
@@ -403,7 +403,8 @@ shinyServer(function(input, output, session) {
     extensions = 'Buttons', 
     options = list(dom = 'Bfrtip',
                    buttons = c('copy', 'csv', 'excel', 'pdf', 'print'),
-                   scroller = TRUE)
+                   scroller = TRUE),
+    selection = 'none'
     )}
   )
   
