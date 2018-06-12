@@ -279,11 +279,11 @@ shinyServer(function(input, output, session) {
   
   # Draw Plot
   output$streamFlow <- renderPlot({
-    plot( x = values$data$dateTime,
+    plot(x = values$data$dateTime,
           y = values$data$Q_cfs,
           type = "b",
           pch = 16,
-          col = 'blue',
+          col = '#0069b5',
           lwd =3,
           main = paste0(ifelse(is.na(values$flow$gnis_name[values$flow$comid == values$ids[values$i]]), "", values$flow@data$gnis_name[values$flow$comid == values$ids[values$i]]),
                         paste0(" COMID: ", values$flow$comid[values$flow$comid == values$ids[values$i]],"\nMedium Range National Water Model Forecasts")),
@@ -369,7 +369,7 @@ shinyServer(function(input, output, session) {
       DT::datatable(df, options = list(ajax = list(url = action), dom = 't'), escape = FALSE, selection = 'none')
     } else {
       df <- values$upstream
-      df <- rbind(df, "No streams in this AOI")
+      df <- rbind(df, paste0("No upstream reaches from COMID ", values$id))
       colnames(df) = "Upstream"
       DT::datatable(df, options = list(dom = 't'), escape = FALSE, selection = 'none')
     }
@@ -384,7 +384,7 @@ shinyServer(function(input, output, session) {
       DT::datatable(df, options = list(ajax = list(url = action), dom = 't'), escape = FALSE, selection = 'none')
     } else {
       df <- values$downstream
-      df <- rbind(df, "No streams in this AOI")
+      df <- rbind(df, paste0("No downstream reaches from COMID ", values$id))
       colnames(df) = "Downstream"
       DT::datatable(df, options = list(dom = 't'), escape = FALSE, selection = 'none')
     }
@@ -402,9 +402,9 @@ shinyServer(function(input, output, session) {
     DT::datatable(values$nwm, 
     extensions = 'Buttons', 
     options = list(dom = 'Bfrtip',
-                   buttons = c('copy', 'csv', 'excel', 'pdf', 'print'),
-                   scroller = TRUE),
-    selection = 'none'
+                   buttons = c('copy', 'csv', 'excel', 'pdf', 'print')),
+    selection = 'none',
+    rownames = FALSE
     )}
   )
   
