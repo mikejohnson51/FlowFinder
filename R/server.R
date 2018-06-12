@@ -46,49 +46,57 @@ shinyServer(function(input, output, session) {
   
   # On go, calculate reactive values
   observeEvent(input$do, {
-    # Check if input is likely a lat/lon pair
-    split = unlist(strsplit(input$place, split=" ", fixed=TRUE))
-    if ((length(split) == 2) && !is.na(as.numeric(split[1])) && !is.na(as.numeric(split[2])) )  {
-        values$lat = as.numeric(split[1])
-        values$lon = as.numeric(split[2])
-    } else {
-      loc = dismo::geocode( input$place, output = 'latlon' )
-      values$lat = loc$lat
-      values$lon = loc$lon
-    }
-    
-    clip = list(values$lat, values$lon, 5, 5)
-    
-    values$nhd = tryCatch({
-      suppressMessages(findNHD(clip_unit = clip, ids = TRUE))
-    },
-    error=function(error_message) {
-      return(NA)
+    withProgress(message = 'Analyzing Location', value = 0, {
+      incProgress(1/6, detail = "Getting location coordinates")
+      # Check if input is likely a lat/lon pair
+      split = unlist(strsplit(input$place, split=" ", fixed=TRUE))
+      if ((length(split) == 2) && !is.na(as.numeric(split[1])) && !is.na(as.numeric(split[2])) )  {
+          values$lat = as.numeric(split[1])
+          values$lon = as.numeric(split[2])
+      } else {
+        loc = dismo::geocode( input$place, output = 'latlon' )
+        values$lat = loc$lat
+        values$lon = loc$lon
+      }
+      
+      clip = list(values$lat, values$lon, 5, 5)
+      
+      incProgress(2/6, detail = "Getting Spatial Objects")
+      values$nhd = tryCatch({
+        suppressMessages(findNHD(clip_unit = clip, ids = TRUE))
+      },
+      error=function(error_message) {
+        return(NA)
+      })
+      if (is.na(values$nhd[1])) {
+        error_message("Could not find any features in this region. ")
+        return()
+      }
+  
+      values$flow = values$nhd$flowlines
+      values$ids =  values$flow$comid
+      values$ids2 = values$nhd$ids
+      
+      incProgress(1/6, detail = "Getting USGS Stations")
+      values$stats = tryCatch({
+        suppressMessages(findUSGS(clip_unit = clip)$nwis)
+      },
+      error=function(error_message) {
+        return(NA)
+      })
+      
+      incProgress(1/6, detail = "Subsetting Stream Data")
+      values$nwm = subset_nomads_rda(comids = values$ids2)
+  
+      if (input$do == 1) {
+        updateTextInput(session = session, inputId =  "place", value = "")
+      }
+      
+      values$nhd_prep = suppressWarnings(prep_nhd(flines = values$flow))
+      values$hmm = get_upstream(flines = values$nhd_prep)
+      
+      incProgress(1/6, detail = "Mapping")
     })
-    if (is.na(values$nhd[1])) {
-      error_message("Could not find any features in this region. ")
-      return()
-    }
-
-    values$flow = values$nhd$flowlines
-    values$ids =  values$flow$comid
-    values$ids2 = values$nhd$ids
-    
-    values$stats = tryCatch({
-      suppressMessages(findUSGS(clip_unit = clip)$nwis)
-    },
-    error=function(error_message) {
-      return(NA)
-    })
-    
-    values$nwm = subset_nomads_rda(comids = values$ids2)
-
-    if (input$do == 1) {
-      updateTextInput(session = session, inputId =  "place", value = "")
-    }
-    
-    values$nhd_prep = suppressWarnings(prep_nhd(flines = values$flow))
-    values$hmm = get_upstream(flines = values$nhd_prep)
 
    })
   
