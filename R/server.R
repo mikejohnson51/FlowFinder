@@ -130,6 +130,8 @@ shinyServer(function(input, output, session) {
     clearMarkers()
     leafletProxy("map", session) %>%
       clearGroup("NHD Flowlines") %>%
+      clearGroup("Location") %>%
+      clearGroup("USGS Stations") %>%
       fitBounds(bounds$west, bounds$south, bounds$east, bounds$north) %>%
       addPolylines(data = values$flow, color = 'blue', weight = values$flow$streamorde,
                    popup = paste(sep = " ",
@@ -147,7 +149,8 @@ shinyServer(function(input, output, session) {
                      fillOpacity = 0.7,
                      bringToFront = FALSE)
       ) %>%
-      addCircleMarkers(lng = as.numeric(values$lon), lat = as.numeric(values$lat), radius = 6, color = 'green', stroke = FALSE, fillOpacity = 0.5)
+      addCircleMarkers(lng = as.numeric(values$lon), lat = as.numeric(values$lat), radius = 6, color = 'green', 
+                       stroke = FALSE, fillOpacity = 0.5, group = "Location")
       error_message("")
     # Don't try and map USGS stations if there are none  
     if(typeof(values$stats) == "S4") {
