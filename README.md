@@ -1,4 +1,4 @@
-# FlowlineFinder <img src="img/ff_logo.png" width=50 align="left" />
+# FlowlineFinder <img src="img/ff_logo.png" width=40 align="left" />
 
 ## Description
 
