@@ -71,7 +71,7 @@ shinyUI(
                             ),
                tabPanel("Data", icon = icon("line-chart"),
                         textOutput("stream"),
-                        selectInput(inputId = "flow_selector", label = ,"", choices = ""),
+                        selectizeInput(inputId = "flow_selector", choices = "", label = NULL),
                         actionButton("prevCOMID", label = "Previous"),
                         actionButton("nextCOMID", label = "Next"),
                         actionButton("mark_flowline", "View on Map"),

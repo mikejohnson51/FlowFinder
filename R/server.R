@@ -280,7 +280,23 @@ shinyServer(function(input, output, session) {
     e = paste0(paste0(ifelse(is.na(name), "", name)), paste0(" COMID: ", max_qcms))
     values$choices = as.list(paste0(paste0(ifelse(is.na(values$flow@data$gnis_name), "", values$flow@data$gnis_name)),
                             paste0(" COMID: ", values$flow$comid)))
-    updateSelectInput(session = session, inputId = "flow_selector", choices = values$choices , selected = e)
+    lables = paste0(paste0(ifelse(is.na(values$flow@data$gnis_name), "", values$flow@data$gnis_name)),
+                    paste0(" COMID: ", values$flow$comid))
+    values$test = data.frame(value=lables, label=lables, id=values$flow$comid)
+    non_zero = unique(values$nwm[values$nwm$Q_cfs > 0,]$COMID)
+    values$test <- transform(values$test, max= ifelse(id %in% non_zero, 1, 0))
+    updateSelectizeInput(session, 'flow_selector', choices = values$test, server = TRUE,
+                         selected = e,
+                         options = list(render = I(
+                           "{
+                           option: function(item, escape) {
+                           if (item.max == 1) {
+                           return '<div style=color:#0069b5;font-weight:bold;>' + escape(item.value) + '</div>';
+                           } else {
+                           return '<div style=color:#a8a8a8>' + escape(item.value) + '</div>';
+                           }
+                           }
+  }")))
   })
   
   # Set values for current stream
@@ -339,7 +355,7 @@ shinyServer(function(input, output, session) {
   observeEvent(input$prevCOMID, {
     current <- which(values$choices == input$flow_selector)
     if(current > 1){
-      updateSelectInput(session, "flow_selector",
+      updateSelectizeInput(session, "flow_selector",
                         selected = values$choices[current - 1])
     }
   })
@@ -348,7 +364,7 @@ shinyServer(function(input, output, session) {
   observeEvent(input$nextCOMID, {
     current <- which(values$choices == input$flow_selector)
     if(current < length(values$choices)){
-      updateSelectInput(session, "flow_selector",
+      updateSelectizeInput(session, "flow_selector",
                         selected = values$choices[current + 1])
     }
   })
@@ -358,7 +374,7 @@ shinyServer(function(input, output, session) {
   observe({
     if (is.null(input$goto))
       return()
-    updateSelectInput(session = session, inputId = "flow_selector", selected = input$goto$text)
+    updateSelectizeInput(session = session, inputId = "flow_selector", selected = input$goto$text)
   })
   
   # View on map button
@@ -428,7 +444,7 @@ shinyServer(function(input, output, session) {
   observe({
     if (is.null(input$switchStream))
       return()
-    updateSelectInput(session = session, inputId = "flow_selector", selected = input$switchStream$stream)
+    updateSelectizeInput(session = session, inputId = "flow_selector", selected = input$switchStream$stream)
   })
 
   output$downloadCSV <- downloadHandler(
