@@ -324,31 +324,9 @@ shinyServer(function(input, output, session) {
            #subtitle = "Medium Range National Water Model Forecasts"
            ) +
       geom_hline(yintercept = cutoff, color = "red", alpha = .2, size=5) +
-      annotate("text", min(values$data$dateTime)+420, cutoff, vjust = -1, label = "Average Monthly Flow") +
+      annotate("text", min(values$data$dateTime)+1420, cutoff, vjust = -1, label = "Average Monthly Flow") +
       theme_light()
     
-    
-   # plot(x = values$data$dateTime,
-    #      y = values$data$Q_cfs,
-     #     type = "b",
-      #    pch = 16,
-       #   col = '#0069b5',
-       #   lwd =3,
-        #  main = paste0(ifelse(is.na(values$flow$gnis_name[values$flow$comid == values$ids[values$i]]), "", values$flow@data$gnis_name[values$flow$comid == values$ids[values$i]]),
-         #               paste0(" COMID: ", values$flow$comid[values$flow$comid == values$ids[values$i]],"\nMedium Range National Water Model Forecasts")),
-  #        ylab = "streamflow (cfs)",
-  #        xlab = 'Date and Time', axes = F)
-  #  axis(1, at= seq(min(values$data$dateTime), max(values$data$dateTime), 10800), 
-  #       labels= seq(min(values$nwm$dateTime), max(values$nwm$dateTime), 10800), 
-  #       cex.axis = .95,
-  #       lwd = 2
-  #  )
-  #  axis(2, at= seq(min(values$data$Q_cfs), max(values$data$Q_cfs), ((max(values$data$Q_cfs) - min(values$data$Q_cfs)) / 10)), 
-  #       labels= round(seq(min(values$data$Q_cfs), max(values$data$Q_cfs), ((max(values$data$Q_cfs) - min(values$data$Q_cfs)) / 10)), 1), 
-  #       las = 2,
-   #      lwd = 2,
-  #       cex.axis = .8)
-  
     })
   
   # Previous Stream
