@@ -4,13 +4,17 @@ library(ncdf4)
 library(dismo)
 library(shinyjs)
 library(DT)
-
+library(ggplot2)
 library(data.table)
 library(fst)
 library(dplyr)
 
 source("../R/subset_nomads_rda.R")
 source("../R/nhdModifier.R")
+
+month = as.numeric(substr(list.files("../flowline-app/data/current_nc"),6,7))
+xxx = list.files("../flowline-app/data/", pattern = as.character(month), full.names = T)
+norm = fst::read_fst(path = xxx)
 
 # Generate icon for usgs stations
 USGSicon = leaflet::makeIcon(
@@ -286,31 +290,50 @@ shinyServer(function(input, output, session) {
     values$id = unlist(strsplit(text, split='COMID: ', fixed=TRUE))[2]
     values$i = match(values$id, values$flow@data$comid)
     values$data = values$nwm[values$nwm$COMID == values$ids[values$i],]
+    values$normals = norm[norm$COMID == values$ids[values$i],]
   })
   
   # Draw Plot
   output$streamFlow <- renderPlot({
-    plot(x = values$data$dateTime,
-          y = values$data$Q_cfs,
-          type = "b",
-          pch = 16,
-          col = '#0069b5',
-          lwd =3,
-          main = paste0(ifelse(is.na(values$flow$gnis_name[values$flow$comid == values$ids[values$i]]), "", values$flow@data$gnis_name[values$flow$comid == values$ids[values$i]]),
-                        paste0(" COMID: ", values$flow$comid[values$flow$comid == values$ids[values$i]],"\nMedium Range National Water Model Forecasts")),
-          ylab = "streamflow (cfs)",
-          xlab = 'Date and Time', axes = F)
-    axis(1, at= seq(min(values$data$dateTime), max(values$data$dateTime), 10800), 
-         labels= seq(min(values$nwm$dateTime), max(values$nwm$dateTime), 10800), 
-         cex.axis = .95,
-         lwd = 2
-    )
-    axis(2, at= seq(min(values$data$Q_cfs), max(values$data$Q_cfs), ((max(values$data$Q_cfs) - min(values$data$Q_cfs)) / 10)), 
-         labels= round(seq(min(values$data$Q_cfs), max(values$data$Q_cfs), ((max(values$data$Q_cfs) - min(values$data$Q_cfs)) / 10)), 1), 
-         las = 2,
-         lwd = 2,
-         cex.axis = .8)
-  })
+  
+    cutoff = values$normals[,2] * 35.3147
+    
+    ggplot(data = values$data, aes(x = dateTime, y = Q_cfs)) + 
+      geom_line(color='blue', size = 1.5, alpha=0.4) + 
+      geom_point(color = 'navy', size = 3) +
+      labs(x = "Date and Time",
+           y = "Streamflow (cfs)"
+           #title = paste0(ifelse(is.na(values$flow$gnis_name[values$flow$comid == values$ids[values$i]]), "", values$flow@data$gnis_name[values$flow$comid == values$ids[values$i]]),
+            #                           paste0(" COMID: ", values$flow$comid[values$flow$comid == values$ids[values$i]])),
+           #subtitle = "Medium Range National Water Model Forecasts"
+           ) +
+      geom_hline(yintercept = cutoff, color = "red", alpha = .2, size=5) +
+      annotate("text", min(values$data$dateTime)+420, cutoff, vjust = -1, label = "Average Monthly Flow") +
+      theme_light()
+    
+    
+   # plot(x = values$data$dateTime,
+    #      y = values$data$Q_cfs,
+     #     type = "b",
+      #    pch = 16,
+       #   col = '#0069b5',
+       #   lwd =3,
+        #  main = paste0(ifelse(is.na(values$flow$gnis_name[values$flow$comid == values$ids[values$i]]), "", values$flow@data$gnis_name[values$flow$comid == values$ids[values$i]]),
+         #               paste0(" COMID: ", values$flow$comid[values$flow$comid == values$ids[values$i]],"\nMedium Range National Water Model Forecasts")),
+  #        ylab = "streamflow (cfs)",
+  #        xlab = 'Date and Time', axes = F)
+  #  axis(1, at= seq(min(values$data$dateTime), max(values$data$dateTime), 10800), 
+  #       labels= seq(min(values$nwm$dateTime), max(values$nwm$dateTime), 10800), 
+  #       cex.axis = .95,
+  #       lwd = 2
+  #  )
+  #  axis(2, at= seq(min(values$data$Q_cfs), max(values$data$Q_cfs), ((max(values$data$Q_cfs) - min(values$data$Q_cfs)) / 10)), 
+  #       labels= round(seq(min(values$data$Q_cfs), max(values$data$Q_cfs), ((max(values$data$Q_cfs) - min(values$data$Q_cfs)) / 10)), 1), 
+  #       las = 2,
+   #      lwd = 2,
+  #       cex.axis = .8)
+  
+    })
   
   # Previous Stream
   observeEvent(input$prevCOMID, {
