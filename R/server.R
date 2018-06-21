@@ -315,17 +315,20 @@ shinyServer(function(input, output, session) {
     cutoff = values$normals[,2] * 35.3147
     
     ggplot(data = values$data, aes(x = dateTime, y = Q_cfs)) + 
-      geom_line(color='blue', size = 1.5, alpha=0.4) + 
+      geom_line(color='#0069b5', size = 1.5, alpha=0.4) + 
       geom_point(color = 'navy', size = 3) +
       labs(x = "Date and Time",
-           y = "Streamflow (cfs)"
-           #title = paste0(ifelse(is.na(values$flow$gnis_name[values$flow$comid == values$ids[values$i]]), "", values$flow@data$gnis_name[values$flow$comid == values$ids[values$i]]),
-            #                           paste0(" COMID: ", values$flow$comid[values$flow$comid == values$ids[values$i]])),
-           #subtitle = "Medium Range National Water Model Forecasts"
+           y = "Streamflow (cfs)",
+           title = paste0(ifelse(is.na(values$flow$gnis_name[values$flow$comid == values$ids[values$i]]), "", paste0(values$flow@data$gnis_name[values$flow$comid == values$ids[values$i]], " ")),
+                                       paste0("COMID: ", values$flow$comid[values$flow$comid == values$ids[values$i]])),
+           subtitle = "Medium Range National Water Model Forecasts"
            ) +
       geom_hline(yintercept = cutoff, color = "red", alpha = .2, size=5) +
-      annotate("text", min(values$data$dateTime)+1420, cutoff, vjust = -1, label = "Average Monthly Flow") +
-      theme_light()
+      annotate("text", min(values$data$dateTime)+1420, cutoff, label = "Average Monthly Flow") +
+      theme_light() +
+      theme(
+        plot.title = element_text(color="#0069b5", size=16, face="bold.italic")
+      )
     
     })
   

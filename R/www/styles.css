@@ -230,7 +230,8 @@ h4 { font-weight: 400; }
 #tbl_up,
 #tbl_down { margin-bottom: 50px; }
 
-#downloadData { margin: 50px 0; }
+#downloadData,
+#streamFlow{ margin: 30px 0; }
 
 /*****************************************
 *            Queiries                    *
@@ -272,4 +273,16 @@ h4 { font-weight: 400; }
 
   #nav { font-size: 11px !important; }
    
+}
+
+
+
+
+
+
+
+
+
+.form-group.shiny-input-container {
+    width: 100%;
 }
