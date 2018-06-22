@@ -1,13 +1,20 @@
+#' @importFrom dismo geocode
+#' @importFrom shinyjs click
+#' @importFrom fst read_fst
+#' @importFrom DT datatable dataTableAjax renderDataTable
+#' @importFrom dplyr filter left_join select rename
+
 library(shiny)
 library(HydroData)
-library(ncdf4)
-library(dismo)
-library(shinyjs)
-library(DT)
 library(ggplot2)
-library(data.table)
-library(fst)
-library(dplyr)
+
+#library(dismo)
+#library(shinyjs)
+#library(DT)
+
+#library(data.table)
+#library(fst)
+#library(dplyr)
 
 source("subset_nomads_rda.R")
 source("nhdModifier.R")
@@ -395,7 +402,7 @@ shinyServer(function(input, output, session) {
   output$tbl_up <- DT::renderDataTable({
     if (length(values$upstream) > 0) {
       df <- values$upstream %>%
-        mutate(View = paste('<a class="go-stream" href="" data-stream="', Upstream, '"><i class="fa fa-eye"></i></a>', sep=""))
+        dplyr::mutate(View = paste('<a class="go-stream" href="" data-stream="', Upstream, '"><i class="fa fa-eye"></i></a>', sep=""))
       action <- DT::dataTableAjax(session, df)
       DT::datatable(df, options = list(ajax = list(url = action), dom = 't'), escape = FALSE, selection = 'none')
     } else {
@@ -410,7 +417,7 @@ shinyServer(function(input, output, session) {
   output$tbl_down <- DT::renderDataTable({
     if (length(values$downstream) > 0) {
       df <- values$downstream %>%
-        mutate(View = paste('<a class="go-stream" href="" data-stream="', Downstream, '"><i class="fa fa-eye"></i></a>', sep=""))
+        dplyr::mutate(View = paste('<a class="go-stream" href="" data-stream="', Downstream, '"><i class="fa fa-eye"></i></a>', sep=""))
       action <- DT::dataTableAjax(session, df)
       DT::datatable(df, options = list(ajax = list(url = action), dom = 't'), escape = FALSE, selection = 'none')
     } else {
