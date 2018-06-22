@@ -9,8 +9,8 @@ library(data.table)
 library(fst)
 library(dplyr)
 
-source("../R/subset_nomads_rda.R")
-source("../R/nhdModifier.R")
+source("subset_nomads_rda.R")
+source("nhdModifier.R")
 
 month = as.numeric(substr(list.files("../flowline-app/data/current_nc"),6,7))
 xxx = list.files("../flowline-app/data/", pattern = as.character(month), full.names = T)
@@ -280,7 +280,23 @@ shinyServer(function(input, output, session) {
     e = paste0(paste0(ifelse(is.na(name), "", name)), paste0(" COMID: ", max_qcms))
     values$choices = as.list(paste0(paste0(ifelse(is.na(values$flow@data$gnis_name), "", values$flow@data$gnis_name)),
                             paste0(" COMID: ", values$flow$comid)))
-    updateSelectInput(session = session, inputId = "flow_selector", choices = values$choices , selected = e)
+    lables = paste0(paste0(ifelse(is.na(values$flow@data$gnis_name), "", values$flow@data$gnis_name)),
+                    paste0(" COMID: ", values$flow$comid))
+    values$test = data.frame(value=lables, label=lables, id=values$flow$comid)
+    non_zero = unique(values$nwm[values$nwm$Q_cfs > 0,]$COMID)
+    values$test <- transform(values$test, max= ifelse(id %in% non_zero, 1, 0))
+    updateSelectizeInput(session, 'flow_selector', choices = values$test, server = TRUE,
+                         selected = e,
+                         options = list(render = I(
+                           "{
+                           option: function(item, escape) {
+                           if (item.max == 1) {
+                           return '<div style=color:#0069b5;font-weight:bold;>' + escape(item.value) + '</div>';
+                           } else {
+                           return '<div style=color:#a8a8a8>' + escape(item.value) + '</div>';
+                           }
+                           }
+  }")))
   })
   
   # Set values for current stream
@@ -299,47 +315,28 @@ shinyServer(function(input, output, session) {
     cutoff = values$normals[,2] * 35.3147
     
     ggplot(data = values$data, aes(x = dateTime, y = Q_cfs)) + 
-      geom_line(color='blue', size = 1.5, alpha=0.4) + 
+      geom_line(color='#0069b5', size = 1.5, alpha=0.4) + 
       geom_point(color = 'navy', size = 3) +
       labs(x = "Date and Time",
-           y = "Streamflow (cfs)"
-           #title = paste0(ifelse(is.na(values$flow$gnis_name[values$flow$comid == values$ids[values$i]]), "", values$flow@data$gnis_name[values$flow$comid == values$ids[values$i]]),
-            #                           paste0(" COMID: ", values$flow$comid[values$flow$comid == values$ids[values$i]])),
-           #subtitle = "Medium Range National Water Model Forecasts"
+           y = "Streamflow (cfs)",
+           title = paste0(ifelse(is.na(values$flow$gnis_name[values$flow$comid == values$ids[values$i]]), "", paste0(values$flow@data$gnis_name[values$flow$comid == values$ids[values$i]], " ")),
+                                       paste0("COMID: ", values$flow$comid[values$flow$comid == values$ids[values$i]])),
+           subtitle = "Medium Range National Water Model Forecasts"
            ) +
       geom_hline(yintercept = cutoff, color = "red", alpha = .2, size=5) +
-      annotate("text", min(values$data$dateTime)+420, cutoff, vjust = -1, label = "Average Monthly Flow") +
-      theme_light()
+      annotate("text", min(values$data$dateTime)+1420, cutoff, label = "Average Monthly Flow") +
+      theme_light() +
+      theme(
+        plot.title = element_text(color="#0069b5", size=16, face="bold.italic")
+      )
     
-    
-   # plot(x = values$data$dateTime,
-    #      y = values$data$Q_cfs,
-     #     type = "b",
-      #    pch = 16,
-       #   col = '#0069b5',
-       #   lwd =3,
-        #  main = paste0(ifelse(is.na(values$flow$gnis_name[values$flow$comid == values$ids[values$i]]), "", values$flow@data$gnis_name[values$flow$comid == values$ids[values$i]]),
-         #               paste0(" COMID: ", values$flow$comid[values$flow$comid == values$ids[values$i]],"\nMedium Range National Water Model Forecasts")),
-  #        ylab = "streamflow (cfs)",
-  #        xlab = 'Date and Time', axes = F)
-  #  axis(1, at= seq(min(values$data$dateTime), max(values$data$dateTime), 10800), 
-  #       labels= seq(min(values$nwm$dateTime), max(values$nwm$dateTime), 10800), 
-  #       cex.axis = .95,
-  #       lwd = 2
-  #  )
-  #  axis(2, at= seq(min(values$data$Q_cfs), max(values$data$Q_cfs), ((max(values$data$Q_cfs) - min(values$data$Q_cfs)) / 10)), 
-  #       labels= round(seq(min(values$data$Q_cfs), max(values$data$Q_cfs), ((max(values$data$Q_cfs) - min(values$data$Q_cfs)) / 10)), 1), 
-  #       las = 2,
-   #      lwd = 2,
-  #       cex.axis = .8)
-  
     })
   
   # Previous Stream
   observeEvent(input$prevCOMID, {
     current <- which(values$choices == input$flow_selector)
     if(current > 1){
-      updateSelectInput(session, "flow_selector",
+      updateSelectizeInput(session, "flow_selector",
                         selected = values$choices[current - 1])
     }
   })
@@ -348,7 +345,7 @@ shinyServer(function(input, output, session) {
   observeEvent(input$nextCOMID, {
     current <- which(values$choices == input$flow_selector)
     if(current < length(values$choices)){
-      updateSelectInput(session, "flow_selector",
+      updateSelectizeInput(session, "flow_selector",
                         selected = values$choices[current + 1])
     }
   })
@@ -358,7 +355,7 @@ shinyServer(function(input, output, session) {
   observe({
     if (is.null(input$goto))
       return()
-    updateSelectInput(session = session, inputId = "flow_selector", selected = input$goto$text)
+    updateSelectizeInput(session = session, inputId = "flow_selector", selected = input$goto$text)
   })
   
   # View on map button
@@ -428,7 +425,7 @@ shinyServer(function(input, output, session) {
   observe({
     if (is.null(input$switchStream))
       return()
-    updateSelectInput(session = session, inputId = "flow_selector", selected = input$switchStream$stream)
+    updateSelectizeInput(session = session, inputId = "flow_selector", selected = input$switchStream$stream)
   })
 
   output$downloadCSV <- downloadHandler(

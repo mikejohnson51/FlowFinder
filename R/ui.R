@@ -70,15 +70,18 @@ shinyUI(
                             )
                             ),
                tabPanel("Data", icon = icon("line-chart"),
-                        textOutput("stream"),
-                        selectInput(inputId = "flow_selector", label = ,"", choices = ""),
-                        actionButton("prevCOMID", label = "Previous"),
-                        actionButton("nextCOMID", label = "Next"),
-                        actionButton("mark_flowline", "View on Map"),
+                        # textOutput("stream"),
+                        fluidRow(
+                          column(5, 
+                                 column(12, selectizeInput(inputId = "flow_selector", choices = "", label = NULL))
+                          ),
+                          column(5,
+                                 actionButton("prevCOMID", label = "Previous"),
+                                 actionButton("nextCOMID", label = "Next"),
+                                 actionButton("mark_flowline", "View on Map")
+                          )
+                        ),
                         plotOutput("streamFlow"),
-                        # fluidRow(
-                        #   splitLayout(cellWidths = c("40%", "40%"), DT::DTOutput('tbl_up'), DT::DTOutput('tbl_down'))
-                        # ),
                         fluidRow(
                           column(6,DT::DTOutput('tbl_up')),  
                           column(6,DT::DTOutput('tbl_down'))
