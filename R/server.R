@@ -12,8 +12,8 @@ library(dplyr)
 source("subset_nomads_rda.R")
 source("nhdModifier.R")
 
-month = as.numeric(substr(list.files("../flowline-app/data/current_nc"),6,7))
-xxx = list.files("../flowline-app/data/", pattern = as.character(month), full.names = T)
+month = as.numeric(substr(list.files("flowline-app/data/current_nc"),6,7))
+xxx = list.files("flowline-app/data/", pattern = as.character(month), full.names = T)
 norm = fst::read_fst(path = xxx)
 
 # Generate icon for usgs stations

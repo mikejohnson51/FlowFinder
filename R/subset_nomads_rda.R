@@ -1,5 +1,5 @@
 subset_nomads_rda = function(comids = NULL) {
-  file = list.files("../flowline-app/data/current_nc", full.names = T)
+  file = list.files("flowline-app/data/current_nc", full.names = T)
   n_rows = fst::metadata_fst(path = file)$nrOfRows
   inc = ceiling(n_rows/12)
   df = list()
