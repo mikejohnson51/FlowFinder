@@ -30,6 +30,6 @@ knit("nomads_download.Rmd")
 FlowlineFinder::run_app()
 ```
 
-**Demo**
+## Demo
 
 ![](.github/img/flowline_finder.gif)
