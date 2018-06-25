@@ -60,7 +60,7 @@ download_nomads_rda = function(fileList = NULL){
 
   name =paste0(date,"_",time,"_medium_.fst")
     
-  fst::write.fst(Q,  path = paste0("./flowline-app/data/current_nc/", name), 100) 
+  fst::write.fst(Q,  path = paste0("./inst/flowlinefinder/data/current_nc/", name), 100) 
 
   unlink(list.files(tmp, pattern = ".nc$"))
 

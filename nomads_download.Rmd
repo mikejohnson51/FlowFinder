@@ -25,10 +25,10 @@ Check if files need to be updated, and, if so, download them:
 
 ```{r, echo = FALSE}
 
-file = list.files("./flowline-app/data/current_nc", full.names = F)
+file = list.files("./data/current_nc", full.names = F)
 
 if(length(file) > 0){
-  ttt = strsplit(list.files("./flowline-app/data/current_nc", full.names = F), "_")[[1]]
+  ttt = strsplit(list.files("./data/current_nc", full.names = F), "_")[[1]]
   date = ttt[1]
   time = ttt[2]
   forecast = ttt[3]
@@ -44,7 +44,7 @@ if(all(
 )){
   message("No Download needed...")
 } else {
-  file.remove(list.files("./flowline-app/data/current_nc", full.names = T))
+  file.remove(list.files("./inst/flowlinefinder/data/current_nc", full.names = T))
   download_nomads_rda(fileList)
 }
 
