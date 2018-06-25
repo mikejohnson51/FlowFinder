@@ -1,4 +1,4 @@
-# FlowlineFinder <img src="img/ff_logo.png" width=40 align="left" />
+# FlowlineFinder <img src=".github/img/ff_logo.png" width=40 align="left" />
 
 ## Description
 
@@ -8,4 +8,4 @@ Of particular interest is the ability to find nearby NHD reaches in the field.
 
 Much of the data processing and gathering is driven by the [HydroData](http://mikejohnson51.github.io/HydroData/) and NWM packages with a interface driven by R Shiny.
 
-![](https://github.com/mikejohnson51/FlowlineFinder/blob/master/img/flowline_finder.gif)
+![](.github/img/flowline_finder.gif)
