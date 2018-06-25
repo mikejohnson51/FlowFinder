@@ -4,8 +4,8 @@
 \alias{get_nomads_filelist}
 \title{Getting Most Current NWM data from the NOAA NOMADs server}
 \usage{
-get_nomads_filelist(dir = "./flowline-app/data/current_nc", type = NULL,
-  time = NULL, num = 6)
+get_nomads_filelist(dir = "./inst/flowlinefinder/data/current_nc",
+  type = NULL, time = NULL, num = 6)
 }
 \value{
 This fuction saves the 18 NetCDF files related to the most recent forecasts.
