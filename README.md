@@ -20,8 +20,8 @@ install_github("mikejohnson51/FlowlineFinder")
 **Update National Water Model Forecasting Data**
 
 ```R
-library(knitr)
-knit("nomads_download.Rmd")
+library(rmarkdown)
+rmarkdown::render("nomads_download.Rmd")
 ```
 
 **Run Application**
