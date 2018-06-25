@@ -1,7 +1,6 @@
 #' @export
 
 subset_nomads_rda <- function(comids = NULL, file = NULL) {
-  #file = list.files("/Users/patjohnson/Desktop/ff_2/inst/flowlinefinder/flowline-app/data/current_nc", full.names = T)
   n_rows = fst::metadata_fst(path = file)$nrOfRows
   inc = ceiling(n_rows/12)
   df = list()

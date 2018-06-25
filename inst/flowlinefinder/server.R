@@ -1,7 +1,7 @@
 library(FlowlineFinder)
 
-month = as.numeric(substr(list.files("flowline-app/data/current_nc"),6,7))
-month_files = list.files("flowline-app/data/", pattern = as.character(month), full.names = T)
+month = as.numeric(substr(list.files("data/current_nc"),6,7))
+month_files = list.files("data/", pattern = as.character(month), full.names = T)
 norm = fst::read_fst(path = month_files)
 
 # Generate icon for usgs stations
@@ -78,7 +78,7 @@ shinyServer(function(input, output, session) {
       })
       
       incProgress(1/6, detail = "Subsetting Stream Data")
-      data_file = normalizePath(list.files("flowline-app/data/current_nc", full.names = TRUE))
+      data_file = normalizePath(list.files("data/current_nc", full.names = TRUE))
       values$nwm = subset_nomads_rda(comids = values$ids2, file = data_file)
       if (input$do == 1) {
         updateTextInput(session = session, inputId =  "place", value = "")
