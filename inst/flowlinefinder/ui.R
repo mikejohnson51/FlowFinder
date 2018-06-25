@@ -33,7 +33,7 @@ shinyUI(
                             # Get geolocation if possible
                             tags$script('
                                         $(document).ready(function(){
-                                          $.getJSON("https://json.geoiplookup.io/api?callback=?", function(response) {
+                                          $.getJSON("https://json.geoiplookup.io/", function(response) {
                                             Shiny.onInputChange("getIP", response);
                                           }, "json");
                                         });

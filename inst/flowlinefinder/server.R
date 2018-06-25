@@ -1,27 +1,8 @@
-#' @importFrom dismo geocode
-#' @importFrom shinyjs click
-#' @importFrom fst read_fst
-#' @importFrom DT datatable dataTableAjax renderDataTable
-#' @importFrom dplyr filter left_join select rename
-
-library(shiny)
-library(HydroData)
-library(ggplot2)
-
-#library(dismo)
-#library(shinyjs)
-#library(DT)
-
-#library(data.table)
-#library(fst)
-#library(dplyr)
-
-source("subset_nomads_rda.R")
-source("nhdModifier.R")
+library(FlowlineFinder)
 
 month = as.numeric(substr(list.files("flowline-app/data/current_nc"),6,7))
-xxx = list.files("flowline-app/data/", pattern = as.character(month), full.names = T)
-norm = fst::read_fst(path = xxx)
+month_files = list.files("flowline-app/data/", pattern = as.character(month), full.names = T)
+norm = fst::read_fst(path = month_files)
 
 # Generate icon for usgs stations
 USGSicon = leaflet::makeIcon(
@@ -57,6 +38,7 @@ shinyServer(function(input, output, session) {
   
   # On go, calculate reactive values
   observeEvent(input$do, {
+    shinyjs::disable("do")
     withProgress(message = 'Analyzing Location', value = 0, {
       incProgress(1/6, detail = "Getting location coordinates")
       # Check if input is likely a lat/lon pair
@@ -71,10 +53,9 @@ shinyServer(function(input, output, session) {
       }
       
       clip = list(values$lat, values$lon, 5, 5)
-      
       incProgress(2/6, detail = "Getting Spatial Objects")
       values$nhd = tryCatch({
-        suppressMessages(findNHD(clip_unit = clip, ids = TRUE))
+        suppressMessages(HydroData::findNHD(clip_unit = clip, ids = TRUE))
       },
       error=function(error_message) {
         return(NA)
@@ -90,15 +71,15 @@ shinyServer(function(input, output, session) {
       
       incProgress(1/6, detail = "Getting USGS Stations")
       values$stats = tryCatch({
-        suppressMessages(findUSGS(clip_unit = clip)$nwis)
+        suppressMessages(HydroData::findUSGS(clip_unit = clip)$nwis)
       },
       error=function(error_message) {
         return(NA)
       })
       
       incProgress(1/6, detail = "Subsetting Stream Data")
-      values$nwm = subset_nomads_rda(comids = values$ids2)
-  
+      data_file = normalizePath(list.files("flowline-app/data/current_nc", full.names = TRUE))
+      values$nwm = subset_nomads_rda(comids = values$ids2, file = data_file)
       if (input$do == 1) {
         updateTextInput(session = session, inputId =  "place", value = "")
       }
@@ -108,7 +89,7 @@ shinyServer(function(input, output, session) {
       
       incProgress(1/6, detail = "Mapping")
     })
-
+    shinyjs::enable("do")
    })
   
   # Function to determine bounds

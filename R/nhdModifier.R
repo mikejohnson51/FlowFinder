@@ -1,3 +1,4 @@
+#' @export
 prep_nhd <- function(flines, min_network_size = 2, min_path_length = 1, purge_non_dendritic = TRUE) {
   if(grepl("Spatial",class(flines))) {
     message("removing geometry")
@@ -37,11 +38,4 @@ prep_nhd <- function(flines, min_network_size = 2, min_path_length = 1, purge_no
   flines <- dplyr::left_join(flines, dplyr::select(flines, toCOMID = comid, fromnode), by = c("tonode" = "fromnode"))
   dplyr::select(flines, -tonode, -fromnode, -terminalfl, -startflag,
                 -streamorde, -streamcalc, -terminalpa, -ftype, -pathlength, -divergence)
-}
-
-
-get_upstream <- function(flines) {
-  dplyr::left_join(dplyr::select(flines, comid), dplyr::select(flines, comid, toCOMID),
-                   by = c("comid" = "toCOMID")) %>%
-    dplyr::rename(fromCOMID = comid.y)
 }
