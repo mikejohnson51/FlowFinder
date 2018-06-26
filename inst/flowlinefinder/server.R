@@ -11,8 +11,22 @@ USGSicon = leaflet::makeIcon(
   iconAnchorX = 20, iconAnchorY = 10)
 
 shinyServer(function(input, output, session) {
-  
+
   ########## Initial Setup ####################################################################
+  # Set up reactive values
+  values <- reactiveValues()
+  
+  # Determine if app is running locally or shinyapps server
+  # Local usage requires necessary data to be in inst/flowlinefinder/data/current_nc
+  # Online server uses dropbox account with updated data
+  observe({
+    if (session$clientData$url_hostname == "flowlinefinder.shinyapps.io") {
+      values$online <- TRUE
+      values$mapping = as.data.frame(drop_read_csv("current_nc/map.csv"))
+    } else {
+      values$online <- FALSE
+    }
+  })
   
   # Define Initial Map
   output$map <- renderLeaflet({
@@ -32,10 +46,7 @@ shinyServer(function(input, output, session) {
   error_message <- function(message) {
     output$server_problems <- renderText({ message })
   }
-  
-  # Set up reactive values
-  values <- reactiveValues()
-  
+
   # On go, calculate reactive values
   observeEvent(input$do, {
     shinyjs::disable("do")
@@ -78,8 +89,13 @@ shinyServer(function(input, output, session) {
       })
       
       incProgress(1/6, detail = "Subsetting Stream Data")
-      data_file = normalizePath(list.files("data/current_nc", full.names = TRUE))
-      values$nwm = subset_nomads_rda(comids = values$ids2, file = data_file)
+      if (values$online) {
+        values$nwm = subset_nomads_rda_drop(comids = values$ids2, mapping = values$mapping)
+      } else {
+        data_file = normalizePath(list.files("data/current_nc", full.names = TRUE))
+        values$nwm = subset_nomads_rda(comids = values$ids2, file = data_file)
+      }
+      
       if (input$do == 1) {
         updateTextInput(session = session, inputId =  "place", value = "")
       }

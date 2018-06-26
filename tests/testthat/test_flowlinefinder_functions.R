@@ -22,7 +22,7 @@ test_that("check get_upstream routines",{
 
 test_that("check subset_nomads_rda routines",{
   
-  data_file = normalizePath(list.files("../../inst/flowlinefinder/flowline-app/data/current_nc", full.names = TRUE))
+  data_file = normalizePath(list.files("../../inst/flowlinefinder/data/current_nc", full.names = TRUE))
   
   subset = subset_nomads_rda(comids = nhd$ids, file = data_file)
 

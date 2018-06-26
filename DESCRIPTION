@@ -18,7 +18,9 @@ Imports:
     DT,
     fst,
     shinyjs,
-    dismo
+    dismo,
+    ncdf4,
+    rdrop2
 Suggests:
     covr,
     testthat
