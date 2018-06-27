@@ -13,7 +13,7 @@
 #' @return
 #' This fuction saves the 18 NetCDF files related to the most recent forecasts.
 
-get_nomads_filelist = function(dir = "./flowline-app/data/current_nc",
+get_nomads_filelist = function(dir = "./inst/flowlinefinder/data/current_nc",
                       type = NULL,
                       time = NULL,
                       num = 6) {
