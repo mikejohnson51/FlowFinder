@@ -3,6 +3,7 @@ library(FlowlineFinder)
 month = as.numeric(substr(list.files("data/current_nc"),6,7))
 month_files = list.files("data/", pattern = as.character(month), full.names = T)
 norm = fst::read_fst(path = month_files)
+size = 15
 
 # Generate icon for usgs stations
 USGSicon = leaflet::makeIcon(
@@ -50,6 +51,7 @@ shinyServer(function(input, output, session) {
   # On go, calculate reactive values
   observeEvent(input$do, {
     shinyjs::disable("do")
+    start.time <- Sys.time()
     withProgress(message = 'Analyzing Location', value = 0, {
       incProgress(1/6, detail = "Getting location coordinates")
       # Check if input is likely a lat/lon pair
@@ -63,7 +65,7 @@ shinyServer(function(input, output, session) {
         values$lon = loc$lon
       }
       
-      clip = list(values$lat, values$lon, 5, 5)
+      clip = list(values$lat, values$lon, size, size)
       incProgress(2/6, detail = "Getting Spatial Objects")
       values$nhd = tryCatch({
         suppressMessages(HydroData::findNHD(clip_unit = clip, ids = TRUE))
@@ -105,13 +107,17 @@ shinyServer(function(input, output, session) {
       
       incProgress(1/6, detail = "Mapping")
     })
+    end.time <- Sys.time()
+    time.taken <- end.time - start.time
+    time.taken
+    print(time.taken)
     shinyjs::enable("do")
    })
   
   # Function to determine bounds
   calc_bounds <- function(lat, lon) {
-    dl = ((5/2)/69) / cos(lat * pi/180)
-    df = ((5/2)/69)
+    dl = ((size/2)/69) / cos(lat * pi/180)
+    df = ((size/2)/69)
     south = lat - df
     north = lat + df
     west  = lon - dl
@@ -255,11 +261,11 @@ shinyServer(function(input, output, session) {
   # Render tables
   observeEvent(input$do, {
     max_order = max(values$flow@data$streamorde)
-    
+    sq_mi = size^2
     table = rbind(cbind("Largest Stream Name: ", values$flow@data$gnis_name[match(max_order, values$flow@data$streamorde)]),
                   cbind("Number of Flowlines: ", length(values$flow)),
                   cbind("Largest Stream Order: ", max_order),
-                  cbind("Total Area (SqMi): ", 25),
+                  cbind("Total Area (SqMi): ", size),
                   cbind("Unique HUC8 units: ", paste(unique(as.numeric(na.omit(unique(substr(values$flow$reachcode,1,8))))), collapse = ", ")))
     colnames(table) = c('Statistic', 'Value')
     output$Flowlines = renderTable(table, striped = TRUE)
@@ -305,6 +311,20 @@ shinyServer(function(input, output, session) {
                            }
                            }
     }")))
+    text = e
+    values$id = unlist(strsplit(text, split='COMID: ', fixed=TRUE))[2]
+    values$i = match(values$id, values$flow@data$comid)
+    values$data = values$nwm[values$nwm$COMID == values$ids[values$i],]
+    values$normals = norm[norm$COMID == values$ids[values$i],]
+  })
+  
+  observeEvent(input$flow_selector, {
+    req(input$flow_selector)
+    text = input$flow_selector
+    values$id = unlist(strsplit(text, split='COMID: ', fixed=TRUE))[2]
+    values$i = match(values$id, values$flow@data$comid)
+    values$data = values$nwm[values$nwm$COMID == values$ids[values$i],]
+    values$normals = norm[norm$COMID == values$ids[values$i],]
   })
   
   # Draw Plot
