@@ -20,14 +20,12 @@ shinyServer(function(input, output, session) {
   # Local usage requires necessary data to be in inst/flowlinefinder/data/current_nc
   # Online server uses dropbox account with updated data
   observe({
-    print(session$clientData$url_hostname)
     if (session$clientData$url_hostname == "flowlinefinder.shinyapps.io") {
       values$online <- TRUE
       values$mapping = as.data.frame(rdrop2::drop_read_csv("current_nc/map.csv"))
     } else {
       values$online <- FALSE
     }
-    print(values$online)
   })
   
   # Define Initial Map
@@ -77,7 +75,7 @@ shinyServer(function(input, output, session) {
         error_message("Could not find any features in this region. ")
         return()
       }
-  
+      
       values$flow = values$nhd$flowlines
       values$ids =  values$flow$comid
       values$ids2 = values$nhd$ids
@@ -92,10 +90,8 @@ shinyServer(function(input, output, session) {
       
       incProgress(1/6, detail = "Subsetting Stream Data")
       if (values$online) {
-        print('we are here')
         values$nwm = subset_nomads_rda_drop(comids = values$ids2, mapping = values$mapping)
       } else {
-        print('no luck...')
         data_file = normalizePath(list.files("data/current_nc", full.names = TRUE))
         values$nwm = subset_nomads_rda(comids = values$ids2, file = data_file)
       }
@@ -138,49 +134,53 @@ shinyServer(function(input, output, session) {
   
   # On go, draw map
   observeEvent(input$do, {
-    bounds = calc_bounds(values$lat, values$lon)
-    clearMarkers()
-    leafletProxy("map", session) %>%
-      clearGroup("NHD Flowlines") %>%
-      clearGroup("Location") %>%
-      clearGroup("USGS Stations") %>%
-      fitBounds(bounds$west, bounds$south, bounds$east, bounds$north) %>%
-      addPolylines(data = values$flow, color = 'blue', weight = values$flow$streamorde,
-                   popup = paste(sep = " ",
-                                 paste0("<b><a class='open-stream'>",paste0(ifelse(is.na(values$flow@data$gnis_name), "", values$flow@data$gnis_name)),
-                                        paste0(" COMID: ", values$flow$comid),"</a></b></br>"),
-                                 '<a class="stream-data"><i class="fa fa-line-chart"></i></a>',
-                                 '<a class="upstream-flow"><i class="fa fa-angle-double-up"></i></a>',
-                                 '<a class="downstream-flow"><i class="fa fa-angle-double-down"></i></a>'
-                   ),
-                   options = popupOptions(className = "stream_popup"), 
-                   group = "NHD Flowlines",
-                   highlight = highlightOptions(
-                     weight = 10,
-                     color = "#666",
-                     fillOpacity = 0.7,
-                     bringToFront = FALSE)
-      ) %>%
-      addCircleMarkers(lng = as.numeric(values$lon), lat = as.numeric(values$lat), radius = 6, color = 'green', 
-                       stroke = FALSE, fillOpacity = 0.5, group = "Location")
-      error_message("")
-    # Don't try and map USGS stations if there are none  
-    if(typeof(values$stats) == "S4") {
+    withProgress(message = 'Mapping Location', value = 0, {
+      bounds = calc_bounds(values$lat, values$lon)
+      clearMarkers()
+      incProgress(5/6, detail = "Flowlines")
       leafletProxy("map", session) %>%
-        addMarkers(data = values$stats,
-                   icon = USGSicon,
-                   group = "USGS Stations",
-                   popup = pop <- paste(
-                     paste("<strong>Site Number:</strong>",
-                           paste0('<a href=',sprintf(
-                             "https://waterdata.usgs.gov/nwis/inventory/?site_no=%s",values$stats$site_no),' target="_blank">',values$stats$site_no,"</a>")
+        clearGroup("NHD Flowlines") %>%
+        clearGroup("Location") %>%
+        clearGroup("USGS Stations") %>%
+        fitBounds(bounds$west, bounds$south, bounds$east, bounds$north) %>%
+        addPolylines(data = values$flow, color = 'blue', weight = values$flow$streamorde,
+                     popup = paste(sep = " ",
+                                   paste0("<b><a class='open-stream'>",paste0(ifelse(is.na(values$flow@data$gnis_name), "", values$flow@data$gnis_name)),
+                                          paste0(" COMID: ", values$flow$comid),"</a></b></br>"),
+                                   '<a class="stream-data"><i class="fa fa-line-chart"></i></a>',
+                                   '<a class="upstream-flow"><i class="fa fa-angle-double-up"></i></a>',
+                                   '<a class="downstream-flow"><i class="fa fa-angle-double-down"></i></a>'
                      ),
-                     paste("<strong>NHD COMID:</strong>", values$stats$feature_id),
-                     paste("<strong>Site Name:</strong>", values$stats$site_name),
-                     sep = "<br/>"
-                   ) )
-      
-    }
+                     options = popupOptions(className = "stream_popup"), 
+                     group = "NHD Flowlines",
+                     highlight = highlightOptions(
+                       weight = 10,
+                       color = "#666",
+                       fillOpacity = 0.7,
+                       bringToFront = FALSE)
+        ) %>%
+        addCircleMarkers(lng = as.numeric(values$lon), lat = as.numeric(values$lat), radius = 6, color = 'green', 
+                         stroke = FALSE, fillOpacity = 0.5, group = "Location")
+        error_message("")
+      # Don't try and map USGS stations if there are none
+      incProgress(1/6, detail = "USGS Stations")
+      if(typeof(values$stats) == "S4") {
+        leafletProxy("map", session) %>%
+          addMarkers(data = values$stats,
+                     icon = USGSicon,
+                     group = "USGS Stations",
+                     popup = pop <- paste(
+                       paste("<strong>Site Number:</strong>",
+                             paste0('<a href=',sprintf(
+                               "https://waterdata.usgs.gov/nwis/inventory/?site_no=%s",values$stats$site_no),' target="_blank">',values$stats$site_no,"</a>")
+                       ),
+                       paste("<strong>NHD COMID:</strong>", values$stats$feature_id),
+                       paste("<strong>Site Name:</strong>", values$stats$site_name),
+                       sep = "<br/>"
+                     ) )
+        
+      }
+    })
   })
   
   # Fucntion to clear markers
@@ -304,17 +304,7 @@ shinyServer(function(input, output, session) {
                            return '<div style=color:#a8a8a8>' + escape(item.value) + '</div>';
                            }
                            }
-  }")))
-  })
-  
-  # Set values for current stream
-  observe({
-    req(input$flow_selector)
-    text = input$flow_selector
-    values$id = unlist(strsplit(text, split='COMID: ', fixed=TRUE))[2]
-    values$i = match(values$id, values$flow@data$comid)
-    values$data = values$nwm[values$nwm$COMID == values$ids[values$i],]
-    values$normals = norm[norm$COMID == values$ids[values$i],]
+    }")))
   })
   
   # Draw Plot
