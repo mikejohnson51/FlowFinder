@@ -1,7 +1,9 @@
+#' @export
+
 download_nomads_rda = function(fileList = NULL, number = 6){
   
   tmp = tempdir()
-  
+  dir <- system.file("flowlinefinder", package = "FlowlineFinder")
   for (i in seq_along(fileList[[3]])) {
     download.file(
       url = fileList[[3]][i],
@@ -68,6 +70,7 @@ download_nomads_rda = function(fileList = NULL, number = 6){
     subset.Q = as.data.frame(subset)
     #name = paste0("./inst/flowlinefinder/data/current_nc/",i, ".fst")
     name = paste0("./inst/flowlinefinder/data/current_nc/",month, "_", sprintf("%02d", i), ".fst")
+    #name = paste0(dir,"/data/current_nc/",month, "_", sprintf("%02d", i), ".fst")
     fst::write_fst(subset.Q, path = name)
     # drop_upload(name, path = "current_nc")
     # unlink(name)
@@ -79,6 +82,7 @@ download_nomads_rda = function(fileList = NULL, number = 6){
   map <- data.frame(tmp, stringsAsFactors = FALSE)
    #combine all vectors into a matrix
   colnames(map) <- c('num', 'min', 'max', 'filename')
+  #write.csv(map, paste0(dir,'/data/current_nc/map.csv'))
   write.csv(map, "./inst/flowlinefinder/data/current_nc/map.csv")
   # drop_upload("./inst/flowlinefinder/data/current_nc/map.csv", path = "current_nc")
   
