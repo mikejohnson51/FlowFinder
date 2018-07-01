@@ -1,6 +1,9 @@
 library(FlowlineFinder)
 
-month = as.numeric(substr(list.files("data/current_nc"),6,7))
+#t = fst::read_fst("data/current_nc/1.fst")
+month = as.numeric(substr(list.files("data/current_nc")[1], 1,2))
+#month = as.numeric(substr(list.files("data/current_nc"),6,7))
+#print(month)
 month_files = list.files("data/", pattern = as.character(month), full.names = T)
 norm = fst::read_fst(path = month_files)
 size = 15
@@ -23,9 +26,11 @@ shinyServer(function(input, output, session) {
   observe({
     if (session$clientData$url_hostname == "flowlinefinder.shinyapps.io") {
       values$online <- TRUE
-      values$mapping = as.data.frame(rdrop2::drop_read_csv("current_nc/map.csv"))
+      values$mapping = as.data.frame(rdrop2::drop_read_csv("current_nc/data/map.csv"))
     } else {
-      values$online <- FALSE
+      values$online <- TRUE
+      # values$mapping = as.data.frame(read.csv("data/current_nc/map.csv"))
+      values$mapping = read.csv("data/current_nc/map.csv", stringsAsFactors = FALSE)
     }
   })
   
@@ -94,8 +99,8 @@ shinyServer(function(input, output, session) {
       if (values$online) {
         values$nwm = subset_nomads_rda_drop(comids = values$ids2, mapping = values$mapping)
       } else {
-        data_file = normalizePath(list.files("data/current_nc", full.names = TRUE))
-        values$nwm = subset_nomads_rda(comids = values$ids2, file = data_file)
+        #data_file = normalizePath(list.files("data/current_nc", full.names = TRUE))
+        #values$nwm = subset_nomads_rda(comids = values$ids2, file = data_file)
       }
       
       if (input$do == 1) {
@@ -112,34 +117,6 @@ shinyServer(function(input, output, session) {
     time.taken
     print(time.taken)
     shinyjs::enable("do")
-   })
-  
-  # Function to determine bounds
-  calc_bounds <- function(lat, lon) {
-    dl = ((size/2)/69) / cos(lat * pi/180)
-    df = ((size/2)/69)
-    south = lat - df
-    north = lat + df
-    west  = lon - dl
-    east  = lon + dl
-    coords = data.frame(south = south, north = north, west = west, east = east)
-  }
-  
-  # Move to current location when possible
-  observe({
-    if(!is.null(input$lat)){
-      updateTextInput(session = session, inputId =  "place", value = paste(input$lat, input$long, sep = " "), placeholder = "Current Location")
-      shinyjs::click("do")
-    } else if (!is.null(input$getIP)) {
-      updateTextInput(session = session, inputId = "place", value = paste(input$getIP$latitude, input$getIP$longitude, sep = " "), placeholder = "Search Flowline Finder")
-      shinyjs::click("do")
-    }
-  })
-  
-  ########## MAP ####################################################################
-  
-  # On go, draw map
-  observeEvent(input$do, {
     withProgress(message = 'Mapping Location', value = 0, {
       bounds = calc_bounds(values$lat, values$lon)
       clearMarkers()
@@ -167,7 +144,7 @@ shinyServer(function(input, output, session) {
         ) %>%
         addCircleMarkers(lng = as.numeric(values$lon), lat = as.numeric(values$lat), radius = 6, color = 'green', 
                          stroke = FALSE, fillOpacity = 0.5, group = "Location")
-        error_message("")
+      error_message("")
       # Don't try and map USGS stations if there are none
       incProgress(1/6, detail = "USGS Stations")
       if(typeof(values$stats) == "S4") {
@@ -187,7 +164,80 @@ shinyServer(function(input, output, session) {
         
       }
     })
+    output$data_loc <- renderText({ input$place })
+    
+    max_order = max(values$flow@data$streamorde)
+    sq_mi = size^2
+    table = rbind(cbind("Largest Stream Name: ", values$flow@data$gnis_name[match(max_order, values$flow@data$streamorde)]),
+                  cbind("Number of Flowlines: ", length(values$flow)),
+                  cbind("Largest Stream Order: ", max_order),
+                  cbind("Total Area (SqMi): ", size),
+                  cbind("Unique HUC8 units: ", paste(unique(as.numeric(na.omit(unique(substr(values$flow$reachcode,1,8))))), collapse = ", ")))
+    colnames(table) = c('Statistic', 'Value')
+    output$Flowlines = renderTable(table, striped = TRUE)
+    
+    if(typeof(values$stats) == "S4") {
+      station_data = cbind(paste0('<a href=',sprintf(
+        "https://waterdata.usgs.gov/nwis/inventory/?site_no=%s",values$stats$site_no),' target="_blank">',values$stats$site_name,"</a>"),values$stats$site_no, round(values$stats$da_sqkm, digits = 0))
+    } else {
+      station_data = cbind('NA', 'NA', 'NA')
+    }
+    colnames(station_data) = c("USGS Site", "Site No.", "Drainage Area (SqKm)")
+    output$stations = renderTable({station_data}, striped = TRUE, sanitize.text.function = function(x) x)
+    
+    max_qcms = values$nwm[match(max(values$nwm$Q_cfs), values$nwm$Q_cfs),]$COMID
+    name = values$flow[values$flow$comid == max_qcms,]$gnis_name
+    e = paste0(paste0(ifelse(is.na(name), "", name)), paste0(" COMID: ", max_qcms))
+    values$choices = as.list(paste0(paste0(ifelse(is.na(values$flow@data$gnis_name), "", values$flow@data$gnis_name)),
+                                    paste0(" COMID: ", values$flow$comid)))
+    lables = paste0(paste0(ifelse(is.na(values$flow@data$gnis_name), "", values$flow@data$gnis_name)),
+                    paste0(" COMID: ", values$flow$comid))
+    values$test = data.frame(value=lables, label=lables, id=values$flow$comid)
+    non_zero = unique(values$nwm[values$nwm$Q_cfs > 0,]$COMID)
+    values$test <- transform(values$test, max= ifelse(id %in% non_zero, 1, 0))
+    updateSelectizeInput(session, 'flow_selector', choices = values$test, server = TRUE,
+                         selected = e,
+                         options = list(render = I(
+                           "{
+                           option: function(item, escape) {
+                           if (item.max == 1) {
+                           return '<div style=color:#0069b5;font-weight:bold;>' + escape(item.value) + '</div>';
+                           } else {
+                           return '<div style=color:#a8a8a8>' + escape(item.value) + '</div>';
+                           }
+                           }
+  }")))
+    text = e
+    values$id = unlist(strsplit(text, split='COMID: ', fixed=TRUE))[2]
+    values$i = match(values$id, values$flow@data$comid)
+    values$data = values$nwm[values$nwm$COMID == values$ids[values$i],]
+    values$normals = norm[norm$COMID == values$ids[values$i],]
+    
+   })
+  
+  # Function to determine bounds
+  calc_bounds <- function(lat, lon) {
+    dl = ((size/2)/69) / cos(lat * pi/180)
+    df = ((size/2)/69)
+    south = lat - df
+    north = lat + df
+    west  = lon - dl
+    east  = lon + dl
+    coords = data.frame(south = south, north = north, west = west, east = east)
+  }
+  
+  # Move to current location when possible
+  observe({
+    if(!is.null(input$lat)){
+      updateTextInput(session = session, inputId =  "place", value = paste(input$lat, input$long, sep = " "), placeholder = "Current Location")
+      shinyjs::click("do")
+    } else if (!is.null(input$getIP)) {
+      updateTextInput(session = session, inputId = "place", value = paste(input$getIP$latitude, input$getIP$longitude, sep = " "), placeholder = "Search Flowline Finder")
+      shinyjs::click("do")
+    }
   })
+  
+  ########## MAP ####################################################################
   
   # Fucntion to clear markers
   clearMarkers <- function() {
@@ -251,71 +301,11 @@ shinyServer(function(input, output, session) {
                    options = pathOptions(clickable = FALSE))
   })
   
-  ########## Information ####################################################################
-  
-  # Change header
-  observeEvent(input$do, {
-    output$data_loc <- renderText({ input$place })
-  })
-  
-  # Render tables
-  observeEvent(input$do, {
-    max_order = max(values$flow@data$streamorde)
-    sq_mi = size^2
-    table = rbind(cbind("Largest Stream Name: ", values$flow@data$gnis_name[match(max_order, values$flow@data$streamorde)]),
-                  cbind("Number of Flowlines: ", length(values$flow)),
-                  cbind("Largest Stream Order: ", max_order),
-                  cbind("Total Area (SqMi): ", size),
-                  cbind("Unique HUC8 units: ", paste(unique(as.numeric(na.omit(unique(substr(values$flow$reachcode,1,8))))), collapse = ", ")))
-    colnames(table) = c('Statistic', 'Value')
-    output$Flowlines = renderTable(table, striped = TRUE)
-    
-    if(typeof(values$stats) == "S4") {
-      station_data = cbind(paste0('<a href=',sprintf(
-        "https://waterdata.usgs.gov/nwis/inventory/?site_no=%s",values$stats$site_no),' target="_blank">',values$stats$site_name,"</a>"),values$stats$site_no, round(values$stats$da_sqkm, digits = 0))
-    } else {
-      station_data = cbind('NA', 'NA', 'NA')
-    }
-    colnames(station_data) = c("USGS Site", "Site No.", "Drainage Area (SqKm)")
-    output$stations = renderTable({station_data}, striped = TRUE, sanitize.text.function = function(x) x)
-  })
-  
   ########## Stream Flow ####################################################################
   
   # Change header
   observeEvent(input$flow_selector, {
     output$stream <- renderText({ input$flow_selector })
-  })
-  
-  # Update Drop-Down Options
-  observeEvent(input$do, {
-    max_qcms = values$nwm[match(max(values$nwm$Q_cfs), values$nwm$Q_cfs),]$COMID
-    name = values$flow[values$flow$comid == max_qcms,]$gnis_name
-    e = paste0(paste0(ifelse(is.na(name), "", name)), paste0(" COMID: ", max_qcms))
-    values$choices = as.list(paste0(paste0(ifelse(is.na(values$flow@data$gnis_name), "", values$flow@data$gnis_name)),
-                            paste0(" COMID: ", values$flow$comid)))
-    lables = paste0(paste0(ifelse(is.na(values$flow@data$gnis_name), "", values$flow@data$gnis_name)),
-                    paste0(" COMID: ", values$flow$comid))
-    values$test = data.frame(value=lables, label=lables, id=values$flow$comid)
-    non_zero = unique(values$nwm[values$nwm$Q_cfs > 0,]$COMID)
-    values$test <- transform(values$test, max= ifelse(id %in% non_zero, 1, 0))
-    updateSelectizeInput(session, 'flow_selector', choices = values$test, server = TRUE,
-                         selected = e,
-                         options = list(render = I(
-                           "{
-                           option: function(item, escape) {
-                           if (item.max == 1) {
-                           return '<div style=color:#0069b5;font-weight:bold;>' + escape(item.value) + '</div>';
-                           } else {
-                           return '<div style=color:#a8a8a8>' + escape(item.value) + '</div>';
-                           }
-                           }
-    }")))
-    text = e
-    values$id = unlist(strsplit(text, split='COMID: ', fixed=TRUE))[2]
-    values$i = match(values$id, values$flow@data$comid)
-    values$data = values$nwm[values$nwm$COMID == values$ids[values$i],]
-    values$normals = norm[norm$COMID == values$ids[values$i],]
   })
   
   observeEvent(input$flow_selector, {
