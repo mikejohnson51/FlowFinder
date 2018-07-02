@@ -1,6 +1,6 @@
 # FlowlineFinder <img src=".github/img/ff_logo.png" width=40 align="left" />
 
-[![travis](https://travis-ci.org/mikejohnson51/FlowlineFinder.svg?branch=master)](https://travis-ci.org/mikejohnson51/FlowlineFinder.svg?branch=master) [![Coverage Status](https://img.shields.io/coveralls/github/mikejohnson51/FlowlineFinder.svg)](https://coveralls.io/github/mikejohnson51/FlowlineFinder?branch=master)
+[![travis](https://travis-ci.org/mikejohnson51/FlowlineFinder.svg?branch=master)](https://travis-ci.org/mikejohnson51/FlowlineFinder.svg?branch=master)
 
 
 
