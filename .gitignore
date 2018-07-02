@@ -3,7 +3,7 @@ nomads_download.html
 .Rhistory
 .RData
 .Ruserdata
-.DS_Store
+.DS_Storegit
 .httr-oauth
 token.rds
 inst/flowlinefinder/rsconnect
