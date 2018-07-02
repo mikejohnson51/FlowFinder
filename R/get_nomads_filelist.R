@@ -5,8 +5,6 @@
 #''./FlowlineFinder' subfolder of the specified directory. Each time this function is run the old files will be removed.
 #' So, if you see something interesting be sure to save the data elsewhere!
 #'
-#' @examples
-#' get_nomads(dir = "mikejohnson/desktop")
 #' @author
 #' Mike Johnson
 #' @export
