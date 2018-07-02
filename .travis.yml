@@ -1,6 +1,6 @@
 language: R
-sudo: required
 cache: packages
+sudo: required
 dist: trusty
 
 matrix:
@@ -22,20 +22,22 @@ env:
      - R_CHECK_ARGS="--no-vignettes --no-manual --as-cran"
      - NOT_CRAN="true"
      - _R_CHECK_FORCE_SUGGESTS_=false
-     
-     
+
 warnings_are_errors: false
 
-r:
-  - release
-  - devel
-
-r_packages:
-  - devtools
-  - covr
-
 r_github_packages:
-  - mikejohnson51/HydroData
-
+  - jimhester/covr
+  - mikejohnson51/HydroData 
+  
+script:
+  - |
+    R CMD build .
+    travis_wait 20 R CMD check FlowlineFinder*tar.gz
+     
 after_success:
-  - Rscript -e 'covr::codecov()'
+  - if [[ "${R_CODECOV}" ]]; then travis_wait 20 R -e 'covr::coveralls()'; fi
+
+notifications:
+  email:
+    on_success: change
+    on_failure: change
