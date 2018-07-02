@@ -8,3 +8,4 @@ nomads_download.html
 token.rds
 inst/flowlinefinder/rsconnect
 inst/flowlinefinder/data/*
+.DS_Store
