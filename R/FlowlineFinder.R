@@ -15,7 +15,7 @@
 #' 
 #' @importFrom dplyr filter left_join select rename
 #' 
-#' @importFrom ncdf4 nc_open
+#' @importFrom ncdf4 nc_open ncvar_get nc_close
 #' 
 #' @importFrom rdrop2 drop_upload drop_read_csv drop_download 
 #' 
