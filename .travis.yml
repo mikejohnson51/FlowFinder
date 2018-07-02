@@ -1,6 +1,29 @@
 language: R
 sudo: required
 cache: packages
+dist: trusty
+
+matrix:
+  include:
+    - os: linux
+      r: release
+    - os: linux
+      r: devel
+      env: R_CODECOV=true
+
+before_install:
+  - sudo add-apt-repository ppa:ubuntugis/ppa --yes
+  - sudo apt-get --yes --force-yes update -qq
+  - sudo apt-get install --yes libudunits2-dev libproj-dev libgeos-dev libgdal-dev libcurl4-openssl-dev netcdf-bin
+
+env:
+   global:
+     - R_BUILD_ARGS="--no-vignettes --no-manual"
+     - R_CHECK_ARGS="--no-vignettes --no-manual --as-cran"
+     - NOT_CRAN="true"
+     - _R_CHECK_FORCE_SUGGESTS_=false
+     
+     
 warnings_are_errors: false
 
 r:
