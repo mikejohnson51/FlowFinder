@@ -19,6 +19,8 @@
 #' 
 #' @importFrom rdrop2 drop_upload drop_read_csv drop_download 
 #' 
+#' @importFrom utils download.file head write.csv 
+#' 
 #' @import shiny
 
 
@@ -27,14 +29,20 @@ NULL
 
 
 ## quiets concerns of R CMD check re: the .'s that appear in pipelines
-if(getRversion() >= "2.15.1")  { utils::globalVariables(c("LAT", "LON",
-                                                          "State", "Longitude", "Latitude",
-                                                          "nid_cleaned",
-                                                          "usgsStations",
-                                                          "snotel",
-                                                          "daymet_tiles",
-                                                          "kopRas",
-                                                          "DAY", "site_no", "YEAR", "MONTH",
-                                                          "year_2000", "year_2005", "year_2010", "COUNTY", "ID",
-                                                          "PARAMETER", "Date", ".", "ap"))
+if(getRversion() >= "2.15.1")  { utils::globalVariables(c("comid",
+                                                          "lengthkm",
+                                                          "ftype",
+                                                          "terminalfl",
+                                                          "fromnode", "tonode",
+                                                          "totdasqkm", 
+                                                          "startflag",
+                                                          "streamorde",
+                                                          "streamcalc",
+                                                          "terminalpa",
+                                                          "pathlength",
+                                                          "divergence",
+                                                          "comid.y",
+                                                          "toCOMID",
+                                                          "files",
+                                                          "head"))
 }

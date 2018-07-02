@@ -20,7 +20,8 @@ Imports:
     shinyjs,
     dismo,
     ncdf4,
-    rdrop2
+    rdrop2,
+    utils
 Suggests:
     covr,
     testthat
