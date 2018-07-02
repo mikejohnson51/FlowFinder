@@ -18,19 +18,3 @@ test_that("check get_upstream routines",{
   # check if no error occured
   expect_true(check)
 })
-
-
-test_that("check subset_nomads_rda routines",{
-  
-  data_file = normalizePath(list.files("../../inst/flowlinefinder/data/current_nc", full.names = TRUE))
-  
-  subset = subset_nomads_rda(comids = nhd$ids, file = data_file)
-
-  print(!inherits(subset,"try-error"))
-  
-  # see if any of the runs failed
-  check = !inherits(subset,"try-error")
-
-  # check if no error occured
-  expect_true(check)
-})
