@@ -3,3 +3,5 @@
 .covrignore
 .travis.yml
 .github
+docs
+inst/flowlinefinder/data/current_nc/*

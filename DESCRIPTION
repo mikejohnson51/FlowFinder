@@ -21,7 +21,9 @@ Imports:
     dismo,
     ncdf4,
     rdrop2,
-    utils
+    utils,
+    lubridate,
+    reshape2
 Suggests:
     covr,
     testthat

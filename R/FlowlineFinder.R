@@ -11,17 +11,23 @@
 #' 
 #' @importFrom fst read_fst write_fst
 #' 
-#' @importFrom DT datatable dataTableAjax renderDataTable
-#' 
 #' @importFrom dplyr filter left_join select rename
 #' 
 #' @importFrom ncdf4 nc_open ncvar_get nc_close
+#' 
+#' @importFrom lubridate ymd_hms
+#' 
+#' @importFrom reshape2 melt
 #' 
 #' @importFrom rdrop2 drop_upload drop_read_csv drop_download 
 #' 
 #' @importFrom utils download.file head write.csv 
 #' 
 #' @import shiny
+#' 
+#' @import HydroData
+#' 
+#' @import ggplot2
 
 
 
