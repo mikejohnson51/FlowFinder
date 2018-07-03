@@ -5,7 +5,7 @@ subset_nomads_rda_drop <- function(comids = NULL, mapping = NULL) {
   uid = sample(1:1000000, 1)
   dir.create(file.path(tempdir(), as.character(uid)), showWarnings = FALSE)
   #tmp = paste0(tempdir(),"/",as.character((uid)))
-  for (i in 1:20) {
+  for (i in 1:4) {
     min = mapping[i,]$min
     max = mapping[i,]$max
     file = mapping$filename[i]
