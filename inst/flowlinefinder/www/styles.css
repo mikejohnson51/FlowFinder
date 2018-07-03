@@ -26,6 +26,16 @@ h4 { font-weight: 400; }
 *               Header                   *
 *****************************************/
 
+.bg {display: none;}
+
+.logo,
+.logo-small {
+  max-height: 30px;
+  margin-top: -3px;
+}
+
+.logo-small {display: none;}
+
 .navbar-header, 
 .nav > li { float: left !important }
 
@@ -241,12 +251,15 @@ h4 { font-weight: 400; }
   
   .navbar-default .navbar-brand{ font-size: 14px !important;}
   
-  #nav { font-size: 12px !important; }
+  /*#nav { font-size: 12px !important; }*/
   
   #nav > li > a {
     padding-left: 8px !important;
     padding-right: 8px !important;
   }
+
+  .logo {display: none}
+  .logo-small {display: block;}
 }
 
 @media only screen and (max-width: 407px) {
@@ -269,12 +282,12 @@ h4 { font-weight: 400; }
   }
 }
 
-@media only screen and (max-width: 351px) {
+/*@media only screen and (max-width: 351px) {
 
   #nav { font-size: 11px !important; }
    
 }
-
+*/
 
 
 

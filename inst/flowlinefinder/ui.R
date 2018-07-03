@@ -5,7 +5,13 @@ library(shinyjs)
 shinyUI(
   tagList(
     useShinyjs(),
-    navbarPage("Flowline Finder", id="nav",
+    div(class="bg",style="display:none",
+          titlePanel(
+            title="", windowTitle="FlowlineFinder"
+          )
+    ),
+    navbarPage(title=div(img(src="logo.png", class="logo"),img(src="logo-small.png", class="logo-small")),
+               id="nav",
                tabPanel("Map", icon = icon("map"),
                         div(class="outer",
                             tags$head(
