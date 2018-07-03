@@ -1,9 +1,12 @@
 #' @export
 
-download_nomads_rda = function(fileList = NULL, number = 6){
+download_nomads_rda = function(fileList = NULL, number = 6, dir = NULL){
+  
+  if (is.null(dir)) {
+    dir <- system.file("flowlinefinder", package = "FlowlineFinder")
+  }
   
   tmp = tempdir()
-  dir <- system.file("flowlinefinder", package = "FlowlineFinder")
   for (i in seq_along(fileList[[3]])) {
     download.file(
       url = fileList[[3]][i],
@@ -39,6 +42,7 @@ download_nomads_rda = function(fileList = NULL, number = 6){
     df[, as.character(dates[i])] = vals
     ncdf4::nc_close(nc)
   }
+  
   Q = reshape2::melt(df, id.vars=c("COMID"))
   Q$value = Q$value
   Q$variable = lubridate::ymd_h(Q$variable)
@@ -69,8 +73,8 @@ download_nomads_rda = function(fileList = NULL, number = 6){
     subset = Q[Q$COMID >= min & Q$COMID <= max,]
     subset.Q = as.data.frame(subset)
     #name = paste0("./inst/flowlinefinder/data/current_nc/",i, ".fst")
-    name = paste0("./inst/flowlinefinder/data/current_nc/",month, "_", sprintf("%02d", i), ".fst")
-    #name = paste0(dir,"/data/current_nc/",month, "_", sprintf("%02d", i), ".fst")
+    #name = paste0("./inst/flowlinefinder/data/current_nc/",month, "_", sprintf("%02d", i), ".fst")
+    name = paste0(dir,"/data/current_nc/",month, "_", sprintf("%02d", i), ".fst")
     fst::write_fst(subset.Q, path = name)
     # drop_upload(name, path = "current_nc")
     # unlink(name)
@@ -82,8 +86,8 @@ download_nomads_rda = function(fileList = NULL, number = 6){
   map <- data.frame(tmp, stringsAsFactors = FALSE)
    #combine all vectors into a matrix
   colnames(map) <- c('num', 'min', 'max', 'filename')
-  #write.csv(map, paste0(dir,'/data/current_nc/map.csv'))
-  write.csv(map, "./inst/flowlinefinder/data/current_nc/map.csv")
+  write.csv(map, paste0(dir,'/data/current_nc/map.csv'))
+  #write.csv(map, "./inst/flowlinefinder/data/current_nc/map.csv")
   # drop_upload("./inst/flowlinefinder/data/current_nc/map.csv", path = "current_nc")
   
   message(paste0(name," finished!"))

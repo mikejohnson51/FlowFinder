@@ -16,7 +16,7 @@ source("./R/download_nomads_rda.R")
 First, get a list of most current files on the NOMADs server:
 
 ```{r, echo = FALSE}
-fileList = get_nomads_filelist(num  = 40)
+fileList = get_nomads_filelist(num  = 4)
 message("Date:\n", fileList$date, "\n\nTime:\n",fileList$startTime, "\n\nFiles:\n",
 paste(basename(fileList$urls), collapse  ="\n"), "\n\n")
 ```
@@ -45,7 +45,7 @@ if(all(
   message("No Download needed...")
 } else {
   file.remove(list.files("./inst/flowlinefinder/data/current_nc", full.names = T))
-  download_nomads_rda(fileList, number = 40)
+  download_nomads_rda(fileList, number = 4)
 }
 
 

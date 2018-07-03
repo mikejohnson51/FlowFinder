@@ -1,6 +1,7 @@
 #' @export
 
 subset_nomads_rda_drop <- function(comids = NULL, mapping = NULL) {
+  
   groups = c()
   uid = sample(1:1000000, 1)
   dir.create(file.path(tempdir(), as.character(uid)), showWarnings = FALSE)
