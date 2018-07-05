@@ -18,7 +18,6 @@ subset_nomads_rda_drop <- function(comids = NULL, mapping = NULL) {
     }
   }
   groups = unique(groups)
-  print(groups)
   res = list()
   for (group in groups) {
     #local = paste0(tmp, "/",group,".fst" )
@@ -27,10 +26,7 @@ subset_nomads_rda_drop <- function(comids = NULL, mapping = NULL) {
     #print("Downloaded From Dropbox!")
     #message("Downloaded From Dropbox! (message)")
     name = paste0('data/current_nc/', group)
-    print(name)
-    print('here1')
     res_subset <- fst::read.fst(name)
-    print('here2')
     res_new = res_subset[res_subset$COMID %in% comids, ]
     res = rbind(res, res_new)
   }

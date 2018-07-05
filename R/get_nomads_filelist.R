@@ -11,12 +11,9 @@
 #' @return
 #' This fuction saves the 18 NetCDF files related to the most recent forecasts.
 
-get_nomads_filelist = function(dir = "./inst/flowlinefinder/data/current_nc",
-                      type = NULL,
-                      time = NULL,
-                      num = 6) {
-
-  dir = normalizePath(dir)
+get_nomads_filelist = function(type = NULL,
+                               time = NULL,
+                               num = 6) {
 
   date = format(strptime(format(Sys.time(), tz = "GMT"),format = "%Y-%m-%d"), format = "%Y-%m-%d")
   backup.date = as.Date(date) -1
