@@ -48,6 +48,21 @@ shinyServer(function(input, output, session) {
         position = "bottomleft"
       ) 
   })
+  #################  FLOOD CODE GOES HERE #########################
+  
+  output$flood_map <- renderLeaflet({
+    leaflet() %>%
+      addProviderTiles(providers$CartoDB.Positron, group = "Basemap") %>%
+      addProviderTiles(providers$Esri.WorldImagery, group = "Imagery") %>%
+      addScaleBar("bottomleft") %>%
+      setView(lng = -93.85, lat = 37.45, zoom = 4) %>%
+      addLayersControl(
+        baseGroups = c("Basemap","Imagery"),
+        options = layersControlOptions(collapsed = TRUE),
+        position = "bottomleft"
+      ) 
+  })
+  ###############################################################
   
   error_message <- function(message) {
     output$server_problems <- renderText({ message })

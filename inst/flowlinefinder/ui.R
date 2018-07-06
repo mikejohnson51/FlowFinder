@@ -100,7 +100,10 @@ shinyUI(
                         textOutput("data_loc"),   
                         tableOutput("stations"),
                         tableOutput("Flowlines")
+               ),
+               tabPanel("Floods", icon = icon("tint"),
+                        div(class="outer",
+                            leafletOutput("flood_map", width="100%", height="100%")
+                            )
                )
-               
-               
     )))

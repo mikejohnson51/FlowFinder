@@ -33,5 +33,6 @@ subset_nomads_rda_drop <- function(comids = NULL, mapping = NULL) {
   message("Successfully loaded data !")
   #print(tmp)
   #unlink(tmp, recursive = TRUE)
+  res$agency_code = "NOAA NWS"
   return(res)
 }
