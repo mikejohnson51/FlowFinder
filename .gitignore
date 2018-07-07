@@ -7,4 +7,5 @@ nomads_download.html
 .httr-oauth
 token.rds
 inst/flowlinefinder/rsconnect
+inst/flowlinefinder/data/*
 .DS_Store
