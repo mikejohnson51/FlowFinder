@@ -3,6 +3,7 @@
 export(download_nomads_rda)
 export(get_nomads_filelist)
 export(get_upstream)
+export(make_flood_risk_map)
 export(prep_nhd)
 export(run_app)
 export(subset_nomads_rda_drop)
