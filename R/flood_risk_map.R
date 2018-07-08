@@ -9,7 +9,7 @@
 make_flood_risk_map = function(path = NULL){
 
 vals = read_fst(path)
-df = read_fst("../inst/flowlinefinder/data/comids_w_tz.fst")
+df = read_fst("data/comids_w_tz.fst")
 
 #write_fst(df, path = "/Users/mikejohnson/Desktop/FlowlineMap/comids_w_tz.fst")
 

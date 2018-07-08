@@ -52,8 +52,8 @@ shinyServer(function(input, output, session) {
   
    output$flood_map <- renderLeaflet({
      # make_flood_risk_map(path = 'data/current_nc/max_increase.fst')
-     load('m.rda')
-     m
+     load('data/current_nc/flood_map.rda')
+     flood_map
   })
   # output$inc<-renderUI({
   #   includeHTML("m.html")

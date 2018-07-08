@@ -94,7 +94,8 @@ shinyUI(
                         ),
                         DT::DTOutput('tbl'),
                         downloadButton('downloadCSV', 'Download CSV'),
-                        downloadButton('downloadNHD', 'Download NHD')
+                        downloadButton('downloadNHD', 'Download NHD.shp'),
+                        downloadButton('downloadRDA', 'Download RDA')
                ),
                tabPanel("Info", icon = icon("info-circle"),
                         textOutput("data_loc"),   
@@ -105,5 +106,6 @@ shinyUI(
                         div(class="outer",
                             leafletOutput("flood_map", width="100%", height="100%")
                             )
+                        # shiny::includeHTML("www/m.html")
                )
     )))

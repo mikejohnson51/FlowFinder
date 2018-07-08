@@ -126,4 +126,7 @@ download_nomads_rda = function(fileList = NULL, number = 6, dir = NULL){
   rm(max_increases)
   rm(change.files)
   gc()
+  
+  flood_map = make_flood_risk_map(path = paste0(dir,'/data/current_nc/max_increase.fst'))
+  save(flood_map, file = paste0(dir,'/data/current_nc/flood_map.rda'))
 }
