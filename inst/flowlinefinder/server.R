@@ -31,36 +31,40 @@ shinyServer(function(input, output, session) {
         position = "bottomleft"
       ) 
   })
-
+  
   output$flood_map <- renderLeaflet({
     load('data/current_nc/flood_map.rda')
     flood_map
   })
-
+  
   error_message <- function(message) {
     output$server_problems <- renderText({ message })
   }
   
   # On go, calculate reactive values
   observeEvent(input$do, {
+    # Workaround for existing Shiny Bug that doesn't always properly set when using updateTextInput
+    if (!input$place == "") {
+      values$user_loc = input$place
+    }
     shinyjs::disable("do")
     start.time <- Sys.time()
     withProgress(message = 'Analyzing Location', value = 0, {
       incProgress(1/6, detail = "Getting location coordinates")
       # Check if input is likely a lat/lon pair
-      split = unlist(strsplit(input$place, split=" ", fixed=TRUE))
+      split = unlist(strsplit(values$user_loc, split=" ", fixed=TRUE))
       if ((length(split) == 2) && !is.na(as.numeric(split[1])) && !is.na(as.numeric(split[2])) )  {
         values$lat = as.numeric(split[1])
         values$lon = as.numeric(split[2])
       } else {
-        loc = AOI::getPoint(name = input$place)
+        loc = AOI::getPoint(name = values$user_loc)
         values$lat = loc$lat
         values$lon = loc$lon
       }
       
       clip = list(values$lat, values$lon, size, size)
       AOI = AOI::getAOI(clip_unit = clip)
-
+      
       incProgress(2/6, detail = "Getting Spatial Objects")
       values$nhd = tryCatch({
         suppressMessages(HydroData::findNHD(clip_unit = AOI, ids = TRUE))
@@ -88,7 +92,7 @@ shinyServer(function(input, output, session) {
       incProgress(1/6, detail = "Subsetting Stream Data")
       values$mapping = read.csv("data/current_nc/map.csv", stringsAsFactors = FALSE)
       values$nwm = subset_nomads_rda_drop(comids = values$ids2, mapping = values$mapping)
-
+      
       if (input$do == 1) {
         updateTextInput(session = session, inputId =  "place", value = "")
       }
@@ -203,12 +207,16 @@ shinyServer(function(input, output, session) {
   # Move to current location when possible
   observe({
     if(!is.null(input$lat)){
-      updateTextInput(session = session, inputId =  "place", value = paste(input$lat, input$long, sep = " "), placeholder = "Current Location")
+      values$user_loc = paste(input$lat, input$long, sep = " ")
+      updateTextInput(session = session, inputId =  "place", value = values$user_loc, placeholder = "Current Location")
       shinyjs::click("do")
+      print('here33')
+      
     } else if (!is.null(input$getIP)) {
-      updateTextInput(session = session, inputId = "place", value = paste(input$getIP$latitude, input$getIP$longitude, sep = " "), placeholder = "Search Flowline Finder")
-      shinyjs::click("do")
-    }
+        values$user_loc = paste(input$getIP$latitude, input$getIP$longitude, sep = " ")
+        updateTextInput(session = session, inputId = "place", value = values$user_loc, placeholder = "Search Flowline Finder")
+        shinyjs::click("do")
+      }
   })
   
   ########## MAP ####################################################################

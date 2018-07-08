@@ -97,15 +97,15 @@ shinyUI(
                         downloadButton('downloadNHD', 'Download NHD.shp'),
                         downloadButton('downloadRDA', 'Download RDA')
                ),
+               tabPanel("Floods", icon = icon("tint"),
+                        div(class="outer",
+                            leafletOutput("flood_map", width="100%", height="100%")
+                        )
+               ),
                tabPanel("Info", icon = icon("info-circle"),
                         textOutput("data_loc"),   
                         tableOutput("stations"),
                         tableOutput("Flowlines")
-               ),
-               tabPanel("Floods", icon = icon("tint"),
-                        div(class="outer",
-                            leafletOutput("flood_map", width="100%", height="100%")
-                            )
-                        # shiny::includeHTML("www/m.html")
                )
+               
     )))
