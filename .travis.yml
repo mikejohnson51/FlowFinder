@@ -27,7 +27,8 @@ warnings_are_errors: false
 
 r_github_packages:
   - jimhester/covr
-  - mikejohnson51/HydroData 
+  - mikejohnson51/HydroData
+  - mikejohnson51/AOI
   
 
 after_success:

@@ -14,11 +14,11 @@ Depends:
     ggplot2
 Imports:
     shiny (>= 1.0.4),
+    AOI,
     dplyr,
     DT,
     fst,
     shinyjs,
-    dismo,
     ncdf4,
     rdrop2,
     utils,

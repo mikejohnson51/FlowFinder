@@ -1,9 +1,6 @@
 library(FlowlineFinder)
 
-#t = fst::read_fst("data/current_nc/1.fst")
 month = as.numeric(substr(list.files("data/current_nc")[1], 1,2))
-#month = as.numeric(substr(list.files("data/current_nc"),6,7))
-#print(month)
 month_files = list.files("data/", pattern = as.character(month), full.names = T)
 norm = fst::read_fst(path = month_files)
 size = 15
@@ -15,24 +12,10 @@ USGSicon = leaflet::makeIcon(
   iconAnchorX = 20, iconAnchorY = 10)
 
 shinyServer(function(input, output, session) {
-
+  
   ########## Initial Setup ####################################################################
   # Set up reactive values
   values <- reactiveValues()
-  
-  # Determine if app is running locally or shinyapps server
-  # Local usage requires necessary data to be in inst/flowlinefinder/data/current_nc
-  # Online server uses dropbox account with updated data
-  observe({
-    if (session$clientData$url_hostname == "flowlinefinder.shinyapps.io") {
-      values$online <- TRUE
-      values$mapping = as.data.frame(rdrop2::drop_read_csv("current_nc/data/map.csv"))
-    } else {
-      values$online <- TRUE
-      # values$mapping = as.data.frame(read.csv("data/current_nc/map.csv"))
-      values$mapping = read.csv("data/current_nc/map.csv", stringsAsFactors = FALSE)
-    }
-  })
   
   # Define Initial Map
   output$map <- renderLeaflet({
@@ -48,22 +31,16 @@ shinyServer(function(input, output, session) {
         position = "bottomleft"
       ) 
   })
-  #################  FLOOD CODE GOES HERE #########################
-  
-   output$flood_map <- renderLeaflet({
-     # make_flood_risk_map(path = 'data/current_nc/max_increase.fst')
-     load('data/current_nc/flood_map.rda')
-     flood_map
+
+  output$flood_map <- renderLeaflet({
+    load('data/current_nc/flood_map.rda')
+    flood_map
   })
-  # output$inc<-renderUI({
-  #   includeHTML("m.html")
-  #   })
-  ###############################################################
-  
+
   error_message <- function(message) {
     output$server_problems <- renderText({ message })
   }
-
+  
   # On go, calculate reactive values
   observeEvent(input$do, {
     shinyjs::disable("do")
@@ -73,18 +50,20 @@ shinyServer(function(input, output, session) {
       # Check if input is likely a lat/lon pair
       split = unlist(strsplit(input$place, split=" ", fixed=TRUE))
       if ((length(split) == 2) && !is.na(as.numeric(split[1])) && !is.na(as.numeric(split[2])) )  {
-          values$lat = as.numeric(split[1])
-          values$lon = as.numeric(split[2])
+        values$lat = as.numeric(split[1])
+        values$lon = as.numeric(split[2])
       } else {
-        loc = dismo::geocode( input$place, output = 'latlon' )
+        loc = AOI::getPoint(name = input$place)
         values$lat = loc$lat
         values$lon = loc$lon
       }
       
       clip = list(values$lat, values$lon, size, size)
+      AOI = AOI::getAOI(clip_unit = clip)
+
       incProgress(2/6, detail = "Getting Spatial Objects")
       values$nhd = tryCatch({
-        suppressMessages(HydroData::findNHD(clip_unit = clip, ids = TRUE))
+        suppressMessages(HydroData::findNHD(clip_unit = AOI, ids = TRUE))
       },
       error=function(error_message) {
         return(NA)
@@ -100,20 +79,16 @@ shinyServer(function(input, output, session) {
       
       incProgress(1/6, detail = "Getting USGS Stations")
       values$stats = tryCatch({
-        suppressMessages(HydroData::findUSGS(clip_unit = clip)$nwis)
+        suppressMessages(HydroData::findUSGS(clip_unit = AOI)$nwis)
       },
       error=function(error_message) {
         return(NA)
       })
       
       incProgress(1/6, detail = "Subsetting Stream Data")
-      if (values$online) {
-        values$nwm = subset_nomads_rda_drop(comids = values$ids2, mapping = values$mapping)
-      } else {
-        #data_file = normalizePath(list.files("data/current_nc", full.names = TRUE))
-        #values$nwm = subset_nomads_rda(comids = values$ids2, file = data_file)
-      }
-      
+      values$mapping = read.csv("data/current_nc/map.csv", stringsAsFactors = FALSE)
+      values$nwm = subset_nomads_rda_drop(comids = values$ids2, mapping = values$mapping)
+
       if (input$do == 1) {
         updateTextInput(session = session, inputId =  "place", value = "")
       }
@@ -129,14 +104,13 @@ shinyServer(function(input, output, session) {
     print(time.taken)
     shinyjs::enable("do")
     withProgress(message = 'Mapping Location', value = 0, {
-      bounds = calc_bounds(values$lat, values$lon)
       clearMarkers()
       incProgress(5/6, detail = "Flowlines")
       leafletProxy("map", session) %>%
         clearGroup("NHD Flowlines") %>%
         clearGroup("Location") %>%
         clearGroup("USGS Stations") %>%
-        fitBounds(bounds$west, bounds$south, bounds$east, bounds$north) %>%
+        fitBounds(AOI@bbox[1], AOI@bbox[2], AOI@bbox[3], AOI@bbox[4]) %>%
         addPolylines(data = values$flow, color = 'blue', weight = values$flow$streamorde,
                      popup = paste(sep = " ",
                                    paste0("<b><a class='open-stream'>",paste0(ifelse(is.na(values$flow@data$gnis_name), "", values$flow@data$gnis_name)),
@@ -224,18 +198,7 @@ shinyServer(function(input, output, session) {
     values$data = values$nwm[values$nwm$COMID == values$ids[values$i],]
     values$normals = norm[norm$COMID == values$ids[values$i],]
     
-   })
-  
-  # Function to determine bounds
-  calc_bounds <- function(lat, lon) {
-    dl = ((size/2)/69) / cos(lat * pi/180)
-    df = ((size/2)/69)
-    south = lat - df
-    north = lat + df
-    west  = lon - dl
-    east  = lon + dl
-    coords = data.frame(south = south, north = north, west = west, east = east)
-  }
+    })
   
   # Move to current location when possible
   observe({
@@ -267,14 +230,14 @@ shinyServer(function(input, output, session) {
       shinyjs::click("do")
     } else {
       error_message(" Your current location can't be determined.
- Make sure you have given your browser the necessarry permissions. ")
+                    Make sure you have given your browser the necessarry permissions. ")
     }
     })
   
   # Reset Button
   observeEvent(input$reset, {
     clearMarkers()
-    })
+  })
   
   # Mark upstream flows from leaflet popup
   observe({
@@ -330,7 +293,7 @@ shinyServer(function(input, output, session) {
   
   # Draw Plot
   output$streamFlow <- renderPlot({
-  
+    
     cutoff = values$normals[,2] * 35.3147
     
     ggplot(data = values$data, aes(x = dateTime, y = Q_cfs)) + 
@@ -339,9 +302,9 @@ shinyServer(function(input, output, session) {
       labs(x = "Date and Time",
            y = "Streamflow (cfs)",
            title = paste0(ifelse(is.na(values$flow$gnis_name[values$flow$comid == values$ids[values$i]]), "", paste0(values$flow@data$gnis_name[values$flow$comid == values$ids[values$i]], " ")),
-                                       paste0("COMID: ", values$flow$comid[values$flow$comid == values$ids[values$i]])),
+                          paste0("COMID: ", values$flow$comid[values$flow$comid == values$ids[values$i]])),
            subtitle = "Medium Range National Water Model Forecasts"
-           ) +
+      ) +
       geom_hline(yintercept = cutoff, color = "red", alpha = .2, size=5) +
       annotate("text", min(values$data$dateTime)+1420, cutoff, label = "Average Monthly Flow") +
       theme_light() +
@@ -349,14 +312,14 @@ shinyServer(function(input, output, session) {
         plot.title = element_text(color="#0069b5", size=16, face="bold.italic")
       )
     
-    })
+  })
   
   # Previous Stream
   observeEvent(input$prevCOMID, {
     current <- which(values$choices == input$flow_selector)
     if(current > 1){
       updateSelectizeInput(session, "flow_selector",
-                        selected = values$choices[current - 1])
+                           selected = values$choices[current - 1])
     }
   })
   
@@ -365,7 +328,7 @@ shinyServer(function(input, output, session) {
     current <- which(values$choices == input$flow_selector)
     if(current < length(values$choices)){
       updateSelectizeInput(session, "flow_selector",
-                        selected = values$choices[current + 1])
+                           selected = values$choices[current + 1])
     }
   })
   
@@ -392,7 +355,7 @@ shinyServer(function(input, output, session) {
                    group = "view-on-map"
       )
   })
-
+  
   observe({
     req(values$flow)
     upstream = data.frame(Upstream=NA)[numeric(0), ]
@@ -446,7 +409,7 @@ shinyServer(function(input, output, session) {
       return()
     updateSelectizeInput(session = session, inputId = "flow_selector", selected = input$switchStream$stream)
   })
-
+  
   output$downloadCSV <- downloadHandler(
     filename = function() {
       loc = input$place
@@ -491,5 +454,5 @@ shinyServer(function(input, output, session) {
     }
   )
   
-
+  
   })

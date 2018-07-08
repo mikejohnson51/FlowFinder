@@ -5,8 +5,6 @@
 #' @docType package
 #' @name FlowlineFinder
 #'
-#' @importFrom dismo geocode
-#' 
 #' @importFrom shinyjs click
 #' 
 #' @importFrom fst read_fst write_fst
@@ -21,7 +19,9 @@
 #' 
 #' @importFrom rdrop2 drop_upload drop_read_csv drop_download 
 #' 
-#' @importFrom utils download.file head write.csv 
+#' @importFrom utils download.file head write.csv
+#' 
+#' @importFrom AOI getAOI getPoint
 #' 
 #' @import shiny
 #' 
