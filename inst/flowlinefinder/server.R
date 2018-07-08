@@ -51,8 +51,13 @@ shinyServer(function(input, output, session) {
   #################  FLOOD CODE GOES HERE #########################
   
    output$flood_map <- renderLeaflet({
-     make_flood_risk_map(path = '../inst/flowlinefinder/data/max_increase.fst')
+     # make_flood_risk_map(path = 'data/current_nc/max_increase.fst')
+     load('m.rda')
+     m
   })
+  # output$inc<-renderUI({
+  #   includeHTML("m.html")
+  #   })
   ###############################################################
   
   error_message <- function(message) {
@@ -470,6 +475,20 @@ shinyServer(function(input, output, session) {
       zip(zipfile = fname, files = fs )
     },
     contentType = "application/zip"
+  )
+  
+  output$downloadRDA <- downloadHandler(
+    filename = function() {
+      loc = input$place
+      if (loc == "") {
+        loc = "current_location"
+      }
+      paste(paste(loc, Sys.Date(), sep = '_'), "rda", sep = ".")
+    },
+    content = function(file) {
+      data = values$nwm
+      save(data, file = file)
+    }
   )
   
 
