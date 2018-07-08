@@ -115,6 +115,12 @@ shinyServer(function(input, output, session) {
         clearGroup("Location") %>%
         clearGroup("USGS Stations") %>%
         fitBounds(AOI@bbox[1], AOI@bbox[2], AOI@bbox[3], AOI@bbox[4]) %>%
+        addRectangles(
+          lng1 = AOI@bbox[1] , lat1 = AOI@bbox[2],
+          lng2 = AOI@bbox[3] , lat2 = AOI@bbox[4],
+          fillColor = "transparent",
+          group = 'AOI', color = "red"
+        ) %>%
         addPolylines(data = values$flow, color = 'blue', weight = values$flow$streamorde,
                      popup = paste(sep = " ",
                                    paste0("<b><a class='open-stream'>",paste0(ifelse(is.na(values$flow@data$gnis_name), "", values$flow@data$gnis_name)),
