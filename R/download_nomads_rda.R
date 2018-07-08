@@ -89,12 +89,12 @@ download_nomads_rda = function(fileList = NULL, number = 6, dir = NULL){
                          max = Q$max,
                          max_date = Q$max_date))
     changes = changes[changes$max > 0,]
-    fst::write_fst(changes, paste0(dir,'/data/current_nc/changes/',i,'.fst'))
+    fst::write_fst(changes, paste0(dir,'/data/current_nc/changes/',i,'.fst'), compress = 100)
     rm(changes)
     
     # Remove unneeded columns from Q and write to file
     Q = Q[ ,!(names(Q) %in% c("max", "max_date", "change"))]
-    fst::write_fst(Q, path = name)
+    fst::write_fst(Q, path = name, compress = 100)
     rm(Q)
     
     # Get min and maxs for mapping
@@ -122,7 +122,7 @@ download_nomads_rda = function(fileList = NULL, number = 6, dir = NULL){
   }
   # Sort by max flow and write file with top 5000
   max_increases = max_increases[order(max_increases$max, decreasing=TRUE), ]
-  fst::write_fst(max_increases[1:5000,], paste0(dir,'/data/current_nc/max_increase.fst'))
+  fst::write_fst(max_increases[1:5000,], paste0(dir,'/data/current_nc/max_increase.fst'), compress = 100)
   rm(max_increases)
   rm(change.files)
   gc()
