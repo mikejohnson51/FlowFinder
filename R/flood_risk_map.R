@@ -54,9 +54,9 @@ pop <- paste(
   sep = "<br/>"
 )
 
-m = leaflet() %>% addProviderTiles(providers$CartoDB, group = "Base") %>%
-  addProviderTiles(providers$Esri.WorldImagery, group = "Imagery") %>%
-  addProviderTiles(providers$Esri.NatGeoWorldMap, group = "Terrain") %>%
+m = leaflet() %>% addProviderTiles("CartoDB", group = "Base") %>%
+  addProviderTiles("Esri.WorldImagery", group = "Imagery") %>%
+  addProviderTiles("Esri.NatGeoWorldMap", group = "Terrain") %>%
   addCircleMarkers(
     data = data,
     lat = data$lat,
