@@ -9,7 +9,7 @@
 #' 
 #' @importFrom fst read_fst write_fst
 #' 
-#' @importFrom dplyr filter left_join select rename
+#' @importFrom dplyr filter left_join select rename distinct mutate inner_join
 #' 
 #' @importFrom ncdf4 nc_open ncvar_get nc_close
 #' 

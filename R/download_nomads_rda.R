@@ -5,6 +5,8 @@ download_nomads_rda = function(fileList = NULL, number = 6, dir = NULL){
     dir <- system.file("flowlinefinder", package = "FlowlineFinder")
   }
   
+  dir.create(paste0(dir,'/data/current_nc'))
+  
   tmp = tempdir()
   for (i in seq_along(fileList[[3]])) {
     download.file(
@@ -67,7 +69,6 @@ download_nomads_rda = function(fileList = NULL, number = 6, dir = NULL){
     colnames(Q) = c("COMID", "max", "max_date", "dateTime", "Q_cfs")
     rownames(Q) = NULL
     
-    head(Q)
     message("Reshaped!")
     
     # Encorporate data from monthly averages
@@ -83,15 +84,18 @@ download_nomads_rda = function(fileList = NULL, number = 6, dir = NULL){
     
     message("Normals Read!")
     
-    Q = merge(Q, norm, by = 'COMID')
+    #Q = merge(Q, norm, by = 'COMID')
+    Q = dplyr::inner_join(Q, norm, by = 'COMID')
     rm(norm) 
     message("Removed norm!")
     names(Q) = c(head(names(Q), -1),"month_avg")
     Q$month_avg = Q$month_avg * 35.3147
     message("month avg created!")
-    Q$change <- with(Q, ifelse(month_avg == 0, 0, (Q_cfs - month_avg)/month_avg ))
+    #Q$change <- with(Q, ifelse(month_avg == 0, 0, (Q_cfs - month_avg)/month_avg ))
+    Q = dplyr::mutate(Q, change = ifelse(month_avg == 0, 0, (Q_cfs - month_avg)/month_avg ))
     message("change created!")
-    Q$comp <-with(Q, ifelse(month_avg > Q_cfs, 'less', ifelse(month_avg < Q_cfs, 'greater', 'equal')))
+    #Q$comp <-with(Q, ifelse(month_avg > Q_cfs, 'less', ifelse(month_avg < Q_cfs, 'greater', 'equal')))
+    Q = dplyr::mutate(Q, comp = ifelse(month_avg > Q_cfs, 'less', ifelse(month_avg < Q_cfs, 'greater', 'equal')))
     message("comp created!")
     # Write fst file
     
@@ -102,9 +106,9 @@ download_nomads_rda = function(fileList = NULL, number = 6, dir = NULL){
     
     message("finding likely flood areas!")
     # Create `changes` data frame
-    changes = unique(data.frame(COMID = Q$COMID,
-                         max = Q$max,
-                         max_date = Q$max_date))
+    changes = dplyr::distinct(data.frame(COMID = Q$COMID,
+                                         max = Q$max,
+                                         max_date = Q$max_date), .keep_all = TRUE)
     changes = changes[changes$max > 0,]
     fst::write_fst(changes, paste0(dir,'/data/current_nc/changes/',i,'.fst'), compress = 100)
     rm(changes)
