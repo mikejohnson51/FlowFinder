@@ -12,7 +12,8 @@ Depends:
     R (>= 3.0.0),
     HydroData,
     ggplot2,
-    USAboundariesData
+    magrittr,
+    leaflet
 Imports:
     shiny (>= 1.0.4),
     AOI,

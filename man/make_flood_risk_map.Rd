@@ -4,7 +4,7 @@
 \alias{make_flood_risk_map}
 \title{Make Flood Risk Max}
 \usage{
-make_flood_risk_map(path = NULL)
+make_flood_risk_map(path = NULL, dir = NULL)
 }
 \arguments{
 \item{path}{a path the the maximum value}

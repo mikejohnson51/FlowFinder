@@ -43,21 +43,17 @@ shinyServer(function(input, output, session) {
   
   # On go, calculate reactive values
   observeEvent(input$do, {
-    # Workaround for existing Shiny Bug that doesn't always properly set when using updateTextInput
-    if (!input$place == "") {
-      values$user_loc = input$place
-    }
     shinyjs::disable("do")
     start.time <- Sys.time()
     withProgress(message = 'Analyzing Location', value = 0, {
       incProgress(1/6, detail = "Getting location coordinates")
       # Check if input is likely a lat/lon pair
-      split = unlist(strsplit(values$user_loc, split=" ", fixed=TRUE))
+      split = unlist(strsplit(input$place, split=" ", fixed=TRUE))
       if ((length(split) == 2) && !is.na(as.numeric(split[1])) && !is.na(as.numeric(split[2])) )  {
         values$lat = as.numeric(split[1])
         values$lon = as.numeric(split[2])
       } else {
-        loc = AOI::getPoint(name = values$user_loc)
+        loc = AOI::getPoint(name = input$place)
         values$lat = loc$lat
         values$lon = loc$lon
       }
@@ -213,16 +209,12 @@ shinyServer(function(input, output, session) {
   # Move to current location when possible
   observe({
     if(!is.null(input$lat)){
-      values$user_loc = paste(input$lat, input$long, sep = " ")
-      updateTextInput(session = session, inputId =  "place", value = values$user_loc, placeholder = "Current Location")
+      updateTextInput(session = session, inputId =  "place", value = paste(input$lat, input$long, sep = " "), placeholder = "Current Location")
       shinyjs::click("do")
-      print('here33')
-      
     } else if (!is.null(input$getIP)) {
-        values$user_loc = paste(input$getIP$latitude, input$getIP$longitude, sep = " ")
-        updateTextInput(session = session, inputId = "place", value = values$user_loc, placeholder = "Search Flowline Finder")
-        shinyjs::click("do")
-      }
+      updateTextInput(session = session, inputId = "place", value = paste(input$getIP$latitude, input$getIP$longitude, sep = " "), placeholder = "Search Flowline Finder")
+      shinyjs::click("do")
+    }
   })
   
   ########## MAP ####################################################################

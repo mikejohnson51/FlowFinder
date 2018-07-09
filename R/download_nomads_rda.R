@@ -40,6 +40,8 @@ download_nomads_rda = function(fileList = NULL, number = 6, dir = NULL){
   mappingList <- list()
   dir.create(paste0(dir,'/data/current_nc/changes'))
   
+  message("Entering Loop!")
+  
   # We are splitting the ~2.7 million COMIDS into 40 files
   for (i in 1:40) {
     end = start + inc - 1
@@ -48,11 +50,11 @@ download_nomads_rda = function(fileList = NULL, number = 6, dir = NULL){
     # Grab a section of comids from each file
     for (j in 1:length(all.files)) {
       nc = ncdf4::nc_open(filename = all.files[j])
-      vals = ncvar_get(nc, "streamflow", start = start, count = inc) * 35.3147
+      vals = ncdf4::ncvar_get(nc, "streamflow", start = start, count = inc) * 35.3147
       df[, as.character(dates[j])] = vals
       ncdf4::nc_close(nc)
     }
-    
+    message(paste0("Combined group: ", i))
     # Get max values for each COMID over the time period
     df$max_date = colnames(df[,2:(number+1)])[max.col(df[,2:(number+1)],ties.method = 'first')]
     df$max = do.call(pmax, df[2:(number+1)])
@@ -65,17 +67,32 @@ download_nomads_rda = function(fileList = NULL, number = 6, dir = NULL){
     colnames(Q) = c("COMID", "max", "max_date", "dateTime", "Q_cfs")
     rownames(Q) = NULL
     
+    head(Q)
+    message("Reshaped!")
+    
     # Encorporate data from monthly averages
     month = sprintf("%02d", as.numeric(format(Q$dateTime[1], format = "%m")))
-    month_files = list.files("data/", pattern = as.character(month), full.names = T)
+    message(paste0('month:', month))
+    #month_files = list.files("data", pattern = as.character(month), full.names = T)
+    month_files = list.files(paste0(dir,"/data"), pattern = as.character(month), full.names = T)
+
+    message(paste0('month_files:', month_files))
+    
     norm = fst::read_fst(path = month_files)
+    #norm = fst::read_fst(path = month_files)
+    
+    message("Normals Read!")
+    
     Q = merge(Q, norm, by = 'COMID')
     rm(norm) 
+    message("Removed norm!")
     names(Q) = c(head(names(Q), -1),"month_avg")
     Q$month_avg = Q$month_avg * 35.3147
+    message("month avg created!")
     Q$change <- with(Q, ifelse(month_avg == 0, 0, (Q_cfs - month_avg)/month_avg ))
+    message("change created!")
     Q$comp <-with(Q, ifelse(month_avg > Q_cfs, 'less', ifelse(month_avg < Q_cfs, 'greater', 'equal')))
-    
+    message("comp created!")
     # Write fst file
     
   
@@ -83,7 +100,7 @@ download_nomads_rda = function(fileList = NULL, number = 6, dir = NULL){
     
     
     
-    
+    message("finding likely flood areas!")
     # Create `changes` data frame
     changes = unique(data.frame(COMID = Q$COMID,
                          max = Q$max,
@@ -92,11 +109,14 @@ download_nomads_rda = function(fileList = NULL, number = 6, dir = NULL){
     fst::write_fst(changes, paste0(dir,'/data/current_nc/changes/',i,'.fst'), compress = 100)
     rm(changes)
     
+    message("removing data sets!")
+    
     # Remove unneeded columns from Q and write to file
     Q = Q[ ,!(names(Q) %in% c("max", "max_date", "change"))]
     fst::write_fst(Q, path = name, compress = 100)
     rm(Q)
     
+    message("mapping!")
     # Get min and maxs for mapping
     min = min(comids)
     max = max(comids)

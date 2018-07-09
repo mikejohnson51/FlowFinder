@@ -28,6 +28,10 @@
 #' @import HydroData
 #' 
 #' @import ggplot2
+#' 
+#' @import magrittr
+#' 
+#' @import leaflet
 
 
 
