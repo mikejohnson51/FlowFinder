@@ -87,7 +87,8 @@ shinyUI(
                                  actionButton("mark_flowline", "View on Map")
                           )
                         ),
-                        plotOutput("streamFlow"),
+                        #plotOutput("streamFlow"),
+                        dygraphOutput("dygraph"),
                         fluidRow(
                           column(6,DT::DTOutput('tbl_up')),  
                           column(6,DT::DTOutput('tbl_down'))
@@ -95,7 +96,9 @@ shinyUI(
                         DT::DTOutput('tbl'),
                         downloadButton('downloadCSV', 'Download CSV'),
                         downloadButton('downloadNHD', 'Download NHD.shp'),
-                        downloadButton('downloadRDA', 'Download RDA')
+                        downloadButton('downloadRDA', 'Download RDA'),
+                        downloadButton('downloadGraph', 'Download Graph'),
+                        downloadButton('downloadDygraph', 'Download Dygraph')
                ),
                tabPanel("Floods", icon = icon("tint"),
                         div(class="outer",

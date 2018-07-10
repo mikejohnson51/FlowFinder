@@ -298,26 +298,84 @@ shinyServer(function(input, output, session) {
   })
   
   # Draw Plot
-  output$streamFlow <- renderPlot({
+  # output$streamFlow <- renderPlot({
+  #   
+  #   data2 = data.frame(x= values$data$dateTime, y = values$data$Q_cfs)
+  #   rownames(data2) = data2[[1]]
+  #   as.xts(data2)
+  #   
+  #   
+  #   cutoff = values$normals[,2] * 35.3147
+  #   dygraph(data2)
     
+    # ggplot(data = values$data, aes(x = dateTime, y = Q_cfs)) + 
+    #   geom_line(color='#0069b5', size = 1.5, alpha=0.4) +
+    #   geom_area(fill = '#0069b5', alpha = .1) +
+    #   geom_point(color = '#0069b5', size = 2) +
+    #   labs(x = "Date and Time",
+    #        y = "Streamflow (cfs)",
+    #        title = paste0(ifelse(is.na(values$flow$gnis_name[values$flow$comid == values$ids[values$i]]), "", paste0(values$flow@data$gnis_name[values$flow$comid == values$ids[values$i]], " ")),
+    #                       paste0("COMID: ", values$flow$comid[values$flow$comid == values$ids[values$i]])),
+    #        subtitle = "Medium Range National Water Model Forecasts"
+    #   ) +
+    #   geom_hline(yintercept = cutoff, color = "red", alpha = .2, size=5) +
+    #   annotate("text", min(values$data$dateTime)+1420, cutoff, label = "Average Monthly Flow") +
+    #   theme_light() +
+    #   theme(
+    #     plot.title = element_text(color="#0069b5", size=16, face="bold.italic")
+    #   )
+    
+    
+  #   values$data$color <- ifelse(values$data$Q_cfs <= cutoff, '#0069b5', 'red')
+  #   ggplot()+
+  #     geom_line(data = values$data, aes(x = dateTime, y = Q_cfs, color="Medium Range Forecast"), size = 1.5, alpha=0.4 )  +
+  #     #geom_point(data = values$data, aes(x = dateTime, y = Q_cfs), size = 2, color = '#0069b5') +
+  #     #geom_point(data = values$data, aes(x = dateTime, y = Q_cfs, colour = Q_cfs < cutoff)) +
+  #     geom_point(data = values$data, aes(x = dateTime, y = Q_cfs), size = 2, color = values$data$color) +
+  #     geom_area(data = values$data, aes(x = dateTime, y = Q_cfs),fill = '#0069b5', alpha = .1) +
+  #     geom_hline(aes(yintercept = cutoff, colour = "Average Monthly Flow"), alpha = .2, size=5, show.legend = TRUE) +
+  #     scale_colour_manual("", 
+  #                         breaks = c("Medium Range Forecast", "Average Monthly Flow"),
+  #                         values = c("red","#0069b5" )) +
+  #     labs(x = "Date and Time",
+  #          y = "Streamflow (cfs)",
+  #          title = paste0(ifelse(is.na(values$flow$gnis_name[values$flow$comid == values$ids[values$i]]), "", paste0(values$flow@data$gnis_name[values$flow$comid == values$ids[values$i]], " ")),
+  #                         paste0("COMID: ", values$flow$comid[values$flow$comid == values$ids[values$i]]))) +
+  #     theme(plot.title = element_text(color="#0069b5", size=16, face="bold.italic"),
+  #           legend.position="bottom")
+    
+  # })
+  
+  dygraph_plot <- function() {
     cutoff = values$normals[,2] * 35.3147
-    
-    ggplot(data = values$data, aes(x = dateTime, y = Q_cfs)) + 
-      geom_line(color='#0069b5', size = 1.5, alpha=0.4) + 
-      geom_point(color = 'navy', size = 3) +
-      labs(x = "Date and Time",
-           y = "Streamflow (cfs)",
-           title = paste0(ifelse(is.na(values$flow$gnis_name[values$flow$comid == values$ids[values$i]]), "", paste0(values$flow@data$gnis_name[values$flow$comid == values$ids[values$i]], " ")),
-                          paste0("COMID: ", values$flow$comid[values$flow$comid == values$ids[values$i]])),
-           subtitle = "Medium Range National Water Model Forecasts"
-      ) +
-      geom_hline(yintercept = cutoff, color = "red", alpha = .2, size=5) +
-      annotate("text", min(values$data$dateTime)+1420, cutoff, label = "Average Monthly Flow") +
-      theme_light() +
-      theme(
-        plot.title = element_text(color="#0069b5", size=16, face="bold.italic")
-      )
-    
+    data2 = data.frame(time = values$data$dateTime, streamflow = values$data$Q_cfs)
+    rownames(data2) = data2[[1]]
+    as.xts(data2)
+    mn = mean(data2$streamflow, na.rm = TRUE)
+    std = sd(data2$streamflow, na.rm = TRUE)
+    title = paste0(ifelse(is.na(values$flow$gnis_name[values$flow$comid == values$ids[values$i]]), "", paste0(values$flow@data$gnis_name[values$flow$comid == values$ids[values$i]], " ")),
+                   paste0("COMID: ", values$flow$comid[values$flow$comid == values$ids[values$i]]))
+    graph = dygraph(data2) %>%
+      dyRangeSelector(height = 20) %>%
+      # dyHighlight(highlightCircleSize = 5) %>%
+      dyAxis("x", drawGrid = FALSE) %>%
+      dyAxis("y", label = "Streamflow (cfs)") %>%
+      dySeries("streamflow", label = "Streamflow (cfs)") %>%
+      dyShading(from = mn - std, to = mn + std, axis = "y") %>%
+      dyLegend(width = 400, show = "onmouseover") %>%
+      dyOptions(fillGraph = TRUE, 
+                fillAlpha = 0.1, 
+                drawPoints = TRUE, 
+                pointSize = 2, 
+                colors = "#0069b5",
+                gridLineColor = "lightblue",
+                labelsUTC = TRUE) %>%
+      dyLimit(cutoff, strokePattern = "solid", color = "red", label = "Monthly Average")
+    return(graph)
+  }
+  
+  output$dygraph <- renderDygraph({
+    dygraph_plot()
   })
   
   # Previous Stream
@@ -457,6 +515,46 @@ shinyServer(function(input, output, session) {
     content = function(file) {
       data = values$nwm
       save(data, file = file)
+    }
+  )
+  
+  output$downloadDygraph <- downloadHandler(
+    filename = function() {
+      paste(paste(values$flow$comid[values$flow$comid == values$ids[values$i]], Sys.Date(), sep = '_'), "png", sep = ".")
+    },
+    content = function(file) {
+      graph = dygraph_plot()
+      htmlwidgets::saveWidget(graph, file = file)
+    }
+  )
+  
+  output$downloadGraph <- downloadHandler(
+    filename = function() {
+      paste(paste(values$flow$comid[values$flow$comid == values$ids[values$i]], Sys.Date(), sep = '_'), "png", sep = ".")
+    },
+    content = function(file) {
+      device <- function(..., width, height) {
+        grDevices::png(..., width = 8, height = 4, units = "in",
+                       res = 300)
+      }
+      cutoff = values$normals[,2] * 35.3147
+      values$data$color <- ifelse(values$data$Q_cfs <= cutoff, '#0069b5', 'red')
+      ggsave(file, plot = 
+                         ggplot()+
+                           geom_line(data = values$data, aes(x = dateTime, y = Q_cfs, color="Medium Range Forecast"), size = 1.5, alpha=0.4 )  +
+                           geom_point(data = values$data, aes(x = dateTime, y = Q_cfs), size = 2, color = values$data$color) +
+                           geom_area(data = values$data, aes(x = dateTime, y = Q_cfs),fill = '#0069b5', alpha = .1) +
+                           geom_hline(aes(yintercept = cutoff, colour = "Average Monthly Flow"), alpha = .2, size=5, show.legend = TRUE) +
+                           scale_colour_manual("",
+                                               breaks = c("Medium Range Forecast", "Average Monthly Flow"),
+                                               values = c("red","#0069b5" )) +
+                           labs(x = "Date and Time",
+                                y = "Streamflow (cfs)",
+                                title = paste0(ifelse(is.na(values$flow$gnis_name[values$flow$comid == values$ids[values$i]]), "", paste0(values$flow@data$gnis_name[values$flow$comid == values$ids[values$i]], " ")),
+                                               paste0("COMID: ", values$flow$comid[values$flow$comid == values$ids[values$i]]))) +
+                           theme(plot.title = element_text(color="#0069b5", size=16, face="bold.italic"),
+                                 legend.position="bottom"),
+             device = device)
     }
   )
   

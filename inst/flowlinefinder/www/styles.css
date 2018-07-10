@@ -244,6 +244,20 @@ h4 { font-weight: 400; }
 #streamFlow{ margin: 30px 0; }
 
 /*****************************************
+*            Data                        *
+*****************************************/
+
+.dygraph-title {
+  color: #0069b5;
+  font-weight: bold;
+  font-style: italic;
+  font-size: 16px;
+}
+.dygraph-axis-label {
+  font-size: 11px;
+}
+
+/*****************************************
 *            Queiries                    *
 *****************************************/
 
