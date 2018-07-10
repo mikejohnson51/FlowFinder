@@ -34,6 +34,8 @@
 #' @import magrittr
 #' 
 #' @import leaflet
+#' 
+#' @import dygraphs
 
 
 

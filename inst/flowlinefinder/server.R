@@ -359,6 +359,8 @@ shinyServer(function(input, output, session) {
       dyRangeSelector(height = 20) %>%
       # dyHighlight(highlightCircleSize = 5) %>%
       dyAxis("x", drawGrid = FALSE) %>%
+      dyHighlight(highlightCircleSize = 5,
+                  highlightSeriesBackgroundAlpha = 1) %>%
       dyAxis("y", label = "Streamflow (cfs)") %>%
       dySeries("streamflow", label = "Streamflow (cfs)") %>%
       dyShading(from = mn - std, to = mn + std, axis = "y") %>%
@@ -370,7 +372,7 @@ shinyServer(function(input, output, session) {
                 colors = "#0069b5",
                 gridLineColor = "lightblue",
                 labelsUTC = TRUE) %>%
-      dyLimit(cutoff, strokePattern = "solid", color = "red", label = "Monthly Average")
+      dyLimit(cutoff, strokePattern = "solid", color = "red", label = paste0("Monthly Average (", round(cutoff,2), " cfs)"))
     return(graph)
   }
   
@@ -473,6 +475,26 @@ shinyServer(function(input, output, session) {
       return()
     updateSelectizeInput(session = session, inputId = "flow_selector", selected = input$switchStream$stream)
   })
+  
+  
+  
+  observe({
+    if (input$data_csv || input$data_nhd || input$data_rda || input$plot_png || input$plot_dygraph || input$maps_floods) {
+      shinyjs::enable("downloadData")
+      runjs("
+            var text = document.getElementById('downloadData').firstChild;
+            text.data = 'Download!'
+      ")
+    } else {
+      shinyjs::disable("downloadData")
+      runjs("
+            var text = document.getElementById('downloadData').firstChild;
+            text.data = 'Check one or more boxes'
+      ")
+    }
+  })
+  
+  
   
   output$downloadData <- downloadHandler(
     filename = function() {

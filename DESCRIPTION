@@ -13,7 +13,8 @@ Depends:
     HydroData,
     ggplot2,
     magrittr,
-    leaflet
+    leaflet,
+    dygraphs
 Imports:
     shiny (>= 1.0.4),
     AOI,

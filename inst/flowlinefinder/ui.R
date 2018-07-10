@@ -86,7 +86,7 @@ shinyUI(
                                  actionButton("nextCOMID", label = "Next"),
                                  actionButton("mark_flowline", "View on Map"),
                                  dropdownButton(
-                                   status = "primary", circle = FALSE, icon = icon("download"), label = "Downloads", width = "300px",
+                                   circle = FALSE, icon = icon("download"), label = "Downloads", width = "300px",
                                    down = TRUE, right = TRUE,
                                    tags$h3("Data"),
                                    prettyCheckbox(
@@ -109,12 +109,14 @@ shinyUI(
                                    prettyCheckbox(
                                      inputId = "maps_floods", label = "Flood Map (HTML)", icon = icon("check"), shape = "round", status = "primary"
                                    ),
-                                   downloadButton('downloadData', 'Download!',status = "primary")
+                                   downloadButton(outputId = 'downloadData', label = NULL, class = 'btn-primary')
                                  )
                           )
                         ),
                         #plotOutput("streamFlow"),
+                        br(), br(),
                         dygraphOutput("dygraph"),
+                        br(), br(),
                         fluidRow(
                           column(6,DT::DTOutput('tbl_up')),  
                           column(6,DT::DTOutput('tbl_down'))
