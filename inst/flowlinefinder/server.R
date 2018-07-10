@@ -4,6 +4,7 @@ month = as.numeric(substr(list.files("data/current_nc")[1], 1,2))
 month_files = list.files("data/", pattern = as.character(month), full.names = T)
 norm = fst::read_fst(path = month_files)
 size = 15
+load('data/current_nc/flood_map.rda')
 
 # Generate icon for usgs stations
 USGSicon = leaflet::makeIcon(
@@ -33,7 +34,6 @@ shinyServer(function(input, output, session) {
   })
   
   output$flood_map <- renderLeaflet({
-    load('data/current_nc/flood_map.rda')
     flood_map
   })
   
@@ -350,7 +350,7 @@ shinyServer(function(input, output, session) {
     cutoff = values$normals[,2] * 35.3147
     data2 = data.frame(time = values$data$dateTime, streamflow = values$data$Q_cfs)
     rownames(data2) = data2[[1]]
-    as.xts(data2)
+    xts::as.xts(data2)
     mn = mean(data2$streamflow, na.rm = TRUE)
     std = sd(data2$streamflow, na.rm = TRUE)
     title = paste0(ifelse(is.na(values$flow$gnis_name[values$flow$comid == values$ids[values$i]]), "", paste0(values$flow@data$gnis_name[values$flow$comid == values$ids[values$i]], " ")),
@@ -474,89 +474,103 @@ shinyServer(function(input, output, session) {
     updateSelectizeInput(session = session, inputId = "flow_selector", selected = input$switchStream$stream)
   })
   
-  output$downloadCSV <- downloadHandler(
+  output$downloadData <- downloadHandler(
     filename = function() {
+      paste("output", "zip", sep=".")
+    },
+    content = function(fname) {
+      fs <- c()
+      tmpdir <- tempdir()
+      setwd(tempdir())
+      
       loc = input$place
       if (loc == "") {
         loc = "current_location"
       }
-      paste(paste(loc, Sys.Date(), sep = '_'), "csv", sep = ".")
-    },
-    content = function(file) {
-      write.table(values$nwm, file, sep = ",",
-                  row.names = FALSE)
-    }
-  )
-  
-  output$downloadNHD <- downloadHandler(
-    filename = function() {
-      paste("flowlines", "zip", sep=".")
-    },
-    content = function(fname) {
-      uid = sample(1:1000000, 1)
-      dir.create(file.path(tempdir(), as.character(uid)), showWarnings = FALSE)
-      temp = paste0(tempdir(),"/",as.character((uid)))
-      setwd(temp)
-      rgdal::writeOGR(obj=values$flow, dsn= temp, layer="nhd", driver="ESRI Shapefile")
-      fs = list.files(path = temp, pattern = 'nhd')
-      zip(zipfile = fname, files = fs )
+    
+      ######### DATA #########
+      
+      # CSV file
+      if (input$data_csv) {
+        path <- paste(paste(loc, Sys.Date(), sep = '_'), "csv", sep = ".")
+        fs <- c(fs, path)
+        write.table(values$nwm, path, sep = ",", row.names = FALSE)
+      }
+      
+      if (input$data_rda) {
+        path <- paste(paste(loc, Sys.Date(), sep = '_'), "rda", sep = ".")
+        fs <- c(fs, path)
+        data = values$nwm
+        save(data, file = path)
+      }
+      
+      if (input$data_nhd) {
+        uid = sample(1:1000000, 1)
+        d = paste0(loc, "_shapefile")
+        dir.create(file.path(tempdir(), as.character(uid)), showWarnings = FALSE)
+        temp = paste0(tempdir(),"/",as.character((uid)))
+        setwd(temp)
+        rgdal::writeOGR(obj=values$flow, dsn= temp, layer="nhd", driver="ESRI Shapefile")
+        ls = list.files(path = temp, pattern = 'nhd')
+        ls = paste(d,"/",ls, sep="")
+        fs = c(fs, ls)
+        setwd(tempdir())
+      }
+      
+      ######### Plots #########
+      
+      if (input$plot_png) {
+        path <- paste(paste(values$flow$comid[values$flow$comid == values$ids[values$i]], Sys.Date(), sep = '_'), "png", sep = ".")
+        fs <- c(fs, path)
+        device <- function(..., width, height) {
+          grDevices::png(..., width = 8, height = 4, units = "in",
+                         res = 300)
+        }
+        cutoff = values$normals[,2] * 35.3147
+        values$data$color <- ifelse(values$data$Q_cfs <= cutoff, '#0069b5', 'red')
+        ggsave(path, plot = 
+                 ggplot()+
+                 geom_line(data = values$data, aes(x = dateTime, y = Q_cfs, color="Medium Range Forecast"), size = 1.5, alpha=0.4 )  +
+                 geom_point(data = values$data, aes(x = dateTime, y = Q_cfs), size = 2, color = values$data$color) +
+                 geom_area(data = values$data, aes(x = dateTime, y = Q_cfs),fill = '#0069b5', alpha = .1) +
+                 geom_hline(aes(yintercept = cutoff, colour = "Average Monthly Flow"), alpha = .2, size=5, show.legend = TRUE) +
+                 scale_colour_manual("",
+                                     breaks = c("Medium Range Forecast", "Average Monthly Flow"),
+                                     values = c("red","#0069b5" )) +
+                 labs(x = "Date and Time",
+                      y = "Streamflow (cfs)",
+                      title = paste0(ifelse(is.na(values$flow$gnis_name[values$flow$comid == values$ids[values$i]]), "", paste0(values$flow@data$gnis_name[values$flow$comid == values$ids[values$i]], " ")),
+                                     paste0("COMID: ", values$flow$comid[values$flow$comid == values$ids[values$i]]))) +
+                 theme(plot.title = element_text(color="#0069b5", size=16, face="bold.italic"),
+                       legend.position="bottom"),
+               device = device)
+      }
+      
+      if (input$plot_dygraph) {
+        path <- paste(paste(values$flow$comid[values$flow$comid == values$ids[values$i]], Sys.Date(), sep = '_'), "html", sep = ".")
+        fs <- c(fs, path)
+        graph = dygraph_plot()
+        htmlwidgets::saveWidget(graph, file = path)
+      }
+      
+      ######### Maps #########
+      
+      if (input$maps_floods) {
+        path <- paste0("flood_predections_", Sys.Date(), ".html" )
+        fs <- c(fs, path)
+        htmlwidgets::saveWidget(flood_map, file = path)
+      }
+      
+      
+      zip(zipfile=fname, files=fs)
     },
     contentType = "application/zip"
   )
   
-  output$downloadRDA <- downloadHandler(
-    filename = function() {
-      loc = input$place
-      if (loc == "") {
-        loc = "current_location"
-      }
-      paste(paste(loc, Sys.Date(), sep = '_'), "rda", sep = ".")
-    },
-    content = function(file) {
-      data = values$nwm
-      save(data, file = file)
-    }
-  )
   
-  output$downloadDygraph <- downloadHandler(
-    filename = function() {
-      paste(paste(values$flow$comid[values$flow$comid == values$ids[values$i]], Sys.Date(), sep = '_'), "png", sep = ".")
-    },
-    content = function(file) {
-      graph = dygraph_plot()
-      htmlwidgets::saveWidget(graph, file = file)
-    }
-  )
   
-  output$downloadGraph <- downloadHandler(
-    filename = function() {
-      paste(paste(values$flow$comid[values$flow$comid == values$ids[values$i]], Sys.Date(), sep = '_'), "png", sep = ".")
-    },
-    content = function(file) {
-      device <- function(..., width, height) {
-        grDevices::png(..., width = 8, height = 4, units = "in",
-                       res = 300)
-      }
-      cutoff = values$normals[,2] * 35.3147
-      values$data$color <- ifelse(values$data$Q_cfs <= cutoff, '#0069b5', 'red')
-      ggsave(file, plot = 
-                         ggplot()+
-                           geom_line(data = values$data, aes(x = dateTime, y = Q_cfs, color="Medium Range Forecast"), size = 1.5, alpha=0.4 )  +
-                           geom_point(data = values$data, aes(x = dateTime, y = Q_cfs), size = 2, color = values$data$color) +
-                           geom_area(data = values$data, aes(x = dateTime, y = Q_cfs),fill = '#0069b5', alpha = .1) +
-                           geom_hline(aes(yintercept = cutoff, colour = "Average Monthly Flow"), alpha = .2, size=5, show.legend = TRUE) +
-                           scale_colour_manual("",
-                                               breaks = c("Medium Range Forecast", "Average Monthly Flow"),
-                                               values = c("red","#0069b5" )) +
-                           labs(x = "Date and Time",
-                                y = "Streamflow (cfs)",
-                                title = paste0(ifelse(is.na(values$flow$gnis_name[values$flow$comid == values$ids[values$i]]), "", paste0(values$flow@data$gnis_name[values$flow$comid == values$ids[values$i]], " ")),
-                                               paste0("COMID: ", values$flow$comid[values$flow$comid == values$ids[values$i]]))) +
-                           theme(plot.title = element_text(color="#0069b5", size=16, face="bold.italic"),
-                                 legend.position="bottom"),
-             device = device)
-    }
-  )
+  
+  
   
   
   })

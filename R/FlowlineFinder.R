@@ -23,6 +23,8 @@
 #' 
 #' @importFrom AOI getAOI getPoint
 #' 
+#' @importFrom xts as.xts
+#' 
 #' @import shiny
 #' 
 #' @import HydroData

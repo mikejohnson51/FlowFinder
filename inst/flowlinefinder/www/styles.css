@@ -257,6 +257,37 @@ h4 { font-weight: 400; }
   font-size: 11px;
 }
 
+.pretty {
+  margin-left: 10px !important;
+  margin-bottom: 5px;
+}
+
+.dropdown-menu h3 {
+    color: #0069b5;
+}
+
+#downloads {
+  z-index:99;
+}
+
+.dropdown-menu li:first-of-type {
+    display: none;
+}
+
+.btn {
+  float: left;
+  margin-right: 5px;
+}
+
+.dropdown-menu-right {
+    top: 35px;
+}
+
+#downloadData {
+  width: 95%;
+}
+
+
 /*****************************************
 *            Queiries                    *
 *****************************************/

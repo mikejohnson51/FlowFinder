@@ -1,14 +1,15 @@
 library(shiny)
 library(leaflet)
 library(shinyjs)
+library(shinyWidgets)
 
 shinyUI(
   tagList(
     useShinyjs(),
     div(class="bg",style="display:none",
-          titlePanel(
-            title="", windowTitle="FlowlineFinder"
-          )
+        titlePanel(
+          title="", windowTitle="FlowlineFinder"
+        )
     ),
     navbarPage(title=div(img(src="logo.png", class="logo"),img(src="logo-small.png", class="logo-small")),
                id="nav",
@@ -21,41 +22,41 @@ shinyUI(
                             # Get geolocation if possible
                             tags$script('
                                         $(document).ready(function () {
-                                          navigator.geolocation.getCurrentPosition(onSuccess, onError);
-                                          function onError (err) {
-                                            Shiny.onInputChange("geolocation", false);
-                                          }
-                                          function onSuccess (position) {
-                                            setTimeout(function () {
-                                              document.getElementById("current_loc").style.color = "#5896e4";
-                                              var coords = position.coords;
-                                              Shiny.onInputChange("geolocation", true);
-                                              Shiny.onInputChange("lat", coords.latitude);
-                                              Shiny.onInputChange("long", coords.longitude);
-                                            }, 1100)
-                                          }
+                                        navigator.geolocation.getCurrentPosition(onSuccess, onError);
+                                        function onError (err) {
+                                        Shiny.onInputChange("geolocation", false);
+                                        }
+                                        function onSuccess (position) {
+                                        setTimeout(function () {
+                                        document.getElementById("current_loc").style.color = "#5896e4";
+                                        var coords = position.coords;
+                                        Shiny.onInputChange("geolocation", true);
+                                        Shiny.onInputChange("lat", coords.latitude);
+                                        Shiny.onInputChange("long", coords.longitude);
+                                        }, 1100)
+                                        }
                                         });
-                                      '),
+                                        '),
                             # Get geolocation if possible
                             tags$script('
                                         $(document).ready(function(){
-                                          $.getJSON("https://json.geoiplookup.io/", function(response) {
-                                            Shiny.onInputChange("getIP", response);
-                                          }, "json");
+                                        $.getJSON("https://json.geoiplookup.io/", function(response) {
+                                        Shiny.onInputChange("getIP", response);
+                                        }, "json");
                                         });
-                                      '),
+                                        '),
                             #Enter button activates search, only on focus
                             tags$script('
                                         document.addEventListener("keypress", function(event) {
-                                          if (event.keyCode === 13 || event.which === 13) {
-                                            var dummyEl = document.getElementById("place");
-                                            var isFocused = (document.activeElement === dummyEl);
-                                            if (isFocused) {
-                                              document.getElementById("do").click();
-                                            }
-                                          }
+                                        if (event.keyCode === 13 || event.which === 13) {
+                                        var dummyEl = document.getElementById("place");
+                                        var isFocused = (document.activeElement === dummyEl);
+                                        if (isFocused) {
+                                        document.getElementById("do").click();
+                                        }
+                                        }
                                         });
-                                      '),  
+                                        '),
                             leafletOutput("map", width="100%", height="100%"),
                             verbatimTextOutput(outputId = "server_problems"),
                             absolutePanel(style="display:inline-block", id = "controls", class = "panel panel-default", fixed = TRUE,
@@ -76,15 +77,40 @@ shinyUI(
                             )
                             ),
                tabPanel("Data", icon = icon("line-chart"),
-                        # textOutput("stream"),
                         fluidRow(
                           column(5, 
                                  column(12, selectizeInput(inputId = "flow_selector", choices = "", label = NULL))
                           ),
-                          column(5,
+                          column(6,
                                  actionButton("prevCOMID", label = "Previous"),
                                  actionButton("nextCOMID", label = "Next"),
-                                 actionButton("mark_flowline", "View on Map")
+                                 actionButton("mark_flowline", "View on Map"),
+                                 dropdownButton(
+                                   status = "primary", circle = FALSE, icon = icon("download"), label = "Downloads", width = "300px",
+                                   down = TRUE, right = TRUE,
+                                   tags$h3("Data"),
+                                   prettyCheckbox(
+                                     inputId = "data_csv", label = "CSV", icon = icon("check"), shape = "round", status = "primary"
+                                   ),
+                                   prettyCheckbox(
+                                     inputId = "data_nhd", label = "NHD.shp", icon = icon("check"), shape = "round", status = "primary"
+                                   ),
+                                   prettyCheckbox(
+                                     inputId = "data_rda", label = "RDA", icon = icon("check"), shape = "round", status = "primary"
+                                   ),
+                                   tags$h3("Plots"),
+                                   prettyCheckbox(
+                                     inputId = "plot_png", label = "Flow Graph (PNG)", icon = icon("check"), shape = "round", status = "primary"
+                                   ),
+                                   prettyCheckbox(
+                                     inputId = "plot_dygraph", label = "Flow Dygraph (HTML)", icon = icon("check"), shape = "round", status = "primary"
+                                   ),
+                                   tags$h3("Maps"),
+                                   prettyCheckbox(
+                                     inputId = "maps_floods", label = "Flood Map (HTML)", icon = icon("check"), shape = "round", status = "primary"
+                                   ),
+                                   downloadButton('downloadData', 'Download!',status = "primary")
+                                 )
                           )
                         ),
                         #plotOutput("streamFlow"),
@@ -93,12 +119,10 @@ shinyUI(
                           column(6,DT::DTOutput('tbl_up')),  
                           column(6,DT::DTOutput('tbl_down'))
                         ),
-                        DT::DTOutput('tbl'),
-                        downloadButton('downloadCSV', 'Download CSV'),
-                        downloadButton('downloadNHD', 'Download NHD.shp'),
-                        downloadButton('downloadRDA', 'Download RDA'),
-                        downloadButton('downloadGraph', 'Download Graph'),
-                        downloadButton('downloadDygraph', 'Download Dygraph')
+                        DT::DTOutput('tbl')
+                        
+                        
+                        
                ),
                tabPanel("Floods", icon = icon("tint"),
                         div(class="outer",
