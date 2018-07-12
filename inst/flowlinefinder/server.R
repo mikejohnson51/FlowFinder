@@ -55,7 +55,13 @@ shinyServer(function(input, output, session) {
         values$lat = as.numeric(split[1])
         values$lon = as.numeric(split[2])
       } else {
-        loc = AOI::getPoint(name = input$place)
+        if (input$place == "") {
+          print('here')
+          point = "National Water Center"
+        } else {
+          point = input$place
+        }
+        loc = AOI::getPoint(name = point)
         values$lat = loc$lat
         values$lon = loc$lon
       }
