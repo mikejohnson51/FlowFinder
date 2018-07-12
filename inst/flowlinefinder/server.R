@@ -1,4 +1,5 @@
 library(FlowlineFinder)
+library(dygraphs)
 
 month = as.numeric(substr(list.files("data/current_nc")[1], 1,2))
 month_files = list.files("data/", pattern = as.character(month), full.names = T)
