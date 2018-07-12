@@ -3,6 +3,19 @@ library(leaflet)
 library(shinyjs)
 library(shinyWidgets)
 
+
+#### Reusable UI elements ###
+download_item <- function(id, label) {
+  ui_el = prettyCheckbox(
+            inputId = id, 
+            label = label, 
+            icon = icon("check"), 
+            shape = "round", 
+            status = "primary"
+          )
+  return(ui_el)
+}
+
 shinyUI(
   tagList(
     useShinyjs(),
@@ -88,43 +101,31 @@ shinyUI(
                                  dropdownButton(
                                    circle = FALSE, icon = icon("download"), label = "Downloads", width = "300px",
                                    down = TRUE, right = TRUE,
+                                   
                                    tags$h3("Data"),
-                                   prettyCheckbox(
-                                     inputId = "data_csv", label = "CSV", icon = icon("check"), shape = "round", status = "primary"
-                                   ),
-                                   prettyCheckbox(
-                                     inputId = "data_nhd", label = "NHD.shp", icon = icon("check"), shape = "round", status = "primary"
-                                   ),
-                                   prettyCheckbox(
-                                     inputId = "data_rda", label = "RDA", icon = icon("check"), shape = "round", status = "primary"
-                                   ),
+                                   download_item(id = "data_csv", label = "CSV"),
+                                   download_item(id = "data_nhd", label = "NHD.shp"),
+                                   download_item(id = "data_rda", label = "RDA"),
+                                   
                                    tags$h3("Plots"),
-                                   prettyCheckbox(
-                                     inputId = "plot_png", label = "Flow Graph (PNG)", icon = icon("check"), shape = "round", status = "primary"
-                                   ),
-                                   prettyCheckbox(
-                                     inputId = "plot_dygraph", label = "Flow Dygraph (HTML)", icon = icon("check"), shape = "round", status = "primary"
-                                   ),
+                                   download_item(id = "plot_png", label = "Flow Graph (PNG)"),
+                                   download_item(id = "plot_dygraph", label = "Flow Dygraph (HTML)"),
+                                   
                                    tags$h3("Maps"),
-                                   prettyCheckbox(
-                                     inputId = "maps_floods", label = "Flood Map (HTML)", icon = icon("check"), shape = "round", status = "primary"
-                                   ),
+                                   download_item(id = "maps_floods", label = "Flood Map (HTML)"),
                                    downloadButton(outputId = 'downloadData', label = NULL, class = 'btn-primary')
                                  )
                           )
                         ),
                         #plotOutput("streamFlow"),
                         br(), br(),
-                        dygraphOutput("dygraph"),
+                        dygraphs::dygraphOutput("dygraph"),
                         br(), br(),
                         fluidRow(
                           column(6,DT::DTOutput('tbl_up')),  
                           column(6,DT::DTOutput('tbl_down'))
                         ),
                         DT::DTOutput('tbl')
-                        
-                        
-                        
                ),
                tabPanel("Floods", icon = icon("tint"),
                         div(class="outer",
@@ -136,5 +137,4 @@ shinyUI(
                         tableOutput("stations"),
                         tableOutput("Flowlines")
                )
-               
     )))

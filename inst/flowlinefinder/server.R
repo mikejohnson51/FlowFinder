@@ -59,11 +59,11 @@ shinyServer(function(input, output, session) {
       }
       
       clip = list(values$lat, values$lon, size, size)
-      AOI = AOI::getAOI(clip_unit = clip)
+      AOI = AOI::getAOI(clip = clip)
       
       incProgress(2/6, detail = "Getting Spatial Objects")
       values$nhd = tryCatch({
-        suppressMessages(HydroData::findNHD(clip_unit = AOI, ids = TRUE))
+        suppressMessages(HydroData::findNHD(clip = AOI, ids = TRUE))
       },
       error=function(error_message) {
         return(NA)
@@ -79,7 +79,7 @@ shinyServer(function(input, output, session) {
       
       incProgress(1/6, detail = "Getting USGS Stations")
       values$stats = tryCatch({
-        suppressMessages(HydroData::findUSGS(clip_unit = AOI)$nwis)
+        suppressMessages(HydroData::findUSGS(clip = AOI)$nwis)
       },
       error=function(error_message) {
         return(NA)
@@ -297,55 +297,6 @@ shinyServer(function(input, output, session) {
     values$normals = norm[norm$COMID == values$ids[values$i],]
   })
   
-  # Draw Plot
-  # output$streamFlow <- renderPlot({
-  #   
-  #   data2 = data.frame(x= values$data$dateTime, y = values$data$Q_cfs)
-  #   rownames(data2) = data2[[1]]
-  #   as.xts(data2)
-  #   
-  #   
-  #   cutoff = values$normals[,2] * 35.3147
-  #   dygraph(data2)
-    
-    # ggplot(data = values$data, aes(x = dateTime, y = Q_cfs)) + 
-    #   geom_line(color='#0069b5', size = 1.5, alpha=0.4) +
-    #   geom_area(fill = '#0069b5', alpha = .1) +
-    #   geom_point(color = '#0069b5', size = 2) +
-    #   labs(x = "Date and Time",
-    #        y = "Streamflow (cfs)",
-    #        title = paste0(ifelse(is.na(values$flow$gnis_name[values$flow$comid == values$ids[values$i]]), "", paste0(values$flow@data$gnis_name[values$flow$comid == values$ids[values$i]], " ")),
-    #                       paste0("COMID: ", values$flow$comid[values$flow$comid == values$ids[values$i]])),
-    #        subtitle = "Medium Range National Water Model Forecasts"
-    #   ) +
-    #   geom_hline(yintercept = cutoff, color = "red", alpha = .2, size=5) +
-    #   annotate("text", min(values$data$dateTime)+1420, cutoff, label = "Average Monthly Flow") +
-    #   theme_light() +
-    #   theme(
-    #     plot.title = element_text(color="#0069b5", size=16, face="bold.italic")
-    #   )
-    
-    
-  #   values$data$color <- ifelse(values$data$Q_cfs <= cutoff, '#0069b5', 'red')
-  #   ggplot()+
-  #     geom_line(data = values$data, aes(x = dateTime, y = Q_cfs, color="Medium Range Forecast"), size = 1.5, alpha=0.4 )  +
-  #     #geom_point(data = values$data, aes(x = dateTime, y = Q_cfs), size = 2, color = '#0069b5') +
-  #     #geom_point(data = values$data, aes(x = dateTime, y = Q_cfs, colour = Q_cfs < cutoff)) +
-  #     geom_point(data = values$data, aes(x = dateTime, y = Q_cfs), size = 2, color = values$data$color) +
-  #     geom_area(data = values$data, aes(x = dateTime, y = Q_cfs),fill = '#0069b5', alpha = .1) +
-  #     geom_hline(aes(yintercept = cutoff, colour = "Average Monthly Flow"), alpha = .2, size=5, show.legend = TRUE) +
-  #     scale_colour_manual("", 
-  #                         breaks = c("Medium Range Forecast", "Average Monthly Flow"),
-  #                         values = c("red","#0069b5" )) +
-  #     labs(x = "Date and Time",
-  #          y = "Streamflow (cfs)",
-  #          title = paste0(ifelse(is.na(values$flow$gnis_name[values$flow$comid == values$ids[values$i]]), "", paste0(values$flow@data$gnis_name[values$flow$comid == values$ids[values$i]], " ")),
-  #                         paste0("COMID: ", values$flow$comid[values$flow$comid == values$ids[values$i]]))) +
-  #     theme(plot.title = element_text(color="#0069b5", size=16, face="bold.italic"),
-  #           legend.position="bottom")
-    
-  # })
-  
   dygraph_plot <- function() {
     cutoff = values$normals[,2] * 35.3147
     data2 = data.frame(time = values$data$dateTime, streamflow = values$data$Q_cfs)
@@ -355,7 +306,7 @@ shinyServer(function(input, output, session) {
     std = sd(data2$streamflow, na.rm = TRUE)
     title = paste0(ifelse(is.na(values$flow$gnis_name[values$flow$comid == values$ids[values$i]]), "", paste0(values$flow@data$gnis_name[values$flow$comid == values$ids[values$i]], " ")),
                    paste0("COMID: ", values$flow$comid[values$flow$comid == values$ids[values$i]]))
-    graph = dygraph(data2) %>%
+    graph = dygraphs::dygraph(data2) %>%
       dyRangeSelector(height = 20) %>%
       # dyHighlight(highlightCircleSize = 5) %>%
       dyAxis("x", drawGrid = FALSE) %>%
@@ -376,7 +327,7 @@ shinyServer(function(input, output, session) {
     return(graph)
   }
   
-  output$dygraph <- renderDygraph({
+  output$dygraph <- dygraphs::renderDygraph({
     dygraph_plot()
   })
   
@@ -475,9 +426,7 @@ shinyServer(function(input, output, session) {
       return()
     updateSelectizeInput(session = session, inputId = "flow_selector", selected = input$switchStream$stream)
   })
-  
-  
-  
+
   observe({
     if (input$data_csv || input$data_nhd || input$data_rda || input$plot_png || input$plot_dygraph || input$maps_floods) {
       shinyjs::enable("downloadData")
@@ -588,11 +537,5 @@ shinyServer(function(input, output, session) {
     },
     contentType = "application/zip"
   )
-  
-  
-  
-  
-  
-  
   
   })
