@@ -56,7 +56,6 @@ shinyServer(function(input, output, session) {
         values$lon = as.numeric(split[2])
       } else {
         if (input$place == "") {
-          print('here')
           point = "National Water Center"
         } else {
           point = input$place
@@ -81,10 +80,6 @@ shinyServer(function(input, output, session) {
         return()
       }
       
-      values$flow = values$nhd$flowlines
-      values$ids =  values$flow$comid
-      values$ids2 = values$nhd$ids
-      
       incProgress(1/6, detail = "Getting USGS Stations")
       values$stats = tryCatch({
         suppressMessages(HydroData::findUSGS(clip = AOI)$nwis)
@@ -94,14 +89,13 @@ shinyServer(function(input, output, session) {
       })
       
       incProgress(1/6, detail = "Subsetting Stream Data")
-      values$mapping = read.csv("data/current_nc/map.csv", stringsAsFactors = FALSE)
-      values$nwm = subset_nomads_rda_drop(comids = values$ids2, mapping = values$mapping)
+      values$nwm = subset_nomads_rda_drop(comids = values$nhd$ids)
       
       if (input$do == 1) {
         updateTextInput(session = session, inputId =  "place", value = "")
       }
       
-      values$nhd_prep = suppressWarnings(prep_nhd(flines = values$flow))
+      values$nhd_prep = suppressWarnings(prep_nhd(flines = values$nhd$flowlines))
       values$hmm = get_upstream(flines = values$nhd_prep)
       
       incProgress(1/6, detail = "Mapping")
@@ -125,10 +119,10 @@ shinyServer(function(input, output, session) {
           fillColor = "transparent",
           group = 'AOI', color = "red"
         ) %>%
-        addPolylines(data = values$flow, color = 'blue', weight = values$flow$streamorde,
+        addPolylines(data = values$nhd$flowlines, color = 'blue', weight = values$nhd$flowlines$streamorde,
                      popup = paste(sep = " ",
-                                   paste0("<b><a class='open-stream'>",paste0(ifelse(is.na(values$flow@data$gnis_name), "", values$flow@data$gnis_name)),
-                                          paste0(" COMID: ", values$flow$comid),"</a></b></br>"),
+                                   paste0("<b><a class='open-stream'>",paste0(ifelse(is.na(values$nhd$flowlines@data$gnis_name), "", values$nhd$flowlines@data$gnis_name)),
+                                          paste0(" COMID: ", values$nhd$flowlines$comid),"</a></b></br>"),
                                    '<a class="stream-data"><i class="fa fa-line-chart"></i></a>',
                                    '<a class="upstream-flow"><i class="fa fa-angle-double-up"></i></a>',
                                    '<a class="downstream-flow"><i class="fa fa-angle-double-down"></i></a>'
@@ -165,13 +159,13 @@ shinyServer(function(input, output, session) {
     })
     output$data_loc <- renderText({ input$place })
     
-    max_order = max(values$flow@data$streamorde)
+    max_order = max(values$nhd$flowlines@data$streamorde)
     sq_mi = size^2
-    table = rbind(cbind("Largest Stream Name: ", values$flow@data$gnis_name[match(max_order, values$flow@data$streamorde)]),
-                  cbind("Number of Flowlines: ", length(values$flow)),
+    table = rbind(cbind("Largest Stream Name: ", values$nhd$flowlines@data$gnis_name[match(max_order, values$nhd$flowlines@data$streamorde)]),
+                  cbind("Number of Flowlines: ", length(values$nhd$flowlines)),
                   cbind("Largest Stream Order: ", max_order),
                   cbind("Total Area (SqMi): ", size),
-                  cbind("Unique HUC8 units: ", paste(unique(as.numeric(na.omit(unique(substr(values$flow$reachcode,1,8))))), collapse = ", ")))
+                  cbind("Unique HUC8 units: ", paste(unique(as.numeric(na.omit(unique(substr(values$nhd$flowlines$reachcode,1,8))))), collapse = ", ")))
     colnames(table) = c('Statistic', 'Value')
     output$Flowlines = renderTable(table, striped = TRUE)
     
@@ -185,13 +179,13 @@ shinyServer(function(input, output, session) {
     output$stations = renderTable({station_data}, striped = TRUE, sanitize.text.function = function(x) x)
     
     max_qcms = values$nwm[match(max(values$nwm$Q_cfs), values$nwm$Q_cfs),]$COMID
-    name = values$flow[values$flow$comid == max_qcms,]$gnis_name
+    name = values$nhd$flowlines[values$nhd$flowlines$comid == max_qcms,]$gnis_name
     e = paste0(paste0(ifelse(is.na(name), "", name)), paste0(" COMID: ", max_qcms))
-    values$choices = as.list(paste0(paste0(ifelse(is.na(values$flow@data$gnis_name), "", values$flow@data$gnis_name)),
-                                    paste0(" COMID: ", values$flow$comid)))
-    lables = paste0(paste0(ifelse(is.na(values$flow@data$gnis_name), "", values$flow@data$gnis_name)),
-                    paste0(" COMID: ", values$flow$comid))
-    values$test = data.frame(value=lables, label=lables, id=values$flow$comid)
+    values$choices = as.list(paste0(paste0(ifelse(is.na(values$nhd$flowlines@data$gnis_name), "", values$nhd$flowlines@data$gnis_name)),
+                                    paste0(" COMID: ", values$nhd$flowlines$comid)))
+    lables = paste0(paste0(ifelse(is.na(values$nhd$flowlines@data$gnis_name), "", values$nhd$flowlines@data$gnis_name)),
+                    paste0(" COMID: ", values$nhd$flowlines$comid))
+    values$test = data.frame(value=lables, label=lables, id=values$nhd$flowlines$comid)
     non_zero = unique(values$nwm[values$nwm$Q_cfs > 0,]$COMID)
     values$test <- transform(values$test, max= ifelse(id %in% non_zero, 1, 0))
     updateSelectizeInput(session, 'flow_selector', choices = values$test, server = TRUE,
@@ -208,9 +202,9 @@ shinyServer(function(input, output, session) {
   }")))
     text = e
     values$id = unlist(strsplit(text, split='COMID: ', fixed=TRUE))[2]
-    values$i = match(values$id, values$flow@data$comid)
-    values$data = values$nwm[values$nwm$COMID == values$ids[values$i],]
-    values$normals = norm[norm$COMID == values$ids[values$i],]
+    values$i = match(values$id, values$nhd$flowlines@data$comid)
+    values$data = values$nwm[values$nwm$COMID == values$nhd$flowlines$comid[values$i],]
+    values$normals = norm[norm$COMID == values$nhd$flowlines$comid[values$i],]
     
     })
   
@@ -259,12 +253,12 @@ shinyServer(function(input, output, session) {
       return()
     clearMarkers()
     leafletProxy("map", session) %>%
-      addPolylines(data = values$flow[values$flow$comid == input$upStream$comid,],
+      addPolylines(data = values$nhd$flowlines[values$nhd$flowlines$comid == input$upStream$comid,],
                    color = "blue",
                    opacity = 1,
                    group = "up-stream",
                    options = pathOptions(clickable = FALSE))  %>%
-      addPolylines(data = values$flow[values$flow$comid %in% c(values$hmm[values$hmm$comid == input$upStream$comid, 2]),], 
+      addPolylines(data = values$nhd$flowlines[values$nhd$flowlines$comid %in% c(values$hmm[values$hmm$comid == input$upStream$comid, 2]),], 
                    color = "#84bd00",
                    opacity = 1,
                    group = "up-stream",
@@ -277,12 +271,12 @@ shinyServer(function(input, output, session) {
       return()
     clearMarkers()
     leafletProxy("map", session) %>%
-      addPolylines(data = values$flow[values$flow$comid == input$downStream$comid,],
+      addPolylines(data = values$nhd$flowlines[values$nhd$flowlines$comid == input$downStream$comid,],
                    color = "blue",
                    opacity = 1,
                    group = "down-stream",
                    options = pathOptions(clickable = FALSE))  %>%
-      addPolylines(data = values$flow[values$nhd$flowlines$comid %in% c(values$nhd_prep[values$nhd_prep$comid == input$downStream$comid, 4]),],
+      addPolylines(data = values$nhd$flowlines[values$nhd$flowlines$comid %in% c(values$nhd_prep[values$nhd_prep$comid == input$downStream$comid, 4]),],
                    color = "red",
                    opacity = 1,
                    group = "down-stream",
@@ -300,9 +294,9 @@ shinyServer(function(input, output, session) {
     req(input$flow_selector)
     text = input$flow_selector
     values$id = unlist(strsplit(text, split='COMID: ', fixed=TRUE))[2]
-    values$i = match(values$id, values$flow@data$comid)
-    values$data = values$nwm[values$nwm$COMID == values$ids[values$i],]
-    values$normals = norm[norm$COMID == values$ids[values$i],]
+    values$i = match(values$id, values$nhd$flowlines@data$comid)
+    values$data = values$nwm[values$nwm$COMID == values$nhd$flowlines$comid[values$i],]
+    values$normals = norm[norm$COMID == values$nhd$flowlines$comid[values$i],]
   })
   
   dygraph_plot <- function() {
@@ -312,8 +306,8 @@ shinyServer(function(input, output, session) {
     xts::as.xts(data2)
     mn = mean(data2$streamflow, na.rm = TRUE)
     std = sd(data2$streamflow, na.rm = TRUE)
-    title = paste0(ifelse(is.na(values$flow$gnis_name[values$flow$comid == values$ids[values$i]]), "", paste0(values$flow@data$gnis_name[values$flow$comid == values$ids[values$i]], " ")),
-                   paste0("COMID: ", values$flow$comid[values$flow$comid == values$ids[values$i]]))
+    title = paste0(ifelse(is.na(values$nhd$flowlines$gnis_name[values$nhd$flowlines$comid == values$nhd$flowlines$comid[values$i]]), "", paste0(values$nhd$flowlines@data$gnis_name[values$nhd$flowlines$comid == values$nhd$flowlines$comid[values$i]], " ")),
+                   paste0("COMID: ", values$nhd$flowlines$comid[values$nhd$flowlines$comid == values$nhd$flowlines$comid[values$i]]))
     graph = dygraphs::dygraph(data2) %>%
       dyRangeSelector(height = 20) %>%
       # dyHighlight(highlightCircleSize = 5) %>%
@@ -369,10 +363,10 @@ shinyServer(function(input, output, session) {
   observeEvent(input$mark_flowline, {
     clearMarkers()
     leafletProxy("map", session) %>%
-      setView(lng = mean(values$flow@lines[values$flow$comid == values$id][[1]]@Lines[[1]]@coords[,1]),
-              lat = mean(values$flow@lines[values$flow$comid == values$id][[1]]@Lines[[1]]@coords[,2]), 
+      setView(lng = mean(values$nhd$flowlines@lines[values$nhd$flowlines$comid == values$id][[1]]@Lines[[1]]@coords[,1]),
+              lat = mean(values$nhd$flowlines@lines[values$nhd$flowlines$comid == values$id][[1]]@Lines[[1]]@coords[,2]), 
               zoom = 14) %>% 
-      addPolylines(data = values$flow[values$flow$comid == values$id, ], 
+      addPolylines(data = values$nhd$flowlines[values$nhd$flowlines$comid == values$id, ], 
                    color = "red", 
                    weight = 15,
                    opacity = 0.9,
@@ -382,11 +376,11 @@ shinyServer(function(input, output, session) {
   })
   
   observe({
-    req(values$flow)
+    req(values$nhd$flowlines)
     upstream = data.frame(Upstream=NA)[numeric(0), ]
     downstream = data.frame(Downstream=NA)[numeric(0), ]
-    up = values$flow[values$flow$comid %in% c(values$hmm[values$hmm$comid == values$id, 2]),]
-    down = values$flow[values$flow$comid %in% c(values$nhd_prep[values$nhd_prep$comid == values$id, 4]),]
+    up = values$nhd$flowlines[values$nhd$flowlines$comid %in% c(values$hmm[values$hmm$comid == values$id, 2]),]
+    down = values$nhd$flowlines[values$nhd$flowlines$comid %in% c(values$nhd_prep[values$nhd_prep$comid == values$id, 4]),]
     if (length(up) > 0) {
       upstream = data.frame(paste0(paste0(ifelse(is.na(up$gnis_name), "", up$gnis_name)), paste0(" COMID: ", up$comid)))
       colnames(upstream) = c("Upstream")
@@ -399,34 +393,27 @@ shinyServer(function(input, output, session) {
     values$downstream = downstream
   })
   
-  output$tbl_up <- DT::renderDataTable({
-    if (length(values$upstream) > 0) {
-      df <- values$upstream %>%
-        dplyr::mutate(View = paste('<a class="go-stream" href="" data-stream="', Upstream, '"><i class="fa fa-eye"></i></a>', sep=""))
+  
+  stream_table <- function(data = NULL, direction = NULL) {
+    if (length(data) > 0) {
+      df <- data %>%
+        dplyr::mutate(View = paste('<a class="go-stream" href="" data-stream="', data[[1]], '"><i class="fa fa-eye"></i></a>', sep=""))
       action <- DT::dataTableAjax(session, df)
       DT::datatable(df, options = list(ajax = list(url = action), dom = 't'), escape = FALSE, selection = 'none')
     } else {
-      df <- values$upstream
-      df <- rbind(df, paste0("No upstream reaches from COMID ", values$id))
-      colnames(df) = "Upstream"
+      df <- data
+      df <- rbind(df, paste0("No ", direction, " reaches from COMID ", values$id))
+      colnames(df) = ifelse(direction == "upstream", "Upstream", "Downstream")
       DT::datatable(df, options = list(dom = 't'), escape = FALSE, selection = 'none')
     }
-    
+  } 
+  
+  output$tbl_up <- DT::renderDataTable({
+    stream_table(data = values$upstream, direction = "upstream")
   })
   
   output$tbl_down <- DT::renderDataTable({
-    if (length(values$downstream) > 0) {
-      df <- values$downstream %>%
-        dplyr::mutate(View = paste('<a class="go-stream" href="" data-stream="', Downstream, '"><i class="fa fa-eye"></i></a>', sep=""))
-      action <- DT::dataTableAjax(session, df)
-      DT::datatable(df, options = list(ajax = list(url = action), dom = 't'), escape = FALSE, selection = 'none')
-    } else {
-      df <- values$downstream
-      df <- rbind(df, paste0("No downstream reaches from COMID ", values$id))
-      colnames(df) = "Downstream"
-      DT::datatable(df, options = list(dom = 't'), escape = FALSE, selection = 'none')
-    }
-    
+    stream_table(data = values$downstream, direction = "downstream")
   })
   
   observe({
@@ -434,22 +421,22 @@ shinyServer(function(input, output, session) {
       return()
     updateSelectizeInput(session = session, inputId = "flow_selector", selected = input$switchStream$stream)
   })
-
+  
   observe({
     if (input$data_csv || input$data_nhd || input$data_rda || input$plot_png || input$plot_dygraph || input$maps_floods) {
       shinyjs::enable("downloadData")
       runjs("
             var text = document.getElementById('downloadData').firstChild;
             text.data = 'Download!'
-      ")
+            ")
     } else {
       shinyjs::disable("downloadData")
       runjs("
             var text = document.getElementById('downloadData').firstChild;
             text.data = 'Check one or more boxes'
-      ")
+            ")
     }
-  })
+    })
   
   
   
@@ -466,7 +453,7 @@ shinyServer(function(input, output, session) {
       if (loc == "") {
         loc = "current_location"
       }
-    
+      
       ######### DATA #########
       
       # CSV file
@@ -489,7 +476,7 @@ shinyServer(function(input, output, session) {
         dir.create(file.path(tempdir(), as.character(uid)), showWarnings = FALSE)
         temp = paste0(tempdir(),"/",as.character((uid)))
         setwd(temp)
-        rgdal::writeOGR(obj=values$flow, dsn= temp, layer="nhd", driver="ESRI Shapefile")
+        rgdal::writeOGR(obj=values$nhd$flowlines, dsn= temp, layer="nhd", driver="ESRI Shapefile")
         ls = list.files(path = temp, pattern = 'nhd')
         ls = paste(d,"/",ls, sep="")
         fs = c(fs, ls)
@@ -499,7 +486,7 @@ shinyServer(function(input, output, session) {
       ######### Plots #########
       
       if (input$plot_png) {
-        path <- paste(paste(values$flow$comid[values$flow$comid == values$ids[values$i]], Sys.Date(), sep = '_'), "png", sep = ".")
+        path <- paste(paste(values$nhd$flowlines$comid[values$nhd$flowlines$comid == values$nhd$flowlines$comid[values$i]], Sys.Date(), sep = '_'), "png", sep = ".")
         fs <- c(fs, path)
         device <- function(..., width, height) {
           grDevices::png(..., width = 8, height = 4, units = "in",
@@ -518,15 +505,15 @@ shinyServer(function(input, output, session) {
                                      values = c("red","#0069b5" )) +
                  labs(x = "Date and Time",
                       y = "Streamflow (cfs)",
-                      title = paste0(ifelse(is.na(values$flow$gnis_name[values$flow$comid == values$ids[values$i]]), "", paste0(values$flow@data$gnis_name[values$flow$comid == values$ids[values$i]], " ")),
-                                     paste0("COMID: ", values$flow$comid[values$flow$comid == values$ids[values$i]]))) +
+                      title = paste0(ifelse(is.na(values$nhd$flowlines$gnis_name[values$nhd$flowlines$comid == values$nhd$flowlines$comid[values$i]]), "", paste0(values$nhd$flowlines@data$gnis_name[values$nhd$flowlines$comid == values$nhd$flowlines$comid[values$i]], " ")),
+                                     paste0("COMID: ", values$nhd$flowlines$comid[values$nhd$flowlines$comid == values$nhd$flowlines$comid[values$i]]))) +
                  theme(plot.title = element_text(color="#0069b5", size=16, face="bold.italic"),
                        legend.position="bottom"),
                device = device)
       }
       
       if (input$plot_dygraph) {
-        path <- paste(paste(values$flow$comid[values$flow$comid == values$ids[values$i]], Sys.Date(), sep = '_'), "html", sep = ".")
+        path <- paste(paste(values$nhd$flowlines$comid[values$nhd$flowlines$comid == values$nhd$flowlines$comid[values$i]], Sys.Date(), sep = '_'), "html", sep = ".")
         fs <- c(fs, path)
         graph = dygraph_plot()
         htmlwidgets::saveWidget(graph, file = path)
@@ -546,4 +533,4 @@ shinyServer(function(input, output, session) {
     contentType = "application/zip"
   )
   
-  })
+    })
