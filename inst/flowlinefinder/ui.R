@@ -80,7 +80,7 @@ shinyUI(
                                           actionButton("slide", "", icon = icon("caret-left"))
                             ),
                             absolutePanel(id = "cur_l", class = "panel panel-default", fixed = TRUE,
-                                          draggable = FALSE, bottom = 60, right = 10, left = "auto", top = "auto",
+                                          draggable = FALSE, bottom = 60, right = 5, left = "auto", top = "auto",
                                           actionButton("current_loc", "", icon = icon("location-arrow"))
                             ),
                             absolutePanel(id = "reset_buttons", fixed = TRUE,

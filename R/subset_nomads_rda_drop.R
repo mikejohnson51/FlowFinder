@@ -4,12 +4,7 @@ subset_nomads_rda_drop <- function(comids = NULL) {
   
   mapping = read.csv("data/current_nc/map.csv", stringsAsFactors = FALSE)
   
-  files = c()
-  for (id in comids) {
-    files = c(files, subset(mapping, max >= id & min <= id)$filename)
-  }
-  files = unique(files)
-  files <- files[!is.na(files)]
+  files = unique(sapply(comids, function(id) subset(mapping, max >= id & min <= id)$filename)) 
   
   res = list()
   for (file in files) {

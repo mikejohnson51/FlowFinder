@@ -160,7 +160,6 @@ shinyServer(function(input, output, session) {
     output$data_loc <- renderText({ input$place })
     
     max_order = max(values$nhd$flowlines@data$streamorde)
-    sq_mi = size^2
     table = rbind(cbind("Largest Stream Name: ", values$nhd$flowlines@data$gnis_name[match(max_order, values$nhd$flowlines@data$streamorde)]),
                   cbind("Number of Flowlines: ", length(values$nhd$flowlines)),
                   cbind("Largest Stream Order: ", max_order),
