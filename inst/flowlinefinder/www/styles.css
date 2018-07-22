@@ -36,20 +36,6 @@ h4 { font-weight: 400; }
 
 .logo-small {display: none;}
 
-.navbar-header, 
-.nav > li { float: left !important }
-
-.navbar { max-height: 50px; }
-
-.navbar-nav > li > a {
-  line-height: 20px !important;
-  padding-top: 15px !important;
-  padding-bottom: 15px !important;
-  margin-left: 10px;
-}
-
-.navbar-nav { margin: 0px -15px !important; }
-
 .navbar-default {
   background-color: var(--header) !important;
   border-color: var(--header) !important;
@@ -61,6 +47,15 @@ h4 { font-weight: 400; }
 .navbar-brand { color: white !important; }
 
 .navbar-default .navbar-nav > .active > a { background-color: var(--tab-background) !important; }
+
+.navbar-default .navbar-toggle:focus, 
+.navbar-default .navbar-toggle:hover { background-color: var(--tab-background); }
+
+.navbar-default .navbar-toggle { border: none !important; }
+
+.navbar-default .navbar-toggle .icon-bar { background-color: white !important; }
+
+.navbar-default .navbar-collapse, .navbar-default .navbar-form { border-color: var(--tab-background) !important; }
 
 /*****************************************
 *               Map                      *
@@ -302,7 +297,7 @@ h4 { font-weight: 400; }
 
 @media only screen and (max-width: 473px) {
   
-  .navbar-default .navbar-brand{ font-size: 14px !important;}
+  .navbar-default .navbar-brand{ font-size: 12px !important;}
   
   /*#nav { font-size: 12px !important; }*/
   
@@ -310,14 +305,13 @@ h4 { font-weight: 400; }
     padding-left: 8px !important;
     padding-right: 8px !important;
   }
-
-  .logo {display: none}
-  .logo-small {display: block;}
 }
 
 @media only screen and (max-width: 407px) {
 
-  #place { max-width: 350px; }
+  #place { max-width: 260px; }
+  
+  #controls.off { left: -260px !important; }
   
   #nav > li > a {
     padding-left: 6px !important;
@@ -327,12 +321,15 @@ h4 { font-weight: 400; }
 
 @media only screen and (max-width: 371px) {
   
-  #place { max-width: 320px; }
-
   .navbar-default .navbar-brand{
     font-size: 12px !important;
     padding-left: 8px;
   }
+}
+
+@media only screen and (max-width: 290px) {
+  .logo {display: none}
+  .logo-small {display: block;}
 }
 
 /*@media only screen and (max-width: 351px) {

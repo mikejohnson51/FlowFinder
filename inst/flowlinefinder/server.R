@@ -60,6 +60,8 @@ shinyServer(function(input, output, session) {
         } else {
           point = input$place
         }
+        print('here')
+        print(point)
         loc = AOI::getPoint(name = point)
         values$lat = loc$lat
         values$lon = loc$lon

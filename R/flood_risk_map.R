@@ -61,7 +61,7 @@ m = leaflet() %>% addProviderTiles("CartoDB", group = "Base") %>%
     data = data,
     lat = data$lat,
     lng = data$long,
-    radius = (data$max) / 10000,
+    radius = ifelse(data$change /1000 > 20, 20, data$change /1000),
     color = "red",
     stroke = FALSE,
     fillOpacity = 0.5,
@@ -87,6 +87,7 @@ m = leaflet() %>% addProviderTiles("CartoDB", group = "Base") %>%
     baseGroups = c("Base", "Imagery", "Terrain"),
     options = layersControlOptions(collapsed = T)
   )
+
 
 return(m)
 

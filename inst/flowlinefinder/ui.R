@@ -25,6 +25,7 @@ shinyUI(
         )
     ),
     navbarPage(title=div(img(src="logo.png", class="logo"),img(src="logo-small.png", class="logo-small")),
+               collapsible = TRUE,
                id="nav",
                tabPanel("Map", icon = icon("map"),
                         div(class="outer",
@@ -127,7 +128,7 @@ shinyUI(
                         ),
                         DT::DTOutput('tbl')
                ),
-               tabPanel("Floods", icon = icon("tint"),
+               tabPanel("High Flows", icon = icon("tint"),
                         div(class="outer",
                             leafletOutput("flood_map", width="100%", height="100%")
                         )

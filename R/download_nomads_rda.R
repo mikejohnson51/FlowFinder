@@ -36,7 +36,7 @@ download_nomads_rda = function(fileList = NULL, number = 6, dir = NULL){
   # Opening first file to get necessary data
   nc_gd <- ncdf4::nc_open(filename = all.files[1])
   len = nc_gd[["var"]][["streamflow"]][["varsize"]]
-  inc = floor(len/40)
+  inc = floor(len/25)
   start = 1
   end = start + inc - 1
   mappingList <- list()
@@ -45,7 +45,7 @@ download_nomads_rda = function(fileList = NULL, number = 6, dir = NULL){
   message("Entering Loop!")
   
   # We are splitting the ~2.7 million COMIDS into 40 files
-  for (i in 1:40) {
+  for (i in 1:25) {
     end = start + inc - 1
     comids = nc_gd$var$streamflow$dim[[1]]$vals[start:end]
     df = data.frame(COMID = comids)
@@ -92,10 +92,10 @@ download_nomads_rda = function(fileList = NULL, number = 6, dir = NULL){
     Q$month_avg = Q$month_avg * 35.3147
     message("month avg created!")
     #Q$change <- with(Q, ifelse(month_avg == 0, 0, (Q_cfs - month_avg)/month_avg ))
-    Q = dplyr::mutate(Q, change = ifelse(month_avg == 0, 0, (Q_cfs - month_avg)/month_avg ))
+    Q = dplyr::mutate(Q, change = ifelse(month_avg == 0, 0, (max - month_avg)/month_avg ))
     message("change created!")
     #Q$comp <-with(Q, ifelse(month_avg > Q_cfs, 'less', ifelse(month_avg < Q_cfs, 'greater', 'equal')))
-    Q = dplyr::mutate(Q, comp = ifelse(month_avg > Q_cfs, 'less', ifelse(month_avg < Q_cfs, 'greater', 'equal')))
+    Q = dplyr::mutate(Q, comp = ifelse(month_avg > max, 'less', ifelse(month_avg < max, 'greater', 'equal')))
     message("comp created!")
     # Write fst file
     
@@ -108,15 +108,16 @@ download_nomads_rda = function(fileList = NULL, number = 6, dir = NULL){
     # Create `changes` data frame
     changes = dplyr::distinct(data.frame(COMID = Q$COMID,
                                          max = Q$max,
+                                         change = Q$change,
                                          max_date = Q$max_date), .keep_all = TRUE)
-    changes = changes[changes$max > 0,]
+    changes = changes[changes$change > 0,]
     fst::write_fst(changes, paste0(dir,'/data/current_nc/changes/',i,'.fst'), compress = 100)
     rm(changes)
     
     message("removing data sets!")
     
     # Remove unneeded columns from Q and write to file
-    Q = Q[ ,!(names(Q) %in% c("max", "max_date", "change"))]
+    Q = Q[ ,!(names(Q) %in% c("max", "max_date", "change", "max_date"))]
     fst::write_fst(Q, path = name, compress = 100)
     rm(Q)
     
@@ -127,6 +128,7 @@ download_nomads_rda = function(fileList = NULL, number = 6, dir = NULL){
     mappingList[[i]] <- c(i,min,max, as.character(paste0(month, "_", sprintf("%02d", i), ".fst")))
     start = end +1
   }
+  
   ncdf4::nc_close(nc_gd)
   unlink(list.files(tmp, pattern = ".nc$", full.names = TRUE))
   tmp = do.call("rbind",mappingList)
@@ -145,8 +147,8 @@ download_nomads_rda = function(fileList = NULL, number = 6, dir = NULL){
     max_increases = rbind(max_increases, fst::read_fst(path = change.files[k]))
   }
   # Sort by max flow and write file with top 5000
-  max_increases = max_increases[order(max_increases$max, decreasing=TRUE), ]
-  fst::write_fst(max_increases[1:5000,], paste0(dir,'/data/current_nc/max_increase.fst'), compress = 100)
+  max_increases = max_increases[order(max_increases$change, decreasing=TRUE), ]
+  fst::write_fst(max_increases[1:1500,], paste0(dir,'/data/current_nc/max_increase.fst'), compress = 100)
   rm(max_increases)
   rm(change.files)
   gc()
