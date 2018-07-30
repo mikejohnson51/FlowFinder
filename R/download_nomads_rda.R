@@ -19,6 +19,17 @@ download_nomads_rda = function(fileList = NULL, number = 6, dir = NULL){
   
   date  = fileList$date
   time = fileList$startTime
+  
+  # Write csv for info tab data
+  dateTime <- data.frame(date = date, time = time, stringsAsFactors = FALSE)
+  write.csv(dateTime, paste0(dir,'/data/current_nc/dateTime.csv'))
+  
+  map <- data.frame(tmp, stringsAsFactors = FALSE)
+  #combine all vectors into a matrix
+  colnames(map) <- c('num', 'min', 'max', 'filename')
+  write.csv(map, paste0(dir,'/data/current_nc/map.csv'))
+  
+  
   rm(fileList)
   
   if(length(grep(all.files, pattern = "medium")) > 1){

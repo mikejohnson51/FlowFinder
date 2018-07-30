@@ -93,7 +93,18 @@ shinyUI(
                tabPanel("Data", icon = icon("line-chart"),
                         fluidRow(
                           column(5, 
-                                 column(12, selectizeInput(inputId = "flow_selector", choices = "", label = NULL))
+                                 column(12, pickerInput(inputId = "flow_selector", 
+                                                        choices = "", 
+                                                        multiple = TRUE, 
+                                                        label = NULL,
+                                                        options = list(
+                                                          `max-options`= 10,
+                                                          `selected-text-format` = "count",
+                                                          `count-selected-text` = "{0} reaches selected",
+                                                          `actions-box` = TRUE
+                                                        )
+                                            )
+                                  )
                           ),
                           column(6,
                                  actionButton("prevCOMID", label = "Previous"),
@@ -123,7 +134,7 @@ shinyUI(
                         dygraphs::dygraphOutput("dygraph"),
                         br(), br(),
                         fluidRow(
-                          column(6,DT::DTOutput('tbl_up')),  
+                          column(6,DT::DTOutput('tbl_up')),
                           column(6,DT::DTOutput('tbl_down'))
                         ),
                         DT::DTOutput('tbl')
@@ -136,6 +147,9 @@ shinyUI(
                tabPanel("Info", icon = icon("info-circle"),
                         textOutput("data_loc"),   
                         tableOutput("stations"),
-                        tableOutput("Flowlines")
+                        fluidRow(
+                          column(5, tableOutput("Flowlines")),
+                          column(5, tableOutput("meta"))
+                        )
                )
     )))

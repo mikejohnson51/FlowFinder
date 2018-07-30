@@ -60,8 +60,6 @@ shinyServer(function(input, output, session) {
         } else {
           point = input$place
         }
-        print('here')
-        print(point)
         loc = AOI::getPoint(name = point)
         values$lat = loc$lat
         values$lon = loc$lon
@@ -162,12 +160,12 @@ shinyServer(function(input, output, session) {
     output$data_loc <- renderText({ input$place })
     
     max_order = max(values$nhd$flowlines@data$streamorde)
-    table = rbind(cbind("Largest Stream Name: ", values$nhd$flowlines@data$gnis_name[match(max_order, values$nhd$flowlines@data$streamorde)]),
+    table = rbind(cbind("Largest Stream Order: ", max_order),
+                  cbind("Largest Stream Name: ", values$nhd$flowlines@data$gnis_name[match(max_order, values$nhd$flowlines@data$streamorde)]),
                   cbind("Number of Flowlines: ", length(values$nhd$flowlines)),
-                  cbind("Largest Stream Order: ", max_order),
-                  cbind("Total Area (SqMi): ", size),
+                  cbind("Total Area (SqMi): ", size^2),
                   cbind("Unique HUC8 units: ", paste(unique(as.numeric(na.omit(unique(substr(values$nhd$flowlines$reachcode,1,8))))), collapse = ", ")))
-    colnames(table) = c('Statistic', 'Value')
+    colnames(table) = c('Hydrography', 'Value')
     output$Flowlines = renderTable(table, striped = TRUE)
     
     if(typeof(values$stats) == "S4") {
@@ -179,29 +177,49 @@ shinyServer(function(input, output, session) {
     colnames(station_data) = c("USGS Site", "Site No.", "Drainage Area (SqKm)")
     output$stations = renderTable({station_data}, striped = TRUE, sanitize.text.function = function(x) x)
     
+    dateTime = read.csv('data/current_nc/dateTime.csv', stringsAsFactors = FALSE)
+    timeZones = fst::read.fst('data/comids_w_tz.fst')
+    timeZone = timeZones[timeZones$COMID==values$nhd$flowlines$comid[1],]$tz
+    dif = as.POSIXct(paste(dateTime$date, dateTime$time), "%Y-%m-%d %H", tz = "GMT") - as.POSIXct(paste(dateTime$date, dateTime$time), "%Y-%m-%d %H", tz = timeZone)
+    
+    nwm_table = rbind(cbind("Forcast Type: ", "Medium"),
+                         cbind("Forcast Date: ", dateTime$date),
+                         cbind("Forcast Time: ", paste(dateTime$time, "UTC")),
+                         cbind("Local Time Zone: ", timeZone),
+                         cbind("Time Difference: ", dif)
+                        )
+    rm(dateTime, timeZones)
+    
+    colnames(nwm_table) = c("NWM", "Value")
+    output$meta = renderTable(nwm_table, striped = TRUE)
+    
+    
+    
+    
+    
+    
     max_qcms = values$nwm[match(max(values$nwm$Q_cfs), values$nwm$Q_cfs),]$COMID
     name = values$nhd$flowlines[values$nhd$flowlines$comid == max_qcms,]$gnis_name
-    e = paste0(paste0(ifelse(is.na(name), "", name)), paste0(" COMID: ", max_qcms))
+
     values$choices = as.list(paste0(paste0(ifelse(is.na(values$nhd$flowlines@data$gnis_name), "", values$nhd$flowlines@data$gnis_name)),
                                     paste0(" COMID: ", values$nhd$flowlines$comid)))
-    lables = paste0(paste0(ifelse(is.na(values$nhd$flowlines@data$gnis_name), "", values$nhd$flowlines@data$gnis_name)),
-                    paste0(" COMID: ", values$nhd$flowlines$comid))
-    values$test = data.frame(value=lables, label=lables, id=values$nhd$flowlines$comid)
+    
     non_zero = unique(values$nwm[values$nwm$Q_cfs > 0,]$COMID)
-    values$test <- transform(values$test, max= ifelse(id %in% non_zero, 1, 0))
-    updateSelectizeInput(session, 'flow_selector', choices = values$test, server = TRUE,
-                         selected = e,
-                         options = list(render = I(
-                           "{
-                           option: function(item, escape) {
-                           if (item.max == 1) {
-                           return '<div style=color:#0069b5;font-weight:bold;>' + escape(item.value) + '</div>';
-                           } else {
-                           return '<div style=color:#a8a8a8>' + escape(item.value) + '</div>';
-                           }
-                           }
-  }")))
-    text = e
+    non_zeros = c()
+    for (stream in values$choices) {
+      id = unlist(strsplit(stream, split='COMID: ', fixed=TRUE))[2]
+      non_zeros = c(non_zeros, id %in% non_zero)
+    }
+    
+    text = paste0(paste0(ifelse(is.na(name), "", name)), paste0(" COMID: ", max_qcms))
+  
+    updatePickerInput(session, 'flow_selector', choices = values$choices, selected = text,
+                      choicesOpt = list(
+                        style = ifelse(non_zeros,
+                                       yes = "color:#0069b5;font-weight:bold;",
+                                       no = "style=color:#a8a8a8")
+                      ))
+  
     values$id = unlist(strsplit(text, split='COMID: ', fixed=TRUE))[2]
     values$i = match(values$id, values$nhd$flowlines@data$comid)
     values$data = values$nwm[values$nwm$COMID == values$nhd$flowlines$comid[values$i],]
@@ -301,32 +319,48 @@ shinyServer(function(input, output, session) {
   })
   
   dygraph_plot <- function() {
-    cutoff = values$normals[,2] * 35.3147
-    data2 = data.frame(time = values$data$dateTime, streamflow = values$data$Q_cfs)
-    rownames(data2) = data2[[1]]
-    xts::as.xts(data2)
-    mn = mean(data2$streamflow, na.rm = TRUE)
-    std = sd(data2$streamflow, na.rm = TRUE)
-    title = paste0(ifelse(is.na(values$nhd$flowlines$gnis_name[values$nhd$flowlines$comid == values$nhd$flowlines$comid[values$i]]), "", paste0(values$nhd$flowlines@data$gnis_name[values$nhd$flowlines$comid == values$nhd$flowlines$comid[values$i]], " ")),
-                   paste0("COMID: ", values$nhd$flowlines$comid[values$nhd$flowlines$comid == values$nhd$flowlines$comid[values$i]]))
-    graph = dygraphs::dygraph(data2) %>%
+    
+    df = data.frame(time = values$data$dateTime)
+    
+    for (stream in input$flow_selector) {
+      text = stream
+      id = unlist(strsplit(text, split='COMID: ', fixed=TRUE))[2]
+      i = match(id, values$nhd$flowlines@data$comid)
+      data = values$nwm[values$nwm$COMID == values$nhd$flowlines$comid[i],]
+      df[as.character(id)] = data$Q_cfs
+    }
+    rownames(df) = df[[1]]
+    #title = ifelse((input$flow_selector) == 1,lengthpaste0(ifelse(is.na(values$nhd$flowlines$gnis_name[values$nhd$flowlines$comid == values$nhd$flowlines$comid[values$i]]), "", paste0(values$nhd$flowlines@data$gnis_name[values$nhd$flowlines$comid == values$nhd$flowlines$comid[values$i]], " ")),
+     #              paste0("COMID: ", values$nhd$flowlines$comid[values$nhd$flowlines$comid == values$nhd$flowlines$comid[values$i]])), "Multiple Reaches Selected")
+    graph = dygraphs::dygraph(df) %>%
       dyRangeSelector(height = 20) %>%
-      # dyHighlight(highlightCircleSize = 5) %>%
       dyAxis("x", drawGrid = FALSE) %>%
       dyHighlight(highlightCircleSize = 5,
                   highlightSeriesBackgroundAlpha = 1) %>%
-      dyAxis("y", label = "Streamflow (cfs)") %>%
-      dySeries("streamflow", label = "Streamflow (cfs)") %>%
-      dyShading(from = mn - std, to = mn + std, axis = "y") %>%
-      dyLegend(width = 400, show = "onmouseover") %>%
-      dyOptions(fillGraph = TRUE, 
-                fillAlpha = 0.1, 
-                drawPoints = TRUE, 
-                pointSize = 2, 
-                colors = "#0069b5",
+      dyAxis("y", label = "Streamflow (cfs)" )%>%
+      dyLegend(show = "onmouseover") %>%
+      dyOptions(drawPoints = TRUE, 
+                pointSize = 2,
                 gridLineColor = "lightblue",
-                labelsUTC = TRUE) %>%
-      dyLimit(cutoff, strokePattern = "solid", color = "red", label = paste0("Monthly Average (", round(cutoff,2), " cfs)"))
+                labelsUTC = TRUE)
+
+    if (length(input$flow_selector) == 1) {
+      cutoff = values$normals[,2] * 35.3147
+      mn = mean(df[[2]], na.rm = TRUE)
+      std = sd(df[[2]], na.rm = TRUE)
+      graph = graph %>%
+        dyOptions(
+          drawPoints = TRUE, 
+          pointSize = 2,
+          gridLineColor = "lightblue",
+          labelsUTC = TRUE,
+          fillGraph = TRUE, 
+          fillAlpha = 0.1
+        )  %>%
+        dyLimit(cutoff, strokePattern = "solid", color = "red", label = paste0("Monthly Average (", round(cutoff,2), " cfs)")) %>%
+        dyShading(from = mn - std, to = mn + std, axis = "y")
+    }
+    
     return(graph)
   }
   
@@ -338,7 +372,7 @@ shinyServer(function(input, output, session) {
   observeEvent(input$prevCOMID, {
     current <- which(values$choices == input$flow_selector)
     if(current > 1){
-      updateSelectizeInput(session, "flow_selector",
+      updatePickerInput(session, "flow_selector",
                            selected = values$choices[current - 1])
     }
   })
@@ -347,7 +381,7 @@ shinyServer(function(input, output, session) {
   observeEvent(input$nextCOMID, {
     current <- which(values$choices == input$flow_selector)
     if(current < length(values$choices)){
-      updateSelectizeInput(session, "flow_selector",
+      updatePickerInput(session, "flow_selector",
                            selected = values$choices[current + 1])
     }
   })
@@ -357,7 +391,7 @@ shinyServer(function(input, output, session) {
   observe({
     if (is.null(input$goto))
       return()
-    updateSelectizeInput(session = session, inputId = "flow_selector", selected = input$goto$text)
+    updatePickerInput(session = session, inputId = "flow_selector", selected = input$goto$text)
   })
   
   # View on map button
@@ -394,13 +428,38 @@ shinyServer(function(input, output, session) {
     values$downstream = downstream
   })
   
+  observe({
+    if (length(input$flow_selector) > 1) {
+      shinyjs::hide("tbl_up")
+      shinyjs::hide("tbl_down")
+      shinyjs::hide("prevCOMID")
+      shinyjs::hide("nextCOMID")
+    } else {
+      shinyjs::show("tbl_up")
+      shinyjs::show("tbl_down")
+      shinyjs::show("prevCOMID")
+      shinyjs::show("nextCOMID")
+    }
+  })
   
   stream_table <- function(data = NULL, direction = NULL) {
     if (length(data) > 0) {
       df <- data %>%
         dplyr::mutate(View = paste('<a class="go-stream" href="" data-stream="', data[[1]], '"><i class="fa fa-eye"></i></a>', sep=""))
-      action <- DT::dataTableAjax(session, df)
-      DT::datatable(df, options = list(ajax = list(url = action), dom = 't'), escape = FALSE, selection = 'none')
+      
+      all = data.frame(paste0("All ", "(",nrow(df), ")"), paste('<a class="go-stream" href="" data-stream="', paste(data[[1]],collapse=","), '"><i class="fa fa-eye"></i></a>', sep=""))
+      df = rbind(setNames(all, names(df)), df)
+      
+      
+      
+      action <- DT::dataTableAjax(session, df, rownames = FALSE)
+      DT::datatable(df,
+                    options = list(ajax = list(url = action), 
+                                   dom = 't'
+                                   ), 
+                    escape = FALSE, 
+                    selection = 'none', rownames = FALSE
+                  )
     } else {
       df <- data
       df <- rbind(df, paste0("No ", direction, " reaches from COMID ", values$id))
@@ -420,9 +479,18 @@ shinyServer(function(input, output, session) {
   observe({
     if (is.null(input$switchStream))
       return()
-    updateSelectizeInput(session = session, inputId = "flow_selector", selected = input$switchStream$stream)
+    else {
+      streams = unlist(strsplit(input$switchStream$stream ,","))
+      isolate({
+        if (length(streams) > 1) {
+          streams = c(streams, input$flow_selector)
+        }
+        updatePickerInput(session = session, inputId = "flow_selector", selected = streams)
+      })
+    }
   })
   
+
   observe({
     if (input$data_csv || input$data_nhd || input$data_rda || input$plot_png || input$plot_dygraph || input$maps_floods) {
       shinyjs::enable("downloadData")
