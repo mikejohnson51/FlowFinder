@@ -394,14 +394,23 @@ shinyServer(function(input, output, session) {
     updatePickerInput(session = session, inputId = "flow_selector", selected = input$goto$text)
   })
   
+  
+  getIDs <- function(streams) {
+    ids = c()
+    for (stream in streams) {
+      ids = c(ids, unlist(strsplit(stream, split='COMID: ', fixed=TRUE))[2])
+    }
+    return(ids)
+  }
+  
   # View on map button
   observeEvent(input$mark_flowline, {
     clearMarkers()
+    reaches = values$nhd$flowlines[values$nhd$flowlines$comid %in% getIDs(input$flow_selector), ]
+    bb = AOI::getBoundingBox(reaches)
     leafletProxy("map", session) %>%
-      setView(lng = mean(values$nhd$flowlines@lines[values$nhd$flowlines$comid == values$id][[1]]@Lines[[1]]@coords[,1]),
-              lat = mean(values$nhd$flowlines@lines[values$nhd$flowlines$comid == values$id][[1]]@Lines[[1]]@coords[,2]), 
-              zoom = 14) %>% 
-      addPolylines(data = values$nhd$flowlines[values$nhd$flowlines$comid == values$id, ], 
+      fitBounds(min(bb@bbox[1,]) + .01, min(bb@bbox[2,]) + .01, max(bb@bbox[1,])+ .01, max(bb@bbox[2,])+ .01) %>% 
+      addPolylines(data = reaches, 
                    color = "red", 
                    weight = 15,
                    opacity = 0.9,
