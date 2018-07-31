@@ -124,7 +124,8 @@ shinyUI(
                                    download_item(id = "plot_dygraph", label = "Flow Dygraph (HTML)"),
                                    
                                    tags$h3("Maps"),
-                                   download_item(id = "maps_floods", label = "Flood Map (HTML)"),
+                                   download_item(id = "maps_floods", label = "High Flows (HTML)"),
+                                   download_item(id = "maps_flow", label = "Map (HTML)"),
                                    downloadButton(outputId = 'downloadData', label = NULL, class = 'btn-primary')
                                  )
                           )
