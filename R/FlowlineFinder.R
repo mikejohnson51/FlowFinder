@@ -21,7 +21,7 @@
 #' 
 #' @importFrom utils download.file head write.csv
 #' 
-#' @importFrom AOI getAOI getPoint
+#' @importFrom AOI getAOI getPoint getBoundingBox
 #' 
 #' @importFrom xts as.xts
 #' 
