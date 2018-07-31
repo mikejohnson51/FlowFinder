@@ -2,7 +2,7 @@
 
 download_nomads_rda = function(fileList = NULL, number = 6, dir = NULL){
   if (is.null(dir)) {
-    dir <- system.file("flowlinefinder", package = "FlowlineFinder")
+    dir <- system.file("flowfinder", package = "FlowFinder")
   }
   
   dir.create(paste0(dir,'/data/current_nc'))

@@ -2,5 +2,5 @@
 
 run_app <- function()
 {
-  shiny::runApp(appDir = system.file("flowlinefinder", package = "FlowlineFinder"))
+  shiny::runApp(appDir = system.file("flowfinder", package = "FlowFinder"))
 }
