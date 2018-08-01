@@ -43,36 +43,27 @@ shinyServer(function(input, output, session) {
   
   # On go, calculate reactive values
   observeEvent(input$do, {
+    
+    # Don't let user enter new location while processing previous
     shinyjs::disable("do")
-    start.time <- Sys.time()
+    
+    # Initialize Progress Bar
     withProgress(message = 'Analyzing Location', value = 0, {
+      
+      # Get Initial Location
       incProgress(1/6, detail = "Getting location coordinates")
-      # Check if input is likely a lat/lon pair
-      split = unlist(strsplit(input$place, split=" ", fixed=TRUE))
-      if ((length(split) == 2) && !is.na(as.numeric(split[1])) && !is.na(as.numeric(split[2])) )  {
-        values$lat = as.numeric(split[1])
-        values$lon = as.numeric(split[2])
-      } else {
-        if (input$place == "") {
-          point = "National Water Center"
-        } else {
-          point = input$place
-        }
-        loc = AOI::getPoint(name = point)
-        values$lat = loc$lat
-        values$lon = loc$lon
-      }
+      values$loc = get_location(place = input$place)
       
       
+      # Get Spatial Data
       incProgress(3/6, detail = "Getting Spatial Objects")
-      
-      values$flow_data = AOI::getAOI(clip = list(values$lat, values$lon, size, size)) %>% 
+      values$flow_data = AOI::getAOI(clip = list(values$loc$lat, values$loc$lon, size, size)) %>% 
                          findNHD(ids = TRUE) %>% 
                          findWaterbodies() %>% 
                          findNWIS()
-      
       AOI = values$flow_data$AOI
       
+      #Subset Data
       incProgress(1/6, detail = "Subsetting Stream Data")
       values$nwm = subset_nomads_rda_drop(comids = values$flow_data$comid)
       
@@ -80,17 +71,13 @@ shinyServer(function(input, output, session) {
         updateTextInput(session = session, inputId =  "place", value = "")
       }
       
+      incProgress(1/6, detail = "Finding Upstream/Downstream")
+      # Set Upstream/Downstream Data
       values$flow_data$nhd_prep = suppressWarnings(prep_nhd(flines = values$flow_data$nhd))
       values$hmm = get_upstream(flines = values$flow_data$nhd_prep)
       
+      # Map Data
       incProgress(1/6, detail = "Mapping")
-    })
-    
-    end.time <- Sys.time()
-    time.taken <- end.time - start.time
-    time.taken
-    print(time.taken)
-    withProgress(message = 'Mapping Location', value = 0, {
       clearMarkers()
       incProgress(5/6, detail = "Flowlines")
       leafletProxy("map") %>%
@@ -100,13 +87,13 @@ shinyServer(function(input, output, session) {
         add_bounds(AOI = AOI) %>% 
         add_water_bodies(wb = values$flow_data$waterbodies) %>% 
         add_flows(values = values) %>%
-        add_stations(values = values) 
-        
-      error_message("")
+        add_stations(values = values)
+      
+    })
+    
+    error_message("")
     shinyjs::enable("do")
-  })
-    
-    
+
     ################# INFO TAB ############################
     
     # Page title
@@ -428,7 +415,7 @@ shinyServer(function(input, output, session) {
       if (input$plot_dygraph) {
         path <- paste(paste(values$flow_data$nhd$comid[values$flow_data$nhd$comid == values$flow_data$nhd$comid[values$i]], Sys.Date(), sep = '_'), "html", sep = ".")
         fs <- c(fs, path)
-        graph = dygraph_plot()
+        graph = dygraph_plot(values = values, selected = input$flow_selector )
         htmlwidgets::saveWidget(graph, file = path)
       }
       
@@ -445,14 +432,17 @@ shinyServer(function(input, output, session) {
         on.exit(setwd(owd))
         path <- paste0("flow_map_", Sys.Date(), ".html" )
         fs <- c(fs, path)
-        clip = list(values$lat, values$lon, size, size)
+        clip = list(values$loc$lat, values$loc$lon, size, size)
         AOI = AOI::getAOI(clip = clip)
-        graph = basemap() %>% add_bounds(AOI = AOI) %>% add_flows() %>% add_stations
+        graph = basemap() %>% 
+                add_bounds(AOI = AOI) %>% 
+                add_water_bodies(wb = values$flow_data$waterbodies) %>% 
+                add_flows(values = values) %>%
+                add_stations(values = values)
         htmlwidgets::saveWidget(graph, file = path)
         #mapview::mapshot(mapdown(), file = path, cliprect = "viewport")
       }
-      
-      
+    
       zip(zipfile=fname, files=fs)
     },
     contentType = "application/zip"
