@@ -165,40 +165,34 @@ shinyServer(function(input, output, session) {
     clearMarkers()
   })
   
+  # Mark up/downstream
+  mark_up_down <- function(stream = NULL, data = NULL, group = NULL, color = NULL) {
+    clearMarkers()
+    leafletProxy("map", session) %>%
+      addPolylines(data = values$flow_data$nhd[values$flow_data$nhd$comid == stream,],
+                   color = "blue",
+                   opacity = 1,
+                   group = group,
+                   options = pathOptions(clickable = FALSE))  %>%
+      addPolylines(data = data, 
+                   color = color,
+                   opacity = 1,
+                   group = group,
+                   options = pathOptions(clickable = FALSE))
+  }
+  
   # Mark upstream flows from leaflet popup
   observe({
     if (is.null(input$upStream))
       return()
-    clearMarkers()
-    leafletProxy("map", session) %>%
-      addPolylines(data = values$flow_data$nhd[values$flow_data$nhd$comid == input$upStream$comid,],
-                   color = "blue",
-                   opacity = 1,
-                   group = "up-stream",
-                   options = pathOptions(clickable = FALSE))  %>%
-      addPolylines(data = values$flow_data$nhd[values$flow_data$nhd$comid %in% c(values$hmm[values$hmm$comid == input$upStream$comid, 2]),], 
-                   color = "#84bd00",
-                   opacity = 1,
-                   group = "up-stream",
-                   options = pathOptions(clickable = FALSE))
+    mark_up_down(stream = input$upStream$comid, data = values$flow_data$nhd[values$flow_data$nhd$comid %in% c(values$hmm[values$hmm$comid == input$upStream$comid, 2]),], group = "up-stream", color = "#84bd00")
   })
   
   # Mark downstream flows from leaflet popup
   observe({
     if (is.null(input$downStream))
       return()
-    clearMarkers()
-    leafletProxy("map", session) %>%
-      addPolylines(data = values$flow_data$nhd[values$flow_data$nhd$comid == input$downStream$comid,],
-                   color = "blue",
-                   opacity = 1,
-                   group = "down-stream",
-                   options = pathOptions(clickable = FALSE))  %>%
-      addPolylines(data = values$flow_data$nhd[values$flow_data$nhd$comid %in% c(values$flow_data$nhd_prep[values$flow_data$nhd_prep$comid == input$downStream$comid, 4]),],
-                   color = "red",
-                   opacity = 1,
-                   group = "down-stream",
-                   options = pathOptions(clickable = FALSE))
+    mark_up_down(stream = input$downStream$comid, data = values$flow_data$nhd[values$flow_data$nhd$comid %in% c(values$flow_data$nhd_prep[values$flow_data$nhd_prep$comid == input$downStream$comid, 4]),], group = "down-stream", color = "red")
   })
   
   ########## Stream Flow ####################################################################
@@ -210,8 +204,7 @@ shinyServer(function(input, output, session) {
   
   observeEvent(input$flow_selector, {
     req(input$flow_selector)
-    text = input$flow_selector
-    update_cur_id(text)
+    update_cur_id(input$flow_selector)
   })
   
   output$dygraph <- dygraphs::renderDygraph({
@@ -250,7 +243,6 @@ shinyServer(function(input, output, session) {
     for (stream in streams) {
       ids = c(ids, unlist(strsplit(stream, split='COMID: ', fixed=TRUE))[2])
     }
-    print(length(ids))
     return(ids)
   }
   
@@ -421,12 +413,7 @@ shinyServer(function(input, output, session) {
       
       ######### Maps #########
       
-      if (input$maps_floods) {
-        path <- paste0("flood_predections_", Sys.Date(), ".html" )
-        fs <- c(fs, path)
-        htmlwidgets::saveWidget(flood_map, file = path)
-      }
-      
+      # Map
       if (input$maps_flow) {
         owd <- setwd(tempdir())
         on.exit(setwd(owd))
@@ -435,12 +422,18 @@ shinyServer(function(input, output, session) {
         clip = list(values$loc$lat, values$loc$lon, size, size)
         AOI = AOI::getAOI(clip = clip)
         graph = basemap() %>% 
-                add_bounds(AOI = AOI) %>% 
-                add_water_bodies(wb = values$flow_data$waterbodies) %>% 
-                add_flows(values = values) %>%
-                add_stations(values = values)
+          add_bounds(AOI = AOI) %>% 
+          add_water_bodies(wb = values$flow_data$waterbodies) %>% 
+          add_flows(values = values) %>%
+          add_stations(values = values)
         htmlwidgets::saveWidget(graph, file = path)
-        #mapview::mapshot(mapdown(), file = path, cliprect = "viewport")
+      }
+      
+      # High Flows Map
+      if (input$maps_floods) {
+        path <- paste0("flood_predections_", Sys.Date(), ".html" )
+        fs <- c(fs, path)
+        htmlwidgets::saveWidget(flood_map, file = path)
       }
     
       zip(zipfile=fname, files=fs)
