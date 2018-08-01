@@ -86,9 +86,6 @@ stream_table <- function(data = NULL, direction = NULL, values= NULL, session = 
     
     all = data.frame(paste0("All ", "(",nrow(df), ")"), paste('<a class="go-stream" href="" data-stream="', paste(data[[1]],collapse=","), '"><i class="fa fa-eye"></i></a>', sep=""))
     df = rbind(setNames(all, names(df)), df)
-    
-    
-    
     action <- DT::dataTableAjax(session, df, rownames = FALSE)
     table = DT::datatable(df,
                   options = list(ajax = list(url = action), 
@@ -104,4 +101,21 @@ stream_table <- function(data = NULL, direction = NULL, values= NULL, session = 
     table = DT::datatable(df, options = list(dom = 't'), escape = FALSE, selection = 'none')
   }
   return(table)
-} 
+}
+
+# Find up/downstreams from current id
+find_connecting_streams <- function(values = values) {
+  upstream = data.frame(Upstream=NA)[numeric(0), ]
+  downstream = data.frame(Downstream=NA)[numeric(0), ]
+  up = values$flow_data$nhd[values$flow_data$comid %in% c(values$hmm[values$hmm$comid == values$id, 2]),]
+  down = values$flow_data$nhd[values$flow_data$comid %in% c(values$flow_data$nhd_prep[values$flow_data$nhd_prep$comid == values$id, 4]),]
+  if (length(up) > 0) {
+    upstream = data.frame(paste0(paste0(ifelse(is.na(up$gnis_name), "", up$gnis_name)), paste0(" COMID: ", up$comid)))
+    colnames(upstream) = c("Upstream")
+  }
+  if (length(down) > 0) {
+    downstream = data.frame(paste0(paste0(ifelse(is.na(down$gnis_name), "", down$gnis_name)), paste0(" COMID: ", down$comid)))
+    colnames(downstream) = c("Downstream")
+  }
+  return(list(upstream = upstream, downstream = downstream))
+}

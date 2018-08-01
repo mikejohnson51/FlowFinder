@@ -130,7 +130,7 @@ shinyUI(
                                  )
                           )
                         ),
-                        #plotOutput("streamFlow"),
+                        #plotOutput("fFlow"),
                         br(), br(),
                         dygraphs::dygraphOutput("dygraph"),
                         br(), br(),

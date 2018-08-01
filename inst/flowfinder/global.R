@@ -13,6 +13,17 @@ month_files = list.files("data/", pattern = as.character(month), full.names = T)
 norm = fst::read_fst(path = month_files)
 size = 15
 
+# Returns COMIDS from stream names
+# getIDs("Monument Creek COMID: 1529685") -> "1529685"
+# getIDs(c("Monument Creek COMID: 1529685", "Fountain Creek COMID: 1529677")) -> "1529685" "1529677"
+getIDs <- function(streams) {
+  ids = c()
+  for (stream in streams) {
+    ids = c(ids, unlist(strsplit(stream, split='COMID: ', fixed=TRUE))[2])
+  }
+  return(ids)
+}
+
 # Get location
 get_location <- function(place) {
   # Check if input is likely a lat/lon pair

@@ -26,6 +26,21 @@ add_flows <- function(map, session, values) {
                      stroke = FALSE, fillOpacity = 0.5, group = "Location")
 }
 
+# Mark up/downstream
+mark_up_down <- function(map, session, values, stream, data, group, color) {
+  map %>%
+    addPolylines(data = values$flow_data$nhd[values$flow_data$nhd$comid == stream,],
+                 color = "blue",
+                 opacity = 1,
+                 group = group,
+                 options = pathOptions(clickable = FALSE))  %>%
+    addPolylines(data = data, 
+                 color = color,
+                 opacity = 1,
+                 group = group,
+                 options = pathOptions(clickable = FALSE))
+}
+
 
 # Add stations to map
 add_stations <- function(map, session, values) {
@@ -80,4 +95,16 @@ add_water_bodies <- function(map, session, wb) {
                 fillOpacity = 0.7,
                 bringToFront = FALSE
               ))
+}
+
+
+add_layers <- function(map, values) {
+  map %>%
+    clearGroup("NHD Flowlines") %>%
+    clearGroup("Location") %>%
+    clearGroup("USGS Stations") %>%
+    add_bounds(AOI = values$flow_data$AOI) %>% 
+    add_water_bodies(wb = values$flow_data$waterbodies) %>% 
+    add_flows(values = values) %>%
+    add_stations(values = values)
 }
