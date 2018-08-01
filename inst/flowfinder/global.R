@@ -33,11 +33,11 @@ get_location <- function(place) {
     lon = as.numeric(split[2])
   } 
   else {
-    if (input$place == "") {
+    if (place == "") {
       point = "National Water Center"
     } 
     else {
-      point = input$place
+      point = place
     }
     loc = AOI::getPoint(name = point)
     lat = loc$lat

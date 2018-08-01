@@ -1,4 +1,5 @@
 shinyServer(function(input, output, session) {
+  
   ########## Initial Setup ####################################################################
   
   # Include code for download handler
@@ -25,11 +26,6 @@ shinyServer(function(input, output, session) {
   # Set map
   output$map <- renderLeaflet({
      basemap()
-  })
-  
-  # Set high flows map
-  output$flood_map <- renderLeaflet({
-    flood_map
   })
   
   # Display error messages
@@ -59,8 +55,8 @@ shinyServer(function(input, output, session) {
       
       # Get Initial Location
       incProgress(1/6, detail = "Getting location coordinates")
+      print(input$place)
       values$loc = get_location(place = input$place)
-      
       
       # Get Spatial Data
       incProgress(3/6, detail = "Getting Spatial Objects")
@@ -271,7 +267,8 @@ shinyServer(function(input, output, session) {
   
   # Change download button based on whether or not any items are checked
   observe({
-    if (input$data_csv || input$data_nhd || input$data_rda || input$plot_png || input$plot_dygraph || input$maps_floods || input$maps_flow) {
+    download_options = c(input$data_csv, input$data_nhd, input$data_rda, input$plot_png, input$plot_dygraph, input$maps_floods, input$maps_flow)
+    if (any(download_options)) {
       shinyjs::enable("downloadData")
       runjs("
             var text = document.getElementById('downloadData').firstChild;
@@ -284,5 +281,13 @@ shinyServer(function(input, output, session) {
             text.data = 'Check one or more boxes'
             ")
     }
-    })
+  })
+  
+  ########## MAP TAB ####################################################################
+  
+  # Set high flows map
+  output$flood_map <- renderLeaflet({
+    flood_map
+  })
+  
 })
