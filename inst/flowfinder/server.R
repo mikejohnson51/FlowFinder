@@ -17,16 +17,14 @@ shinyServer(function(input, output, session) {
       setView(lng = -93.85, lat = 37.45, zoom = 4) %>%
       addLayersControl(
         baseGroups = c("Basemap","Imagery"),
-        overlayGroups = c("USGS Stations", "NHD Flowlines"),
+        overlayGroups = c("USGS Stations", "NHD Flowlines", "Water bodies", "AOI"),
         options = layersControlOptions(collapsed = TRUE),
         position = "bottomleft"
       )
   })
   
   # Set map
-  output$map <- renderLeaflet({
-     basemap()
-  })
+  output$map <- renderLeaflet({ basemap() })
   
   # Display error messages
   error_message <- function(message) {
@@ -44,43 +42,43 @@ shinyServer(function(input, output, session) {
   # On go, calculate reactive values
   observeEvent(input$do, {
     
-    # Clear error Messages
+    # Clear error messages
     error_message("")
     
     # Don't let user enter new location while processing previous
     shinyjs::disable("do")
     
-    # Initialize Progress Bar
+    # Initialize progress bar
     withProgress(message = 'Analyzing Location', value = 0, {
       
-      # Get Initial Location
+      # Get initial location
       incProgress(1/6, detail = "Getting location coordinates")
       print(input$place)
       values$loc = get_location(place = input$place)
       
-      # Get Spatial Data
+      # Get spatial data
       incProgress(3/6, detail = "Getting Spatial Objects")
       values$flow_data = AOI::getAOI(clip = list(values$loc$lat, values$loc$lon, size, size)) %>% 
                          findNHD(ids = TRUE) %>% 
                          findWaterbodies() %>% 
                          findNWIS()
 
-      #Subset Data
+      # Subset data
       incProgress(1/6, detail = "Subsetting Stream Data")
       values$nwm = subset_nomads_rda_drop(comids = values$flow_data$comid)
       
-      # Set Upstream/Downstream Data
+      # Set upstream/downstream data
       incProgress(1/6, detail = "Finding Upstream/Downstream")
       values$flow_data$nhd_prep = suppressWarnings(prep_nhd(flines = values$flow_data$nhd))
       values$hmm = get_upstream(flines = values$flow_data$nhd_prep)
       
-      # Map Data
+      # Map data
       incProgress(1/6, detail = "Mapping")
       clearMarkers()
       add_layers(map = leafletProxy("map"), values = values)
     })
     
-    # Update Title
+    # Update title
     if (input$do == 1) {
       updateTextInput(session = session, inputId =  "place", value = "")
     }
@@ -138,7 +136,7 @@ shinyServer(function(input, output, session) {
     )
   }
   
-  # Current Location Button
+  # Current location button
   observeEvent(input$current_loc, {
     if(!is.null(input$lat)){
       updateTextInput(session = session, inputId =  "place", value = paste(input$lat, input$long, sep = " "), placeholder = "Current Location")
@@ -149,10 +147,8 @@ shinyServer(function(input, output, session) {
     }
   })
   
-  # Reset Button
-  observeEvent(input$reset, {
-    clearMarkers()
-  })
+  # Reset button
+  observeEvent(input$reset, { clearMarkers() })
   
   # Mark upstream flows from leaflet popup
   observe({
@@ -286,8 +282,6 @@ shinyServer(function(input, output, session) {
   ########## MAP TAB ####################################################################
   
   # Set high flows map
-  output$flood_map <- renderLeaflet({
-    flood_map
-  })
+  output$flood_map <- renderLeaflet({ flood_map })
   
 })

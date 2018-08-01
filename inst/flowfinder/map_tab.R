@@ -68,7 +68,8 @@ add_bounds <- function(map, session, AOI) {
       lng1 = AOI@bbox[1] , lat1 = AOI@bbox[2],
       lng2 = AOI@bbox[3] , lat2 = AOI@bbox[4],
       fillColor = "transparent",
-      group = 'AOI', color = "red"
+      group = 'AOI', 
+      color = "red"
     ) 
 }
 
@@ -103,6 +104,8 @@ add_layers <- function(map, values) {
     clearGroup("NHD Flowlines") %>%
     clearGroup("Location") %>%
     clearGroup("USGS Stations") %>%
+    clearGroup("Water bodies") %>% 
+    clearGroup("AOI") %>% 
     add_bounds(AOI = values$flow_data$AOI) %>% 
     add_water_bodies(wb = values$flow_data$waterbodies) %>% 
     add_flows(values = values) %>%

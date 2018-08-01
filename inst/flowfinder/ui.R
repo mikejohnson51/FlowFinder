@@ -31,7 +31,7 @@ shinyUI(
                         div(class="outer",
                             tags$head(
                               includeCSS("www/styles.css"),
-                              includeScript("www/gomap.js")
+                              includeScript("www/global.js")
                             ),
                             # Get geolocation if possible
                             tags$script('
