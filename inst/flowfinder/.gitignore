@@ -1,0 +1,11 @@
+nomads_download.html
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+.DS_Storegit
+.httr-oauth
+token.rds
+inst/flowlinefinder/rsconnect
+inst/flowlinefinder/data/current_nc/*
+.DS_Store

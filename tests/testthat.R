@@ -1,4 +1,4 @@
 library(testthat)
-library(FlowlineFinder)
+library(FlowFinder)
 
-test_check("FlowlineFinder")
+test_check("FlowFinder")

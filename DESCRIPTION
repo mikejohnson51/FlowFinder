@@ -1,4 +1,4 @@
-Package: FlowlineFinder
+Package: FlowFinder
 Title: Find, Vizualize and Download NWM and NHD Data in 'Shiny'
 Version: 0.1.0
 Authors@R: as.person(c(
@@ -6,8 +6,8 @@ Authors@R: as.person(c(
     "Pat Johnson <patjohns1216@gmail.com> [aut]"
   ))
 Description: Easily find, vizualize and download the National Hydrograph Dataset (NHD) and NOAA National Water Model Data.
-URL: https://github.com/mikejohnson51/FlowlineFinder
-BugReports: https://github.com/mikejohnson51/FlowlineFinder/issues
+URL: https://github.com/mikejohnson51/FlowFinder
+BugReports: https://github.com/mikejohnson51/FlowFinder/issues
 Depends:
     R (>= 3.0.0),
     HydroData,

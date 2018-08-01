@@ -1,0 +1,107 @@
+# Set initial COMID choices
+set_choices <- function(values) {
+  max_qcms = values$nwm[match(max(values$nwm$Q_cfs), values$nwm$Q_cfs),]$COMID
+  name = values$flow_data$nhd[values$flow_data$nhd$comid == max_qcms,]$gnis_name
+  
+  choices = as.list(paste0(paste0(ifelse(is.na(values$flow_data$nhd@data$gnis_name), "", values$flow_data$nhd@data$gnis_name)),
+                           paste0(" COMID: ", values$flow_data$nhd$comid)))
+  
+  non_zero = unique(values$nwm[values$nwm$Q_cfs > 0,]$COMID)
+  non_zeros = c()
+  for (stream in choices) {
+    id = unlist(strsplit(stream, split='COMID: ', fixed=TRUE))[2]
+    non_zeros = c(non_zeros, id %in% non_zero)
+  }
+  
+  text = paste0(paste0(ifelse(is.na(name), "", name)), paste0(" COMID: ", max_qcms))
+  
+  return(list(default = text, choices = choices, non_zeros = non_zeros))
+}
+
+# Show or hide all provided elements
+show_hide_all <- function(elements, action) {
+  if (action == "hide") {
+    for (element in elements) {
+      shinyjs::hide(element)
+    }
+  } else {
+    for (element in elements) {
+      shinyjs::show(element)
+    }
+  }
+}
+
+# Generate Dygraph
+dygraph_plot <- function(values, selected) {
+  
+  df = data.frame(time = values$data$dateTime)
+  
+  for (stream in selected) {
+    text = stream
+    id = unlist(strsplit(text, split='COMID: ', fixed=TRUE))[2]
+    i = match(id, values$flow_data$nhd@data$comid)
+    data = values$nwm[values$nwm$COMID == values$flow_data$nhd$comid[i],]
+    df[as.character(id)] = data$Q_cfs
+  }
+  rownames(df) = df[[1]]
+  #title = ifelse((selected) == 1,lengthpaste0(ifelse(is.na(values$flow_data$nhd$gnis_name[values$flow_data$nhd$comid == values$flow_data$nhd$comid[values$i]]), "", paste0(values$flow_data$nhd@data$gnis_name[values$flow_data$nhd$comid == values$flow_data$nhd$comid[values$i]], " ")),
+  #              paste0("COMID: ", values$flow_data$nhd$comid[values$flow_data$nhd$comid == values$flow_data$nhd$comid[values$i]])), "Multiple Reaches Selected")
+  graph = dygraphs::dygraph(df) %>%
+    dyRangeSelector(height = 20) %>%
+    dyAxis("x", drawGrid = FALSE) %>%
+    dyHighlight(highlightCircleSize = 5,
+                highlightSeriesBackgroundAlpha = 1) %>%
+    dyAxis("y", label = "Streamflow (cfs)" )%>%
+    dyLegend(show = "onmouseover") %>%
+    dyOptions(drawPoints = TRUE, 
+              pointSize = 2,
+              gridLineColor = "lightblue",
+              labelsUTC = TRUE)
+  
+  if (length(selected) == 1) {
+    cutoff = values$normals[,2] * 35.3147
+    mn = mean(df[[2]], na.rm = TRUE)
+    std = sd(df[[2]], na.rm = TRUE)
+    graph = graph %>%
+      dyOptions(
+        drawPoints = TRUE, 
+        pointSize = 2,
+        gridLineColor = "lightblue",
+        labelsUTC = TRUE,
+        fillGraph = TRUE, 
+        fillAlpha = 0.1
+      )  %>%
+      dyLimit(cutoff, strokePattern = "solid", color = "red", label = paste0("Monthly Average (", round(cutoff,2), " cfs)")) %>%
+      dyShading(from = mn - std, to = mn + std, axis = "y")
+  }
+  
+  return(graph)
+}
+
+# Generate upstream and downstream tables
+stream_table <- function(data = NULL, direction = NULL, values= NULL, session = NULL) {
+  if (length(data) > 0) {
+    df <- data %>%
+      dplyr::mutate(View = paste('<a class="go-stream" href="" data-stream="', data[[1]], '"><i class="fa fa-eye"></i></a>', sep=""))
+    
+    all = data.frame(paste0("All ", "(",nrow(df), ")"), paste('<a class="go-stream" href="" data-stream="', paste(data[[1]],collapse=","), '"><i class="fa fa-eye"></i></a>', sep=""))
+    df = rbind(setNames(all, names(df)), df)
+    
+    
+    
+    action <- DT::dataTableAjax(session, df, rownames = FALSE)
+    table = DT::datatable(df,
+                  options = list(ajax = list(url = action), 
+                                 dom = 't'
+                  ), 
+                  escape = FALSE, 
+                  selection = 'none', rownames = FALSE
+    )
+  } else {
+    df <- data
+    df <- rbind(df, paste0("No ", direction, " reaches from COMID ", values$id))
+    colnames(df) = ifelse(direction == "upstream", "Upstream", "Downstream")
+    table = DT::datatable(df, options = list(dom = 't'), escape = FALSE, selection = 'none')
+  }
+  return(table)
+} 

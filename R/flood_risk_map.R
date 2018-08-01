@@ -9,7 +9,7 @@
 make_flood_risk_map = function(path = NULL, dir = NULL){
   
   if (is.null(dir)) {
-    dir <- system.file("flowlinefinder", package = "FlowlineFinder")
+    dir <- system.file("flowfinder", package = "FlowFinder")
   }
 
 

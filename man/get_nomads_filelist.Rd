@@ -12,7 +12,7 @@ This fuction saves the 18 NetCDF files related to the most recent forecasts.
 \description{
 This function accesses the NOAA Nomads server to download the most up to date forecast NetCDF files.
 These files cover the spatial domain of the continential United States. These files will be stored in the
-'./FlowlineFinder' subfolder of the specified directory. Each time this function is run the old files will be removed.
+'./FlowFinder' subfolder of the specified directory. Each time this function is run the old files will be removed.
 So, if you see something interesting be sure to save the data elsewhere!
 }
 \author{

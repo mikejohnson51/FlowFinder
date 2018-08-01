@@ -1,11 +1,11 @@
 ---
-title: "FlowlineFinder Download NOMADs"
+title: "FlowFinder Download NOMADs"
 output: 
   html_document:
   self_contained: no
 ---
 
-This document will be used within a cron job to update National Water Model forecasts for the FlowlineFinder application:
+This document will be used within a cron job to update National Water Model forecasts for the FlowFinder application:
 
 ```{r, echo = FALSE}
 library(ncdf4)
