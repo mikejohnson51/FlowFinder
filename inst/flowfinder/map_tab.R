@@ -98,7 +98,7 @@ add_water_bodies <- function(map, session, wb) {
               ))
 }
 
-
+# Add layers to a provided map
 add_layers <- function(map, values) {
   map %>%
     clearGroup("NHD Flowlines") %>%

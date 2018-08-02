@@ -1,9 +1,9 @@
 shinyServer(function(input, output, session) {
   
-  ########## Initial Setup ####################################################################
-  
   # Include code for download handler
   source("server_download_handler.R", local = TRUE)$value
+  
+  ########## Initial Setup ####################################################################
   
   # Set up reactive values
   values <- reactiveValues()
@@ -52,28 +52,26 @@ shinyServer(function(input, output, session) {
     withProgress(message = 'Analyzing Location', value = 0, {
       
       # Get initial location
-      incProgress(1/6, detail = "Getting location coordinates")
-      print(input$place)
       values$loc = get_location(place = input$place)
+      incProgress(1/8, detail = "Getting Spatial Objects")
       
       # Get spatial data
-      incProgress(3/6, detail = "Getting Spatial Objects")
       values$flow_data = AOI::getAOI(clip = list(values$loc$lat, values$loc$lon, size, size)) %>% 
                          findNHD(ids = TRUE) %>% 
                          findWaterbodies() %>% 
                          findNWIS()
+      incProgress(4/8, detail = "Subsetting Stream Data")
 
       # Subset data
-      incProgress(1/6, detail = "Subsetting Stream Data")
       values$nwm = subset_nomads_rda_drop(comids = values$flow_data$comid)
+      incProgress(2/8, detail = "Finding Upstream/Downstream")
       
       # Set upstream/downstream data
-      incProgress(1/6, detail = "Finding Upstream/Downstream")
       values$flow_data$nhd_prep = suppressWarnings(prep_nhd(flines = values$flow_data$nhd))
       values$hmm = get_upstream(flines = values$flow_data$nhd_prep)
+      incProgress(1/8, detail = "Mapping")
       
       # Map data
-      incProgress(1/6, detail = "Mapping")
       clearMarkers()
       add_layers(map = leafletProxy("map"), values = values)
     })
@@ -98,13 +96,13 @@ shinyServer(function(input, output, session) {
     # Get and set initial COMID choices 
     choices = set_choices(values = values)
     values$choices = choices$choices
- 
     updatePickerInput(session, 'flow_selector', choices = values$choices, selected = choices$default,
                       choicesOpt = list(
-                        style = ifelse(choices$non_zeros,
-                                       yes = "color:#0069b5;font-weight:bold;",
-                                       no = "style=color:#a8a8a8")
-                      ))
+                                    style = ifelse(choices$non_zeros,
+                                                   yes = "color:#0069b5;font-weight:bold;",
+                                                   no = "style=color:#a8a8a8")
+                                    )
+                      )
   
     # Set initial values based on default COMID
     update_cur_id(choices$default)
