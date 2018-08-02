@@ -22,8 +22,12 @@ add_flows <- function(map, session, values) {
                  fillOpacity = 0.7,
                  bringToFront = FALSE)
   ) %>%
-    addCircleMarkers(lng = as.numeric(values$lon), lat = as.numeric(values$lat), radius = 6, color = 'green', 
-                     stroke = FALSE, fillOpacity = 0.5, group = "Location")
+    addCircleMarkers(lng = as.numeric(values$loc$lon), lat = as.numeric(values$loc$lat), 
+                     radius = 6, 
+                     color = 'green', 
+                     stroke = FALSE, 
+                     fillOpacity = 0.5, 
+                     group = "Location")
 }
 
 # Mark up/downstream

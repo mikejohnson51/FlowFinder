@@ -1,19 +1,22 @@
-# Set initial COMID choices
+# Set initial COMID choices - used in drop down selector
 set_choices <- function(values) {
+  
+  # Find comid that has max flow in forcast - used to set default
   max_qcms = values$nwm[match(max(values$nwm$Q_cfs), values$nwm$Q_cfs),]$COMID
   name = values$flow_data$nhd[values$flow_data$nhd$comid == max_qcms,]$gnis_name
+  text = paste0(paste0(ifelse(is.na(name), "", name)), paste0(" COMID: ", max_qcms))
   
   choices = as.list(paste0(paste0(ifelse(is.na(values$flow_data$nhd@data$gnis_name), "", values$flow_data$nhd@data$gnis_name)),
                            paste0(" COMID: ", values$flow_data$nhd$comid)))
   
+  # Find flows with at least one forcasted point > 0
   non_zero = unique(values$nwm[values$nwm$Q_cfs > 0,]$COMID)
   non_zeros = c()
   for (stream in choices) {
     id = unlist(strsplit(stream, split='COMID: ', fixed=TRUE))[2]
+    # Create vec of T/F values - used to determine style of text in selector
     non_zeros = c(non_zeros, id %in% non_zero)
   }
-  
-  text = paste0(paste0(ifelse(is.na(name), "", name)), paste0(" COMID: ", max_qcms))
   
   return(list(default = text, choices = choices, non_zeros = non_zeros))
 }
@@ -71,8 +74,13 @@ dygraph_plot <- function(values, selected) {
         fillGraph = TRUE, 
         fillAlpha = 0.1
       )  %>%
-      dyLimit(cutoff, strokePattern = "solid", color = "red", label = paste0("Monthly Average (", round(cutoff,2), " cfs)")) %>%
-      dyShading(from = mn - std, to = mn + std, axis = "y")
+      dyLimit(cutoff, 
+              strokePattern = "solid", 
+              color = "red", 
+              label = paste0("Monthly Average (", round(cutoff,2), " cfs)")) %>%
+      dyShading(from = mn - std, 
+                to = mn + std, 
+                axis = "y")
   }
   
   return(graph)

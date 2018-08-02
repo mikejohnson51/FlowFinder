@@ -2,14 +2,16 @@
 station_table <- function(values) {
   if(typeof(values$flow_data$nwis) == "S4") {
     station_data = cbind(paste0('<a href=',sprintf(
-      "https://waterdata.usgs.gov/nwis/inventory/?site_no=%s",values$flow_data$nwis$site_no),' target="_blank">',values$flow_data$nwis$site_name,"</a>"),values$flow_data$nwis$site_no, round(values$flow_data$nwis$da_sqkm, digits = 0))
+                            "https://waterdata.usgs.gov/nwis/inventory/?site_no=%s",values$flow_data$nwis$site_no),' target="_blank">',values$flow_data$nwis$site_name,"</a>"),
+                         values$flow_data$nwis$site_no, 
+                         round(values$flow_data$nwis$da_sqkm, digits = 0)
+                         )
   } else {
     station_data = cbind('NA', 'NA', 'NA')
   }
   colnames(station_data) = c("USGS Site", "Site No.", "Drainage Area (SqKm)")
   return(station_data)
 }
-
 
 # Table 2: Flowline info 
 flowlines_table <- function(values) {

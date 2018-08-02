@@ -260,6 +260,7 @@ shinyServer(function(input, output, session) {
   })
   
   # Change download button based on whether or not any items are checked
+  # Code for download handler in server_download_handler.R
   observe({
     download_options = c(input$data_csv, input$data_nhd, input$data_rda, input$plot_png, input$plot_dygraph, input$maps_floods, input$maps_flow)
     if (any(download_options)) {
