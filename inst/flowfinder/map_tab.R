@@ -79,27 +79,29 @@ add_bounds <- function(map, session, AOI) {
 
 # Add water boundaries to map
 add_water_bodies <- function(map, session, wb) {
-  addPolygons(map, 
-              data = wb, 
-              fillColor =  'lightblue',
-              stroke = TRUE,
-              weight = 1,
-              opacity = 1,
-              fillOpacity = 0.7,
-              smoothFactor = 0.7,
-              popup = paste(
-                paste("<strong>Name:</strong>", wb$gnis_name),
-                paste("<strong>Feature:</strong>", wb$ftype),
-                paste("<strong>Area:</strong>", wb$areasqkm, "SQKM"),
-                sep = "<br/>"
-              ),
-              group = "Water bodies",
-              highlight = highlightOptions(
-                weight = 3,
-                color = "darkred",
+  if(!is.null(wb)) {
+    addPolygons(map, 
+                data = wb, 
+                fillColor =  'lightblue',
+                stroke = TRUE,
+                weight = 1,
+                opacity = 1,
                 fillOpacity = 0.7,
-                bringToFront = FALSE
-              ))
+                smoothFactor = 0.7,
+                popup = paste(
+                  paste("<strong>Name:</strong>", wb$gnis_name),
+                  paste("<strong>Feature:</strong>", wb$ftype),
+                  paste("<strong>Area:</strong>", wb$areasqkm, "SQKM"),
+                  sep = "<br/>"
+                ),
+                group = "Water bodies",
+                highlight = highlightOptions(
+                  weight = 3,
+                  color = "darkred",
+                  fillOpacity = 0.7,
+                  bringToFront = FALSE
+                ))
+  }
 }
 
 # Add layers to a provided map
