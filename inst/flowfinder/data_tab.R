@@ -21,69 +21,56 @@ set_choices <- function(values) {
   return(list(default = text, choices = choices, non_zeros = non_zeros))
 }
 
-# Show or hide all provided elements
-show_hide_all <- function(elements, action) {
-  if (action == "hide") {
-    for (element in elements) {
-      shinyjs::hide(element)
-    }
-  } else {
-    for (element in elements) {
-      shinyjs::show(element)
-    }
-  }
-}
-
 # Generate Dygraph
 dygraph_plot <- function(values, selected) {
   
-  df = data.frame(time = values$data$dateTime)
-  
-  for (stream in selected) {
-    text = stream
-    id = unlist(strsplit(text, split='COMID: ', fixed=TRUE))[2]
-    i = match(id, values$flow_data$nhd@data$comid)
-    data = values$nwm[values$nwm$COMID == values$flow_data$nhd$comid[i],]
-    df[as.character(id)] = data$Q_cfs
-  }
-  rownames(df) = df[[1]]
-  #title = ifelse((selected) == 1,lengthpaste0(ifelse(is.na(values$flow_data$nhd$gnis_name[values$flow_data$nhd$comid == values$flow_data$nhd$comid[values$i]]), "", paste0(values$flow_data$nhd@data$gnis_name[values$flow_data$nhd$comid == values$flow_data$nhd$comid[values$i]], " ")),
-  #              paste0("COMID: ", values$flow_data$nhd$comid[values$flow_data$nhd$comid == values$flow_data$nhd$comid[values$i]])), "Multiple Reaches Selected")
-  graph = dygraphs::dygraph(df) %>%
-    dyRangeSelector(height = 20) %>%
-    dyAxis("x", drawGrid = FALSE) %>%
-    dyHighlight(highlightCircleSize = 5,
-                highlightSeriesBackgroundAlpha = 1) %>%
-    dyAxis("y", label = "Streamflow (cfs)" )%>%
-    dyLegend(show = "onmouseover") %>%
-    dyOptions(drawPoints = TRUE, 
-              pointSize = 2,
-              gridLineColor = "lightblue",
-              labelsUTC = TRUE)
-  
-  if (length(selected) == 1) {
-    cutoff = values$normals[,2] * 35.3147
-    mn = mean(df[[2]], na.rm = TRUE)
-    std = sd(df[[2]], na.rm = TRUE)
-    graph = graph %>%
-      dyOptions(
-        drawPoints = TRUE, 
-        pointSize = 2,
-        gridLineColor = "lightblue",
-        labelsUTC = TRUE,
-        fillGraph = TRUE, 
-        fillAlpha = 0.1
-      )  %>%
-      dyLimit(cutoff, 
-              strokePattern = "solid", 
-              color = "red", 
-              label = paste0("Monthly Average (", round(cutoff,2), " cfs)")) %>%
-      dyShading(from = mn - std, 
-                to = mn + std, 
-                axis = "y")
-  }
-  
-  return(graph)
+    df = data.frame(time = values$data$dateTime)
+    
+    for (stream in selected) {
+      text = stream
+      id = unlist(strsplit(text, split='COMID: ', fixed=TRUE))[2]
+      i = match(id, values$flow_data$nhd@data$comid)
+      data = values$nwm[values$nwm$COMID == values$flow_data$nhd$comid[i],]
+      df[as.character(id)] = data$Q_cfs
+    }
+    rownames(df) = df[[1]]
+    #title = ifelse((selected) == 1,lengthpaste0(ifelse(is.na(values$flow_data$nhd$gnis_name[values$flow_data$nhd$comid == values$flow_data$nhd$comid[values$i]]), "", paste0(values$flow_data$nhd@data$gnis_name[values$flow_data$nhd$comid == values$flow_data$nhd$comid[values$i]], " ")),
+    #              paste0("COMID: ", values$flow_data$nhd$comid[values$flow_data$nhd$comid == values$flow_data$nhd$comid[values$i]])), "Multiple Reaches Selected")
+    graph = dygraphs::dygraph(df) %>%
+      dyRangeSelector(height = 20) %>%
+      dyAxis("x", drawGrid = FALSE) %>%
+      dyHighlight(highlightCircleSize = 5,
+                  highlightSeriesBackgroundAlpha = 1) %>%
+      dyAxis("y", label = "Streamflow (cfs)" )%>%
+      dyLegend(show = "onmouseover") %>%
+      dyOptions(drawPoints = TRUE, 
+                pointSize = 2,
+                gridLineColor = "lightblue",
+                labelsUTC = TRUE)
+    
+    if (length(selected) == 1) {
+      cutoff = values$normals[,2] * 35.3147
+      mn = mean(df[[2]], na.rm = TRUE)
+      std = sd(df[[2]], na.rm = TRUE)
+      graph = graph %>%
+        dyOptions(
+          drawPoints = TRUE, 
+          pointSize = 2,
+          gridLineColor = "lightblue",
+          labelsUTC = TRUE,
+          fillGraph = TRUE, 
+          fillAlpha = 0.1
+        )  %>%
+        dyLimit(cutoff, 
+                strokePattern = "solid", 
+                color = "red", 
+                label = paste0("Monthly Average (", round(cutoff,2), " cfs)")) %>%
+        dyShading(from = mn - std, 
+                  to = mn + std, 
+                  axis = "y")
+    }
+    
+    return(graph)
 }
 
 # Generate upstream and downstream tables

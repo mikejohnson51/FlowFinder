@@ -1,3 +1,4 @@
+library(FlowFinder)
 shinyServer(function(input, output, session) {
   
   # Include code for download handler
@@ -57,19 +58,25 @@ shinyServer(function(input, output, session) {
       
       # Get spatial data
       values$flow_data = AOI::getAOI(clip = list(values$loc$lat, values$loc$lon, size, size)) %>% 
-                         findNHD(ids = TRUE) %>% 
-                         findWaterbodies() %>% 
-                         findNWIS()
+                          HydroData::findNHD(ids = TRUE) %>% 
+                          HydroData::findWaterbodies() %>% 
+                          HydroData::findNWIS()
       incProgress(4/8, detail = "Subsetting Stream Data")
-
-      # Subset data
-      values$nwm = subset_nomads_rda_drop(comids = values$flow_data$comid)
-      incProgress(2/8, detail = "Finding Upstream/Downstream")
       
-      # Set upstream/downstream data
-      values$flow_data$nhd_prep = suppressWarnings(prep_nhd(flines = values$flow_data$nhd))
-      values$hmm = get_upstream(flines = values$flow_data$nhd_prep)
-      incProgress(1/8, detail = "Mapping")
+      if (!exists('nhd', where=values$flow_data)) {
+        values$any_flow = FALSE
+      } else {
+        values$any_flow = TRUE
+        # Subset data
+        values$nwm = subset_nomads_rda_drop(comids = values$flow_data$comid)
+        incProgress(2/8, detail = "Finding Upstream/Downstream")
+        
+        # Set upstream/downstream data
+        values$flow_data$nhd_prep = suppressWarnings(prep_nhd(flines = values$flow_data$nhd))
+        values$hmm = get_upstream(flines = values$flow_data$nhd_prep)
+        incProgress(1/8, detail = "Mapping")
+      }
+      
       
       # Map data
       clearMarkers()
@@ -92,20 +99,36 @@ shinyServer(function(input, output, session) {
     
     # Table 3: NWM info
     output$meta = renderTable(nwm_table(values), striped = TRUE)
-    
-    # Get and set initial COMID choices 
-    choices = set_choices(values = values)
-    values$choices = choices$choices
-    updatePickerInput(session, 'flow_selector', choices = values$choices, selected = choices$default,
-                      choicesOpt = list(
-                                    style = ifelse(choices$non_zeros,
-                                                   yes = "color:#0069b5;font-weight:bold;",
-                                                   no = "style=color:#a8a8a8")
-                                    )
-                      )
   
-    # Set initial values based on default COMID
-    update_cur_id(choices$default)
+    # Only set choices if there are flowlines in AOI
+    if(values$any_flow) {
+      # Get and set initial COMID choices 
+      choices = set_choices(values = values)
+      values$choices = choices$choices
+      updatePickerInput(session, 'flow_selector', choices = values$choices, selected = choices$default,
+                        choicesOpt = list(
+                                      style = ifelse(choices$non_zeros,
+                                                     yes = "color:#0069b5;font-weight:bold;",
+                                                     no = "style=color:#a8a8a8")
+                                      )
+                        )
+      
+      # Set initial values based on default COMID
+      update_cur_id(choices$default)
+      shinyjs::enable("prevCOMID")
+      shinyjs::enable("nextCOMID")
+      shinyjs::enable("flow_selector")
+      shinyjs::enable("mark_flowline")
+      
+    } else {
+      showNotification("No flowlines found in this AOI", type = "error", duration = 10)
+      values$choices = NULL
+      updatePickerInput(session, 'flow_selector', choices = "", selected = NULL)
+      shinyjs::disable("prevCOMID")
+      shinyjs::disable("nextCOMID")
+      shinyjs::disable("flow_selector")
+      shinyjs::disable("mark_flowline")
+    }
 
     # Re-enable search
     shinyjs::enable("do")
@@ -181,6 +204,7 @@ shinyServer(function(input, output, session) {
   
   # Generate dygraph plot
   output$dygraph <- dygraphs::renderDygraph({
+    req(values$any_flow, input$flow_selector)
     dygraph_plot(values = values, selected = input$flow_selector )
   })
   
@@ -236,11 +260,13 @@ shinyServer(function(input, output, session) {
   
   # Upstream Table
   output$tbl_up <- DT::renderDataTable({
+    req(values$any_flow)
     stream_table(data = values$up_down_stream$upstream, direction = "upstream", values = values, session = session)
   })
   
   # Downstream Table
   output$tbl_down <- DT::renderDataTable({
+    req(values$any_flow)
     stream_table(data = values$up_down_stream$downstream, direction = "downstream", values = values, session = session)
   })
   

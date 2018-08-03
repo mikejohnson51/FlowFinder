@@ -4,4 +4,3 @@
 .travis.yml
 .github
 docs
-inst/flowfinder/data/current_nc/*

@@ -1,3 +1,4 @@
+library(FlowFinder)
 library(dygraphs)
 options(shiny.sanitize.errors = FALSE)
 
@@ -22,6 +23,19 @@ getIDs <- function(streams) {
     ids = c(ids, unlist(strsplit(stream, split='COMID: ', fixed=TRUE))[2])
   }
   return(ids)
+}
+
+# Show or hide all provided elements
+show_hide_all <- function(elements, action) {
+  if (action == "hide") {
+    for (element in elements) {
+      shinyjs::hide(element)
+    }
+  } else {
+    for (element in elements) {
+      shinyjs::show(element)
+    }
+  }
 }
 
 # Get location

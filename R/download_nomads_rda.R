@@ -24,11 +24,6 @@ download_nomads_rda = function(fileList = NULL, number = 6, dir = NULL){
   dateTime <- data.frame(date = date, time = time, stringsAsFactors = FALSE)
   write.csv(dateTime, paste0(dir,'/data/current_nc/dateTime.csv'))
   
-  map <- data.frame(tmp, stringsAsFactors = FALSE)
-  #combine all vectors into a matrix
-  colnames(map) <- c('num', 'min', 'max', 'filename')
-  write.csv(map, paste0(dir,'/data/current_nc/map.csv'))
-  
   
   rm(fileList)
   
@@ -165,5 +160,5 @@ download_nomads_rda = function(fileList = NULL, number = 6, dir = NULL){
   gc()
   
   flood_map = make_flood_risk_map(path = paste0(dir,'/data/current_nc/max_increase.fst'))
-  save(flood_map, file = paste0(dir,'/data/current_nc/flood_map.rda'))
+  base::save(flood_map, file = paste0(dir,'/data/current_nc/flood_map.rda'))
 }

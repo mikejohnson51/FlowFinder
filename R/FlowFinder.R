@@ -1,4 +1,4 @@
-#' FlowlineFinder
+#' FlowFinder
 #'
 #' \code{FlowFinder} package
 #' 
@@ -25,9 +25,11 @@
 #' 
 #' @importFrom xts as.xts
 #' 
+#' @importFrom lutz tz_lookup_coords
+#' 
 #' @import shiny
 #' 
-#' @import HydroData
+#' @importFrom HydroData findNHD findNWIS findWaterbodies
 #' 
 #' @import ggplot2
 #' 

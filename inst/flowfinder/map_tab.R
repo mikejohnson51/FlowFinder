@@ -5,33 +5,40 @@ USGSicon = leaflet::makeIcon(
   iconAnchorX = 20, iconAnchorY = 10)
 
 # Add flowlines to map
-add_flows <- function(map, session, values) {
-  addPolylines(map, data = values$flow_data$nhd, color = 'blue', weight = values$flow_data$nhd$streamorde,
-               popup = paste(sep = " ",
-                             paste0("<b><a class='open-stream'>",paste0(ifelse(is.na(values$flow_data$nhd@data$gnis_name), "", values$flow_data$nhd@data$gnis_name)),
-                                    paste0(" COMID: ", values$flow_data$nhd$comid),"</a></b></br>"),
-                             '<a class="stream-data"><i class="fa fa-line-chart"></i></a>',
-                             '<a class="upstream-flow"><i class="fa fa-angle-double-up"></i></a>',
-                             '<a class="downstream-flow"><i class="fa fa-angle-double-down"></i></a>'
-               ),
-               options = popupOptions(className = "stream_popup"), 
-               group = "NHD Flowlines",
-               highlight = highlightOptions(
-                 weight = 10,
-                 color = "#666",
-                 fillOpacity = 0.7,
-                 bringToFront = FALSE)
-  ) %>%
-    addCircleMarkers(lng = as.numeric(values$loc$lon), lat = as.numeric(values$loc$lat), 
-                     radius = 6, 
-                     color = 'green', 
-                     stroke = FALSE, 
-                     fillOpacity = 0.5, 
-                     group = "Location")
+add_flows <- function(map, values) {
+  if(values$any_flow) {
+    addPolylines(map, data = values$flow_data$nhd, color = 'blue', weight = values$flow_data$nhd$streamorde,
+                 popup = paste(sep = " ",
+                               paste0("<b><a class='open-stream'>",paste0(ifelse(is.na(values$flow_data$nhd@data$gnis_name), "", values$flow_data$nhd@data$gnis_name)),
+                                      paste0(" COMID: ", values$flow_data$nhd$comid),"</a></b></br>"),
+                               '<a class="stream-data"><i class="fa fa-line-chart"></i></a>',
+                               '<a class="upstream-flow"><i class="fa fa-angle-double-up"></i></a>',
+                               '<a class="downstream-flow"><i class="fa fa-angle-double-down"></i></a>'
+                 ),
+                 options = popupOptions(className = "stream_popup"), 
+                 group = "NHD Flowlines",
+                 highlight = highlightOptions(
+                   weight = 10,
+                   color = "#666",
+                   fillOpacity = 0.7,
+                   bringToFront = FALSE)
+    )
+  } else {
+    return(map)
+  }
+}
+
+add_location <- function(map, values) {
+  addCircleMarkers(map, lng = as.numeric(values$loc$lon), lat = as.numeric(values$loc$lat), 
+                   radius = 6, 
+                   color = 'green', 
+                   stroke = FALSE, 
+                   fillOpacity = 0.5, 
+                   group = "Location")
 }
 
 # Mark up/downstream
-mark_up_down <- function(map, session, values, stream, data, group, color) {
+mark_up_down <- function(map, values, stream, data, group, color) {
   map %>%
     addPolylines(data = values$flow_data$nhd[values$flow_data$nhd$comid == stream,],
                  color = "blue",
@@ -47,7 +54,7 @@ mark_up_down <- function(map, session, values, stream, data, group, color) {
 
 
 # Add stations to map
-add_stations <- function(map, session, values) {
+add_stations <- function(map, values) {
   if(typeof(values$flow_data$nwis) == "S4") {
     addMarkers(map, data = values$flow_data$nwis,
                icon = USGSicon,
@@ -62,11 +69,13 @@ add_stations <- function(map, session, values) {
                  sep = "<br/>"
                ) )
     
+  } else {
+    return(map)
   }
 }
 
 # Add boundaries to map
-add_bounds <- function(map, session, AOI) {
+add_bounds <- function(map, AOI) {
   fitBounds(map, AOI@bbox[1], AOI@bbox[2], AOI@bbox[3], AOI@bbox[4]) %>%
     addRectangles(
       lng1 = AOI@bbox[1] , lat1 = AOI@bbox[2],
@@ -78,7 +87,7 @@ add_bounds <- function(map, session, AOI) {
 }
 
 # Add water boundaries to map
-add_water_bodies <- function(map, session, wb) {
+add_water_bodies <- function(map, wb) {
   if(!is.null(wb)) {
     addPolygons(map, 
                 data = wb, 
@@ -101,6 +110,8 @@ add_water_bodies <- function(map, session, wb) {
                   fillOpacity = 0.7,
                   bringToFront = FALSE
                 ))
+  } else {
+    return(map)
   }
 }
 
@@ -112,6 +123,7 @@ add_layers <- function(map, values) {
     clearGroup("USGS Stations") %>%
     clearGroup("Water bodies") %>% 
     clearGroup("AOI") %>% 
+    add_location(values = values) %>% 
     add_bounds(AOI = values$flow_data$AOI) %>% 
     add_water_bodies(wb = values$flow_data$waterbodies) %>% 
     add_flows(values = values) %>%

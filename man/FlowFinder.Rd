@@ -4,7 +4,7 @@
 \name{FlowFinder}
 \alias{FlowFinder}
 \alias{FlowFinder-package}
-\title{FlowlineFinder}
+\title{FlowFinder}
 \description{
 \code{FlowFinder} package
 }
