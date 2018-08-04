@@ -13,17 +13,13 @@
 #' 
 #' @importFrom ncdf4 nc_open ncvar_get nc_close
 #' 
-#' @importFrom lubridate ymd_hms
-#' 
 #' @importFrom reshape2 melt
-#' 
-#' @importFrom rdrop2 drop_upload drop_read_csv drop_download 
 #' 
 #' @importFrom utils download.file head write.csv
 #' 
-#' @importFrom AOI getAOI getPoint getBoundingBox
+#' @importFrom AOI getAOI getPoint getBoundingBox aoiProj
 #' 
-#' @importFrom xts as.xts
+#' @importFrom sp SpatialPoints over
 #' 
 #' @importFrom lutz tz_lookup_coords
 #' 
@@ -33,7 +29,7 @@
 #' 
 #' @import ggplot2
 #' 
-#' @import magrittr
+#' @importFrom magrittr %>% 
 #' 
 #' @import leaflet
 #' 

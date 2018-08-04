@@ -31,10 +31,18 @@ show_hide_all <- function(elements, action) {
     for (element in elements) {
       shinyjs::hide(element)
     }
-  } else {
-    for (element in elements) {
-      shinyjs::show(element)
-    }
+  } else if (action == "show") {
+      for (element in elements) {
+        shinyjs::show(element)
+      }
+  } else if (action == "disable") {
+      for (element in elements) {
+        shinyjs::disable(element)
+      }
+  } else if (action == "enable") {
+      for (element in elements) {
+        shinyjs::enable(element)
+      }
   }
 }
 
@@ -61,7 +69,29 @@ get_location <- function(place) {
 }
 
 
+latlong2state <- function(lat, lon) {
+  
+  pointsDF = list(x=lon, y = lat)
+  conus = AOI::states[!(AOI::states$state_abbr %in% c("HI", "AK", 'PR')),]
+  conus = AOI::getBoundingBox(conus)
+  lat = dplyr::between(pointsDF$y, conus@bbox[2,1], conus@bbox[2,2])
+  lng = dplyr::between(pointsDF$x, conus@bbox[1,1], conus@bbox[1,2])
 
+  if((lat+lng) != 2){
+    return(NULL)
+  } 
+  
+  else {
+    
+    tmp = sp::SpatialPoints(coords = cbind(pointsDF$x, pointsDF$y), proj4string = AOI::aoiProj)
+    t = AOI::counties[tmp,]
+    
+    return(list(county = t$name,
+                state  = t$state_name,
+                state.abb = t$state_abbr))
+    
+  }
+}
 
 
 

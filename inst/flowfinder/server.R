@@ -57,14 +57,24 @@ shinyServer(function(input, output, session) {
       incProgress(1/8, detail = "Getting Spatial Objects")
       
       # Get spatial data
-      values$flow_data = AOI::getAOI(clip = list(values$loc$lat, values$loc$lon, size, size)) %>% 
-                          HydroData::findNHD(ids = TRUE) %>% 
-                          HydroData::findWaterbodies() %>% 
-                          HydroData::findNWIS()
+      values$flow_data = suppressMessages(
+                          AOI::getAOI(clip = list(values$loc$lat, values$loc$lon, size, size)) %>% 
+                            HydroData::findNHD(ids = TRUE) %>% 
+                            HydroData::findWaterbodies() %>% 
+                            HydroData::findNWIS()
+                         )
       incProgress(4/8, detail = "Subsetting Stream Data")
       
-      if (!exists('nhd', where=values$flow_data)) {
+      # Determine what state (or if) AOI is in
+      state = latlong2state(lat = values$loc$lat, lon = values$loc$lon)
+      
+      # Set global variable and show notification if no streams in AOI
+      # Continue with data prep if there are streams
+      if (!exists('nhd', where=values$flow_data) || (is.null(state))) {
         values$any_flow = FALSE
+        if (is.null(state)) {
+          showNotification("Warning: AOI appears to be outside CONUS", type = "warning", duration = 10)
+        }
       } else {
         values$any_flow = TRUE
         # Subset data
@@ -74,11 +84,11 @@ shinyServer(function(input, output, session) {
         # Set upstream/downstream data
         values$flow_data$nhd_prep = suppressWarnings(prep_nhd(flines = values$flow_data$nhd))
         values$hmm = get_upstream(flines = values$flow_data$nhd_prep)
-        incProgress(1/8, detail = "Mapping")
       }
-      
-      
+      incProgress(1/8, detail = "Mapping")
+
       # Map data
+      clearMarkers()
       clearMarkers()
       add_layers(map = leafletProxy("map"), values = values)
     })
@@ -99,6 +109,10 @@ shinyServer(function(input, output, session) {
     
     # Table 3: NWM info
     output$meta = renderTable(nwm_table(values), striped = TRUE)
+    
+    ui_flow_only = c("prevCOMID", "nextCOMID", "flow_selector", 
+                     "mark_flowline", "data_csv", "data_rda", 
+                     "data_nhd", "plot_png", "plot_dygraph")
   
     # Only set choices if there are flowlines in AOI
     if(values$any_flow) {
@@ -115,19 +129,38 @@ shinyServer(function(input, output, session) {
       
       # Set initial values based on default COMID
       update_cur_id(choices$default)
-      shinyjs::enable("prevCOMID")
-      shinyjs::enable("nextCOMID")
-      shinyjs::enable("flow_selector")
-      shinyjs::enable("mark_flowline")
+    
       
-    } else {
+      # Enable UI elements only active when streams in AOI
+      # shinyjs::enable("prevCOMID")
+      # shinyjs::enable("nextCOMID")
+      # shinyjs::enable("flow_selector")
+      # shinyjs::enable("mark_flowline")
+      # shinyjs::enable("data_csv")
+      # shinyjs::enable("data_rda")
+      # shinyjs::enable("data_nhd")
+      # shinyjs::enable("plot_png")
+      # shinyjs::enable("plot_dygraph")
+      
+      
+      show_hide_all(elements = ui_flow_only, action = "enable")
+      
+    } 
+    # Disable stream-specific UI elements
+    else {
       showNotification("No flowlines found in this AOI", type = "error", duration = 10)
       values$choices = NULL
       updatePickerInput(session, 'flow_selector', choices = "", selected = NULL)
-      shinyjs::disable("prevCOMID")
-      shinyjs::disable("nextCOMID")
-      shinyjs::disable("flow_selector")
-      shinyjs::disable("mark_flowline")
+      show_hide_all(elements = ui_flow_only, action = "disable")
+      # shinyjs::disable("prevCOMID")
+      # shinyjs::disable("nextCOMID")
+      # shinyjs::disable("flow_selector")
+      # shinyjs::disable("mark_flowline")
+      # shinyjs::disable("data_csv")
+      # shinyjs::disable("data_rda")
+      # shinyjs::disable("data_nhd")
+      # shinyjs::disable("plot_png")
+      # shinyjs::disable("plot_dygraph")
     }
 
     # Re-enable search
@@ -149,12 +182,10 @@ shinyServer(function(input, output, session) {
   
   # Clear markers on map
   clearMarkers <- function() {
-    suppressMessages(
       leafletProxy("map", session) %>%
         clearGroup("view-on-map") %>%
         clearGroup("up-stream") %>%
         clearGroup("down-stream")
-    )
   }
   
   # Current location button

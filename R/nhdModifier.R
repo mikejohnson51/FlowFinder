@@ -1,7 +1,7 @@
 #' @export
 prep_nhd <- function(flines, min_network_size = 2, min_path_length = 1, purge_non_dendritic = TRUE) {
   if(grepl("Spatial",class(flines))) {
-    message("removing geometry")
+    #message("removing geometry")
     flines <- flines@data
   }
   orig_rows <- nrow(flines)

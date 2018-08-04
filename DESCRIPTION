@@ -12,23 +12,24 @@ Depends:
     R (>= 3.0.0),
     HydroData,
     ggplot2,
-    magrittr,
     leaflet,
-    dygraphs
+    dygraphs,
+    AOI
 Imports:
     shiny (>= 1.0.4),
-    AOI,
     dplyr,
     DT,
     fst,
     shinyjs,
     ncdf4,
+    magrittr,
     rdrop2,
     utils,
-    lubridate,
     lutz,
-    reshape2,
-    xts
+    maps,
+    sp,
+    maptools,
+    reshape2
 Suggests:
     covr,
     testthat

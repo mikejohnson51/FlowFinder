@@ -33,10 +33,14 @@ download_nomads_rda = function(fileList = NULL, number = 6, dir = NULL){
     interval = 1
   }
   dates = NULL
+  datesNEW = NULL
   
   for(i in 1:number){
-    dates = append(dates,  format(lubridate::ymd_hms(paste0(date, "-", time, "-00-00"), tz = 'GMT') + ((((i) * interval)) * 60 * 60), tz ="GMT", format="%Y-%m-%d  %H"))
+    dates = append(dates, format(as.POSIXct(paste0(date, " ", time, ":00:00"), "%Y-%M-%d %H:%M:%S", tz = "GMT") + ((((i) * interval)) * 60 * 60), "%Y-%m-%d  %H"))
+    #dates = append(dates,  format(lubridate::ymd_hms(paste0(date, "-", time, "-00-00"), tz = 'GMT') + ((((i) * interval)) * 60 * 60), tz ="GMT", format="%Y-%m-%d  %H"))
   }
+  
+  #"2018-08-04  09" "2018-08-04  12" "2018-08-04  15"
   message("Data Downloaded !")
   
   # Opening first file to get necessary data
