@@ -15,13 +15,15 @@
 #' 
 #' @importFrom reshape2 melt
 #' 
-#' @importFrom utils download.file head write.csv
+#' @importFrom utils download.file head write.csv read.csv
 #' 
 #' @importFrom AOI getAOI getPoint getBoundingBox aoiProj
 #' 
 #' @importFrom sp SpatialPoints over
 #' 
 #' @importFrom lutz tz_lookup_coords
+#' 
+#' @importFrom lubridate ymd_h
 #' 
 #' @import shiny
 #' 
@@ -34,7 +36,6 @@
 #' @import leaflet
 #' 
 #' @import dygraphs
-
 
 
 NULL

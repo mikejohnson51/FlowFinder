@@ -239,6 +239,11 @@ shinyServer(function(input, output, session) {
     dygraph_plot(values = values, selected = input$flow_selector )
   })
   
+  # Keep as easy way to vizualize downloadable ggplot
+  # output$plot2<-renderPlot({
+  #   static_plot(values = values, selected = input$flow_selector )
+  # })
+  
   # Previous stream button
   observeEvent(input$prevCOMID, {
     current <- which(values$choices == input$flow_selector)

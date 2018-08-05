@@ -131,6 +131,8 @@ shinyUI(
                         ),
                         br(), br(),
                         dygraphs::dygraphOutput("dygraph"),
+                        # Keep as easy way to vizualize downloadable ggplot
+                        # plotOutput("plot2"),
                         br(), br(),
                         fluidRow(
                           column(6,DT::DTOutput('tbl_up')),

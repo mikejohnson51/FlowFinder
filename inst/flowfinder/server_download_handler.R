@@ -47,26 +47,12 @@ output$downloadData <- downloadHandler(
       path <- paste(paste(values$flow_data$nhd$comid[values$flow_data$nhd$comid == values$flow_data$nhd$comid[values$i]], Sys.Date(), sep = '_'), "png", sep = ".")
       fs <- c(fs, path)
       device <- function(..., width, height) {
-        grDevices::png(..., width = 8, height = 4, units = "in",
+        grDevices::png(..., width = 12, height = 5, units = "in",
                        res = 300)
       }
       cutoff = values$normals[,2] * 35.3147
       values$data$color <- ifelse(values$data$Q_cfs <= cutoff, '#0069b5', 'red')
-      ggsave(path, plot = 
-               ggplot()+
-               geom_line(data = values$data, aes(x = dateTime, y = Q_cfs, color="Medium Range Forecast"), size = 1.5, alpha=0.4 )  +
-               geom_point(data = values$data, aes(x = dateTime, y = Q_cfs), size = 2, color = values$data$color) +
-               geom_area(data = values$data, aes(x = dateTime, y = Q_cfs),fill = '#0069b5', alpha = .1) +
-               geom_hline(aes(yintercept = cutoff, colour = "Average Monthly Flow"), alpha = .2, size=5, show.legend = TRUE) +
-               scale_colour_manual("",
-                                   breaks = c("Medium Range Forecast", "Average Monthly Flow"),
-                                   values = c("red","#0069b5" )) +
-               labs(x = "Date and Time",
-                    y = "Streamflow (cfs)",
-                    title = paste0(ifelse(is.na(values$flow_data$nhd$gnis_name[values$flow_data$nhd$comid == values$flow_data$nhd$comid[values$i]]), "", paste0(values$flow_data$nhd@data$gnis_name[values$flow_data$nhd$comid == values$flow_data$nhd$comid[values$i]], " ")),
-                                   paste0("COMID: ", values$flow_data$nhd$comid[values$flow_data$nhd$comid == values$flow_data$nhd$comid[values$i]]))) +
-               theme(plot.title = element_text(color="#0069b5", size=16, face="bold.italic"),
-                     legend.position="bottom"),
+      ggsave(path, plot = static_plot(values = values, selected = input$flow_selector),
              device = device)
     }
     

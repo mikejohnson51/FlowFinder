@@ -23,12 +23,10 @@ Imports:
     shinyjs,
     ncdf4,
     magrittr,
-    rdrop2,
     utils,
     lutz,
-    maps,
     sp,
-    maptools,
+    lubridate,
     reshape2
 Suggests:
     covr,
