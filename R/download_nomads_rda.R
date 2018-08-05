@@ -5,7 +5,7 @@ download_nomads_rda = function(fileList = NULL, number = 6, dir = NULL){
     dir <- system.file("flowfinder", package = "FlowFinder")
   }
   
-  dir.create(paste0(dir,'/data/current_nc'))
+  dir.create(paste0(dir,'/data/current_nc_new'))
   
   tmp = tempdir()
   for (i in seq_along(fileList[[3]])) {
@@ -22,7 +22,7 @@ download_nomads_rda = function(fileList = NULL, number = 6, dir = NULL){
   
   # Write csv for info tab data
   dateTime <- data.frame(date = date, time = time, stringsAsFactors = FALSE)
-  write.csv(dateTime, paste0(dir,'/data/current_nc/dateTime.csv'))
+  write.csv(dateTime, paste0(dir,'/data/current_nc_new/dateTime.csv'))
   
   
   rm(fileList)
@@ -36,8 +36,8 @@ download_nomads_rda = function(fileList = NULL, number = 6, dir = NULL){
   datesNEW = NULL
   
   for(i in 1:number){
-    dates = append(dates, format(as.POSIXct(paste0(date, " ", time, ":00:00"), "%Y-%M-%d %H:%M:%S", tz = "GMT") + ((((i) * interval)) * 60 * 60), "%Y-%m-%d  %H"))
-    #dates = append(dates,  format(lubridate::ymd_hms(paste0(date, "-", time, "-00-00"), tz = 'GMT') + ((((i) * interval)) * 60 * 60), tz ="GMT", format="%Y-%m-%d  %H"))
+    #dates = append(dates, format(as.POSIXct(paste0(date, " ", time, ":00:00"), "%Y-%M-%d %H:%M:%S", tz = "GMT") + ((((i) * interval)) * 60 * 60), "%Y-%m-%d  %H"))
+    dates = append(dates,  format(lubridate::ymd_hms(paste0(date, "-", time, "-00-00"), tz = 'GMT') + ((((i) * interval)) * 60 * 60), tz ="GMT", format="%Y-%m-%d  %H"))
   }
   
   #"2018-08-04  09" "2018-08-04  12" "2018-08-04  15"
@@ -50,7 +50,7 @@ download_nomads_rda = function(fileList = NULL, number = 6, dir = NULL){
   start = 1
   end = start + inc - 1
   mappingList <- list()
-  dir.create(paste0(dir,'/data/current_nc/changes'))
+  dir.create(paste0(dir,'/data/current_nc_new/changes'))
   
   message("Entering Loop!")
   
@@ -110,7 +110,7 @@ download_nomads_rda = function(fileList = NULL, number = 6, dir = NULL){
     # Write fst file
     
   
-    name = paste0(dir,"/data/current_nc/",month, "_", sprintf("%02d", i), ".fst")
+    name = paste0(dir,"/data/current_nc_new/",month, "_", sprintf("%02d", i), ".fst")
     
     
     
@@ -121,7 +121,7 @@ download_nomads_rda = function(fileList = NULL, number = 6, dir = NULL){
                                          change = Q$change,
                                          max_date = Q$max_date), .keep_all = TRUE)
     changes = changes[changes$change > 0,]
-    fst::write_fst(changes, paste0(dir,'/data/current_nc/changes/',i,'.fst'), compress = 100)
+    fst::write_fst(changes, paste0(dir,'/data/current_nc_new/changes/',i,'.fst'), compress = 100)
     rm(changes)
     
     message("removing data sets!")
@@ -145,24 +145,34 @@ download_nomads_rda = function(fileList = NULL, number = 6, dir = NULL){
   map <- data.frame(tmp, stringsAsFactors = FALSE)
   #combine all vectors into a matrix
   colnames(map) <- c('num', 'min', 'max', 'filename')
-  write.csv(map, paste0(dir,'/data/current_nc/map.csv'))
+  write.csv(map, paste0(dir,'/data/current_nc_new/map.csv'))
   message(paste0(name," finished!"))
   gc()
   
   # Create file with potential flood areas
-  change.files =  list.files(paste0(dir,'/data/current_nc/changes/'), pattern = ".fst$", full.names = T)
+  change.files =  list.files(paste0(dir,'/data/current_nc_new/changes/'), pattern = ".fst$", full.names = T)
   max_increases = fst::read_fst(path = change.files[1])
   # Loop through all change files and create one data frame
   for (k in 2:length(change.files)) {
     max_increases = rbind(max_increases, fst::read_fst(path = change.files[k]))
   }
+  
+  # Remove changes directory
+  unlink(paste0(dir,'/data/current_nc_new/changes'), recursive=TRUE)
+  
   # Sort by max flow and write file with top 5000
   max_increases = max_increases[order(max_increases$change, decreasing=TRUE), ]
-  fst::write_fst(max_increases[1:1500,], paste0(dir,'/data/current_nc/max_increase.fst'), compress = 100)
+  fst::write_fst(max_increases[1:1500,], paste0(dir,'/data/current_nc_new/max_increase.fst'), compress = 100)
   rm(max_increases)
   rm(change.files)
   gc()
   
-  flood_map = make_flood_risk_map(path = paste0(dir,'/data/current_nc/max_increase.fst'))
-  base::save(flood_map, file = paste0(dir,'/data/current_nc/flood_map.rda'))
+  # Make and save flood map
+  flood_map = make_flood_risk_map(path = paste0(dir,'/data/current_nc_new/max_increase.fst'))
+  base::save(flood_map, file = paste0(dir,'/data/current_nc_new/flood_map.rda'))
+  
+  # Replace old data with new data
+  unlink(paste0(dir,'/data/current_nc'), recursive=TRUE)
+  file.rename(paste0(dir,'/data/current_nc_new/'), 'data/current_nc')
+  
 }

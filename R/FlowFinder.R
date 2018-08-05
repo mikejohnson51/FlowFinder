@@ -23,7 +23,7 @@
 #' 
 #' @importFrom lutz tz_lookup_coords
 #' 
-#' @importFrom lubridate ymd_h
+#' @importFrom lubridate ymd_h ymd_hms
 #' 
 #' @import shiny
 #' 
