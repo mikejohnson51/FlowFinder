@@ -2,7 +2,7 @@
 set_choices <- function(values) {
   
   # Find comid that has max flow in forcast - used to set default
-  max_qcms = values$nwm[match(max(values$nwm$Q_cfs), values$nwm$Q_cfs),]$COMID
+  max_qcms = values$nwm[match(max(values$nwm$Q_cfs, na.rm = TRUE), values$nwm$Q_cfs),]$COMID
   name = values$flow_data$nhd[values$flow_data$nhd$comid == max_qcms,]$gnis_name
   text = paste0(paste0(ifelse(is.na(name), "", name)), paste0(" COMID: ", max_qcms))
   
@@ -24,29 +24,37 @@ set_choices <- function(values) {
 # Generate Dygraph
 dygraph_plot <- function(values, selected) {
   
-  df = data.frame(time = values$data$dateTime)
+  output <- matrix(ncol=length(selected), nrow=length(values$data$dateTime))
   
-  for (stream in selected) {
-    text = stream
+  ids = c()
+  for (j in 1:length(selected)) {
+    text = selected[j]
     id = unlist(strsplit(text, split='COMID: ', fixed=TRUE))[2]
     i = match(id, values$flow_data$nhd@data$comid)
     data = values$nwm[values$nwm$COMID == values$flow_data$nhd$comid[i],]
-    df[as.character(id)] = data$Q_cfs
+    output[,j] <- data$Q_cfs
+    ids = c(ids, as.character(id))
   }
-  rownames(df) = df[[1]]
+  
+  df <- data.frame(output)
+  colnames(df) <- ids
+
+  timeZone = lutz::tz_lookup_coords(values$loc$lat, values$loc$lon, method = "accurate")
+  df = xts::xts(df, order.by = lubridate::with_tz(data$dateTime, timeZone), tz = timeZone)
+
   #title = ifelse((selected) == 1,lengthpaste0(ifelse(is.na(values$flow_data$nhd$gnis_name[values$flow_data$nhd$comid == values$flow_data$nhd$comid[values$i]]), "", paste0(values$flow_data$nhd@data$gnis_name[values$flow_data$nhd$comid == values$flow_data$nhd$comid[values$i]], " ")),
   #              paste0("COMID: ", values$flow_data$nhd$comid[values$flow_data$nhd$comid == values$flow_data$nhd$comid[values$i]])), "Multiple Reaches Selected")
   graph = dygraphs::dygraph(df) %>%
+    dyOptions(drawPoints = TRUE, 
+              pointSize = 2,
+              gridLineColor = "lightblue",
+              useDataTimezone = TRUE) %>% 
     dyRangeSelector(height = 20) %>%
     dyAxis("x", drawGrid = FALSE) %>%
     dyHighlight(highlightCircleSize = 5,
                 highlightSeriesBackgroundAlpha = 1) %>%
     dyAxis("y", label = "Streamflow (cfs)" )%>%
-    dyLegend(show = "onmouseover") %>%
-    dyOptions(drawPoints = TRUE, 
-              pointSize = 2,
-              gridLineColor = "lightblue",
-              labelsUTC = TRUE)
+    dyLegend(show = "onmouseover")
   
   if (length(selected) == 1) {
     cutoff = values$normals[,2] * 35.3147
@@ -54,10 +62,10 @@ dygraph_plot <- function(values, selected) {
     std = sd(df[[2]], na.rm = TRUE)
     graph = graph %>%
       dyOptions(
+        useDataTimezone = TRUE,
         drawPoints = TRUE, 
         pointSize = 2,
         gridLineColor = "lightblue",
-        labelsUTC = TRUE,
         fillGraph = TRUE, 
         fillAlpha = 0.1
       )  %>%

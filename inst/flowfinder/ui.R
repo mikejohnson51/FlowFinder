@@ -109,7 +109,7 @@ shinyUI(
                                  actionButton("prevCOMID", label = "Previous"),
                                  actionButton("nextCOMID", label = "Next"),
                                  actionButton("mark_flowline", "View on Map"),
-                                 dropdownButton(
+                                 dropdownButton(inputId = "download_btn",
                                    circle = FALSE, icon = icon("download"), label = "Downloads", width = "300px",
                                    down = TRUE, right = TRUE,
                                    

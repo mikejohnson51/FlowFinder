@@ -42,7 +42,7 @@ shinyServer(function(input, output, session) {
   
   # On go, calculate reactive values
   observeEvent(input$do, {
-    
+
     # Clear error messages
     error_message("")
     
@@ -129,19 +129,6 @@ shinyServer(function(input, output, session) {
       
       # Set initial values based on default COMID
       update_cur_id(choices$default)
-    
-      
-      # Enable UI elements only active when streams in AOI
-      # shinyjs::enable("prevCOMID")
-      # shinyjs::enable("nextCOMID")
-      # shinyjs::enable("flow_selector")
-      # shinyjs::enable("mark_flowline")
-      # shinyjs::enable("data_csv")
-      # shinyjs::enable("data_rda")
-      # shinyjs::enable("data_nhd")
-      # shinyjs::enable("plot_png")
-      # shinyjs::enable("plot_dygraph")
-      
       
       show_hide_all(elements = ui_flow_only, action = "enable")
       
@@ -152,15 +139,6 @@ shinyServer(function(input, output, session) {
       values$choices = NULL
       updatePickerInput(session, 'flow_selector', choices = "", selected = NULL)
       show_hide_all(elements = ui_flow_only, action = "disable")
-      # shinyjs::disable("prevCOMID")
-      # shinyjs::disable("nextCOMID")
-      # shinyjs::disable("flow_selector")
-      # shinyjs::disable("mark_flowline")
-      # shinyjs::disable("data_csv")
-      # shinyjs::disable("data_rda")
-      # shinyjs::disable("data_nhd")
-      # shinyjs::disable("plot_png")
-      # shinyjs::disable("plot_dygraph")
     }
 
     # Re-enable search
@@ -199,6 +177,12 @@ shinyServer(function(input, output, session) {
     }
   })
   
+  # observe({
+  #   if(input$tabs == "Data") {
+  #     print('true')
+  #   }
+  # })
+  
   # Reset button
   observeEvent(input$reset, { clearMarkers() })
   
@@ -236,7 +220,9 @@ shinyServer(function(input, output, session) {
   # Generate dygraph plot
   output$dygraph <- dygraphs::renderDygraph({
     req(values$any_flow, input$flow_selector)
-    dygraph_plot(values = values, selected = input$flow_selector )
+    withProgress(message = 'Analyzing Location', value = .5, {
+      dygraph_plot(values = values, selected = input$flow_selector )
+    })
   })
   
   # Keep as easy way to vizualize downloadable ggplot
@@ -287,7 +273,7 @@ shinyServer(function(input, output, session) {
   # Activate/Deactivate buttons depending on number of COMIDs selected
   observe({
     elements = c("tbl_up", "tbl_down", "prevCOMID", "nextCOMID")
-    if (length(input$flow_selector) > 1) {
+    if (length(input$flow_selector) > 500) {
       show_hide_all(elements = elements, action = "hide")
     } else {
       show_hide_all(elements = elements, action = "show")

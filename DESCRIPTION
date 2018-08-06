@@ -27,6 +27,7 @@ Imports:
     lutz,
     sp,
     lubridate,
+    xts,
     reshape2
 Suggests:
     covr,

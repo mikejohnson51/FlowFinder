@@ -348,7 +348,18 @@ h4 { font-weight: 400; }
 }
 */
 
+.col-sm-12 {
+  padding-left: 0px !important;
+}
 
+#mark_flowline, #nextCOMID, #prevCOMID {
+  margin: 0px 5px 0px 0;
+}
+
+@media only screen and (max-width: 768px) {
+#mark_flowline, #nextCOMID, #prevCOMID, #drop663421980 {
+  margin-top: 5px !important;
+}
 
 
 
