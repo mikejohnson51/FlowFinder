@@ -47,10 +47,11 @@ data$locTime[i] = format(data$max_date[i], tz= data$tz[i],usetz=TRUE)
 }
 
 pop <- paste(
-  paste("<strong>NHD COMID:</strong>", data$COMID),
+  paste0("<a class='open-stream'>", "<strong>NHD COMID: </strong>", data$COMID, "</a>"),
   paste("<strong>Timezone:</strong>", data$tz),
   paste("<strong>Time of Peak (local):</strong>", data$locTime),
   paste("<strong>Time of Peak (UTC):</strong>", data$max_date),
+  paste('<a class="flood-data"><i class="fa fa-line-chart"></i></a>'),
   sep = "<br/>"
 )
 

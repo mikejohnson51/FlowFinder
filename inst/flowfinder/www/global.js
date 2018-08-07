@@ -66,3 +66,33 @@ $(document).on("click", ".go-stream", function(e) {
     stream: stream,
   });
 });
+
+/************ MAP TAB *******************/
+
+// Graph button
+$(document).on("click", ".flood-data", function(e) {
+  closePopup();
+  //document.getElementById("flood_map").style.height = "60%";
+  //el = document.getElementsByClassName('ui-resizable')[0];
+  el = document.getElementById("flood_map");
+  el.style.height = "calc(100vh - 280px)";
+  document.getElementById("close_fl_gr").style.display = "block";
+  var comid = getStream()[1];
+  comid = comid.split("</strong>").pop();
+  Shiny.onInputChange("map_flood", {
+    comid : comid
+  });
+});
+
+// Close Graph Button
+$(document).on("click", "#close_fl_gr", function(e) {
+  document.getElementById("close_fl_gr").style.display = "none";
+  document.getElementById("flood_map").style.height = "100%";
+  Shiny.onInputChange("map_flood", {
+    comid : "reset"
+  });
+});
+
+
+
+

@@ -136,22 +136,6 @@ h4 { font-weight: 400; }
   line-height: 26px;
 }
 
-#server_problems {
-  top: 110px;
-  bottom: auto;
-  left: 10px;
-  right: auto;
-  position: fixed;
-  z-index: 99999;
-  color: white;
-  font-weight: bold;
-  background: red;
-  padding: 0;
-  border: none;
-  opacity: 0.7;
-  margin-top: 3px;
-}
-
 #data_loc,
 #stream {
   font-size: 150%;
@@ -299,6 +283,28 @@ h4 { font-weight: 400; }
 
 .bs-select-all { display: none;}
 
+/*****************************************
+*           HIGH FLOWS                  *
+*****************************************/
+
+#flood_dygraph {
+  border-top: 6px solid darkgray;
+  padding: 18px 0;
+}
+
+#close_fl_gr {
+  display: none;
+  position: absolute;
+  right: 3px;
+  left: auto;
+  bottom: 200px;
+  border: none;
+  z-index: 999;
+}
+
+#flood_dygraph .dygraph-legend {
+    z-index: 999999 !important;
+}
 
 /*****************************************
 *            Queiries                    *
@@ -307,8 +313,6 @@ h4 { font-weight: 400; }
 @media only screen and (max-width: 473px) {
   
   .navbar-default .navbar-brand{ font-size: 12px !important;}
-  
-  /*#nav { font-size: 12px !important; }*/
   
   #nav > li > a {
     padding-left: 8px !important;
@@ -341,13 +345,6 @@ h4 { font-weight: 400; }
   .logo-small {display: block;}
 }
 
-/*@media only screen and (max-width: 351px) {
-
-  #nav { font-size: 11px !important; }
-   
-}
-*/
-
 .col-sm-12 {
   padding-left: 0px !important;
 }
@@ -360,10 +357,6 @@ h4 { font-weight: 400; }
 #mark_flowline, #nextCOMID, #prevCOMID, #drop663421980 {
   margin-top: 5px !important;
 }
-
-
-
-
 
 
 .form-group.shiny-input-container {

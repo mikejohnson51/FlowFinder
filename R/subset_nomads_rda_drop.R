@@ -1,6 +1,8 @@
 #' @export
 
-subset_nomads_rda_drop <- function(comids = NULL) {
+subset_nomads <- function(comids = NULL) {
+  
+  comids = as.numeric(comids)
   
   mapping = read.csv("data/current_nc/map.csv", stringsAsFactors = FALSE)
   
@@ -9,10 +11,16 @@ subset_nomads_rda_drop <- function(comids = NULL) {
   res = list()
   for (file in files) {
     res_subset <- fst::read.fst(paste0('data/current_nc/', file))
-    res_new = res_subset[res_subset$COMID %in% comids, ]
-    res = rbind(res, res_new)
+    res_new = dplyr::filter(res_subset, COMID %in% comids)
+    res = dplyr::bind_rows(res, res_new)
   }
 
   res$agency_code = "NOAA NWS"
   return(res)
 }
+
+
+
+
+
+

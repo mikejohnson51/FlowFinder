@@ -26,12 +26,7 @@ shinyServer(function(input, output, session) {
   
   # Set map
   output$map <- renderLeaflet({ basemap() })
-  
-  # Display error messages
-  error_message <- function(message) {
-    output$server_problems <- renderText({ message })
-  }
-  
+
   # Define reactive values corresponding to current COMID
   update_cur_id <- function(input) {
     values$id = unlist(strsplit(input, split='COMID: ', fixed=TRUE))[2]
@@ -43,9 +38,6 @@ shinyServer(function(input, output, session) {
   # On go, calculate reactive values
   observeEvent(input$do, {
 
-    # Clear error messages
-    error_message("")
-    
     # Don't let user enter new location while processing previous
     shinyjs::disable("do")
     
@@ -78,7 +70,7 @@ shinyServer(function(input, output, session) {
       } else {
         values$any_flow = TRUE
         # Subset data
-        values$nwm = subset_nomads_rda_drop(comids = values$flow_data$comid)
+        values$nwm = subset_nomads(comids = values$flow_data$comid)
         incProgress(2/8, detail = "Finding Upstream/Downstream")
         
         # Set upstream/downstream data
@@ -172,16 +164,9 @@ shinyServer(function(input, output, session) {
       updateTextInput(session = session, inputId =  "place", value = paste(input$lat, input$long, sep = " "), placeholder = "Current Location")
       shinyjs::click("do")
     } else {
-      error_message(" Your current location can't be determined.
-                    Make sure you have given your browser the necessarry permissions. ")
+      showNotification("Your current location can't be determined. Make sure you have given your browser the necessarry permissions.", type = "error")
     }
   })
-  
-  # observe({
-  #   if(input$tabs == "Data") {
-  #     print('true')
-  #   }
-  # })
   
   # Reset button
   observeEvent(input$reset, { clearMarkers() })
@@ -331,4 +316,34 @@ shinyServer(function(input, output, session) {
   # Set high flows map
   output$flood_map <- renderLeaflet({ flood_map })
   
+  # Generate dygraph plot
+  output$flood_dygraph <- dygraphs::renderDygraph({
+    req(input$map_flood$comid)
+    reset = values$reset_fl_graph
+    comid = input$map_flood$comid
+    isolate({
+      if (comid == "reset") {
+        values$flood_data <- NULL
+        dygraph(data = data.frame(x = 1)) %>%
+          dyOptions(drawGrid = FALSE,
+                    drawYAxis = FALSE,
+                    drawXAxis = FALSE)
+      } else {
+        withProgress(message = 'Making plot', value = .5, {
+          new_data = dygraph_flood(comid = comid, data = values$flood_data)
+          values$flood_data = new_data$data_set
+          new_data$graph
+        })
+      }
+    })
+  })
+  
+  observe({
+    if (is.null(values$flood_data)) {
+      shinyjs::disable("reset_fl_gr")
+    } else {
+      shinyjs::enable("reset_fl_gr")
+    }
+  })
+
 })

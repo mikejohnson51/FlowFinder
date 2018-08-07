@@ -3,6 +3,8 @@ library(leaflet)
 library(shinyjs)
 library(shinyWidgets)
 
+library(shinyjqui)
+
 
 #### Reusable UI elements ###
 download_item <- function(id, label) {
@@ -72,7 +74,6 @@ shinyUI(
                                         });
                                         '),
                             leafletOutput("map", width="100%", height="100%"),
-                            verbatimTextOutput(outputId = "server_problems"),
                             absolutePanel(style="display:inline-block", id = "controls", class = "panel panel-default", fixed = TRUE,
                                           draggable = TRUE, top = 60, left = 10, right = "auto", bottom = "auto",
                                           width = 430, height = "auto",
@@ -142,8 +143,12 @@ shinyUI(
                ),
                tabPanel("High Flows", icon = icon("tint"),
                         div(class="outer",
-                            leafletOutput("flood_map", width="100%", height="100%")
-                        )
+                            leafletOutput("flood_map", height = "100%"),
+                            div(class = "fl_map_div",
+                                dygraphs::dygraphOutput("flood_dygraph", height = "200px")
+                            ),
+                            actionButton("close_fl_gr", "", icon = icon("times"))
+                            )
                ),
                tabPanel("Info", icon = icon("info-circle"),
                         textOutput("data_loc"),   
