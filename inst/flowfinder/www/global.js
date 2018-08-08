@@ -79,8 +79,18 @@ $(document).on("click", ".flood-data", function(e) {
   document.getElementById("close_fl_gr").style.display = "block";
   var comid = getStream()[1];
   comid = comid.split("</strong>").pop();
+  
+  var text = document.getElementsByClassName('lat_lon')[0].innerHTML;
+  var vals = text.split("</strong>").pop();
+  vals = vals.split(" / ");
+  var lat = vals[0];
+  var lon = vals[1];
+  
+  
   Shiny.onInputChange("map_flood", {
-    comid : comid
+    comid : comid,
+    lat : lat,
+    lon : lon
   });
 });
 

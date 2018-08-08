@@ -1,0 +1,14 @@
+.dygraph-label .dygraph-xlabel,
+.dygraph-axis-label,
+.dygraph-label{
+  color: white;
+}
+
+.dygraph-legend {
+  background: #323232 !important;
+  color: white;
+}
+
+.dygraph-legend {
+  z-index: 999999 !important;
+}

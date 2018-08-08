@@ -142,7 +142,7 @@ shinyUI(
                         DT::DTOutput('tbl')
                ),
                tabPanel("High Flows", icon = icon("tint"),
-                        div(class="outer",
+                        div(class="outer dark_bg",
                             leafletOutput("flood_map", height = "100%"),
                             div(class = "fl_map_div",
                                 dygraphs::dygraphOutput("flood_dygraph", height = "200px")

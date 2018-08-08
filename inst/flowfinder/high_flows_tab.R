@@ -1,7 +1,14 @@
 load('data/current_nc/flood_map.rda')
 
 # Generate Dygraph
-dygraph_flood <- function(comid, data) {
+dygraph_flood <- function(comid, data, number) {
+  
+  colors = c("orange", "green", "red", "purple",
+             "lightblue", "lightgreen", "pink", "lightred", "gray",
+             "darkblue", "darkred", "darkgreen", "darkpurple")
+  
+  
+  color_set = colors[1:(number + 1)]
   
   # Get data for new comid
   subset = subset_nomads(comids = comid)
@@ -19,10 +26,12 @@ dygraph_flood <- function(comid, data) {
   }
   
   graph = dygraphs::dygraph(df) %>%
-    dyOptions(drawPoints = TRUE, 
+    dyOptions(colors = colors,
+              drawPoints = TRUE, 
               pointSize = 2,
-              gridLineColor = "lightblue") %>% 
-    dyRangeSelector(height = 20) %>%
+              gridLineColor = "#7f7f7f",
+              axisLineColor = "#b2b2b2") %>% 
+    dyCSS("www/dygraph.css") %>%
     dyAxis("x", drawGrid = FALSE) %>%
     dyHighlight(highlightCircleSize = 5,
                 highlightSeriesBackgroundAlpha = 1) %>%
@@ -36,9 +45,11 @@ dygraph_flood <- function(comid, data) {
     
     graph = graph %>%
       dyOptions(
+        colors = colors,
         drawPoints = TRUE, 
         pointSize = 2,
-        gridLineColor = "lightblue",
+        gridLineColor = "#7f7f7f",
+        axisLineColor = "#b2b2b2",
         fillGraph = TRUE, 
         fillAlpha = 0.1
       )  %>%

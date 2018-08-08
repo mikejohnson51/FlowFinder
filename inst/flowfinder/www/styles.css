@@ -24,6 +24,8 @@ h4 { font-weight: 400; }
 
 .shiny-notification { opacity: 1 !important; }
 
+.dark_bg { background: #323232;}
+
 /*****************************************
 *               Header                   *
 *****************************************/
@@ -300,11 +302,19 @@ h4 { font-weight: 400; }
   bottom: 200px;
   border: none;
   z-index: 999;
+  background: transparent;
+  color: #b2b2b2;
 }
 
-#flood_dygraph .dygraph-legend {
-    z-index: 999999 !important;
+#close_fl_gr:hover {
+  color: white;
 }
+
+a.lat_lon {
+  color: black !important;
+  text-decoration: none !important;
+}
+
 
 /*****************************************
 *            Queiries                    *

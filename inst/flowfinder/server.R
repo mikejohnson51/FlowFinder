@@ -329,8 +329,15 @@ shinyServer(function(input, output, session) {
                     drawYAxis = FALSE,
                     drawXAxis = FALSE)
       } else {
+        #values$flood_data_ids <- ifelse(is.null(values$flood_data_ids), comid, c(values$flood_data_ids, comid))
+        if (is.null(values$flood_data_ids)) {
+          values$flood_data_ids <- comid
+        } else {
+          values$flood_data_ids <- c(values$flood_data_ids, comid)
+        }
+        
         withProgress(message = 'Making plot', value = .5, {
-          new_data = dygraph_flood(comid = comid, data = values$flood_data)
+          new_data = dygraph_flood(comid = comid, data = values$flood_data, number = length(values$flood_data_ids))
           values$flood_data = new_data$data_set
           new_data$graph
         })
@@ -339,11 +346,39 @@ shinyServer(function(input, output, session) {
   })
   
   observe({
-    if (is.null(values$flood_data)) {
-      shinyjs::disable("reset_fl_gr")
-    } else {
-      shinyjs::enable("reset_fl_gr")
-    }
+    req(input$map_flood$comid)
+    comid = input$map_flood$comid
+    
+    isolate({
+      if (comid == "reset") {
+        values$flood_data_ids <- NULL
+        leafletProxy("flood_map", session) %>%
+          clearGroup("flood_markers")
+      } else {
+        colors = c("orange", "green", "red", "purple",
+                   "lightblue", "lightgreen", "pink", "lightred", "gray",
+                   "darkblue", "darkred", "darkgreen", "darkpurple")
+        
+        
+        color = colors[length(values$flood_data_ids) + 1]
+      
+      
+        leafletProxy("flood_map", session) %>%
+          addAwesomeMarkers(
+            icon = awesomeIcons(
+              icon = 'circle',
+              iconColor = '#FFFFFF',
+              library = 'fa',
+              markerColor = color
+            ),
+            data = data,
+            lat = as.numeric(input$map_flood$lat),
+            lng = as.numeric(input$map_flood$lon),
+            popup = paste0("<strong>NHD COMID: </strong>", comid),
+            group = "flood_markers"
+          )
+      }
+    })
   })
-
+  
 })

@@ -13,9 +13,9 @@ make_flood_risk_map = function(path = NULL, dir = NULL){
   }
 
 
-vals = read_fst(path)
+vals = fst::read_fst(path)
 
-df = read_fst(paste0(dir,"/data/comids_w_tz.fst"))
+df = fst::read_fst(paste0(dir,"/data/comids_w_tz.fst"))
 
 #write_fst(df, path = "/Users/mikejohnson/Desktop/FlowlineMap/comids_w_tz.fst")
 
@@ -48,6 +48,7 @@ data$locTime[i] = format(data$max_date[i], tz= data$tz[i],usetz=TRUE)
 
 pop <- paste(
   paste0("<a class='open-stream'>", "<strong>NHD COMID: </strong>", data$COMID, "</a>"),
+  paste0("<a class='lat_lon'>", "<strong>Location: </strong>", paste0(data$lat," / ",data$long),"</a>"),
   paste("<strong>Timezone:</strong>", data$tz),
   paste("<strong>Time of Peak (local):</strong>", data$locTime),
   paste("<strong>Time of Peak (UTC):</strong>", data$max_date),
