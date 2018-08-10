@@ -11,3 +11,7 @@
     -webkit-box-shadow: -6px 6px 8px 6px #ccc;
     box-shadow: -6px 6px 8px 6px #ccc;
 }
+
+.quote-container {
+	max-width: 750px;
+}
