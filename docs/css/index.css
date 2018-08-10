@@ -1,0 +1,13 @@
+.dark_text {color: #4c4c4c;}
+
+.shadow-right {
+    -moz-box-shadow: 6px 6px 8px 6px #ccc;
+    -webkit-box-shadow: 6px 6px 8px 6px #ccc;
+    box-shadow: 6px 6px 8px 6px #ccc;
+}
+
+.shadow-left {
+    -moz-box-shadow: -6px 6px 8px 6px #ccc;
+    -webkit-box-shadow: -6px 6px 8px 6px #ccc;
+    box-shadow: -6px 6px 8px 6px #ccc;
+}
