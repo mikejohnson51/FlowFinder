@@ -1,5 +1,9 @@
 .dark_text {color: #4c4c4c;}
 
+
+
+.item {background: cover !important;}
+
 .shadow-right {
     -moz-box-shadow: 6px 6px 8px 6px #ccc;
     -webkit-box-shadow: 6px 6px 8px 6px #ccc;
