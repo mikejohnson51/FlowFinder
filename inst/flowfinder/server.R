@@ -258,7 +258,7 @@ shinyServer(function(input, output, session) {
   # Activate/Deactivate buttons depending on number of COMIDs selected
   observe({
     elements = c("tbl_up", "tbl_down", "prevCOMID", "nextCOMID")
-    if (length(input$flow_selector) > 500) {
+    if (length(input$flow_selector) > 1) {
       show_hide_all(elements = elements, action = "hide")
     } else {
       show_hide_all(elements = elements, action = "show")

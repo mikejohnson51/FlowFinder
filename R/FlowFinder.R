@@ -17,7 +17,7 @@
 #' 
 #' @importFrom utils download.file head write.csv read.csv
 #' 
-#' @importFrom AOI getAOI getPoint getBoundingBox aoiProj
+#' @importFrom AOI getAOI getBoundingBox aoiProj geocode
 #' 
 #' @importFrom sp SpatialPoints over
 #' 

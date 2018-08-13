@@ -61,7 +61,7 @@ get_location <- function(place) {
     else {
       point = place
     }
-    loc = AOI::getPoint(name = point)
+    loc = AOI::geocode(location = point)
     lat = loc$lat
     lon = loc$lon
   }

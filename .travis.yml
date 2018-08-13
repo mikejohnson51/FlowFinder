@@ -15,9 +15,7 @@ before_install:
   - sudo add-apt-repository ppa:ubuntugis/ppa --yes
   - sudo apt-get --yes --force-yes update -qq
   - sudo apt-get install --yes libudunits2-dev libproj-dev libgeos-dev libgdal-dev libcurl4-openssl-dev libv8-3.14-dev netcdf-bin
-  - Rscript -e 'install.packages("devtools")'
-  - Rscript -e 'devtools::install_github("mikejohnson51/HydroData", ref = "restructure")'
-  
+
 env:
    global:
      - R_BUILD_ARGS="--no-vignettes --no-manual"
@@ -30,8 +28,8 @@ warnings_are_errors: false
 r_github_packages:
   - jimhester/covr
   - mikejohnson51/AOI
+  - mikejohnson51/HydroData
   
-
 after_success:
   - if [[ "${R_CODECOV}" ]]; then travis_wait 20 R -e 'covr::coveralls()'; fi
 
