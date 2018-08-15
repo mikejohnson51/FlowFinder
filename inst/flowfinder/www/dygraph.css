@@ -1,14 +1,14 @@
-.dygraph-label .dygraph-xlabel,
-.dygraph-axis-label,
-.dygraph-label{
+#flood_dygraph .dygraph-label .dygraph-xlabel,
+#flood_dygraph .dygraph-axis-label,
+#flood_dygraph .dygraph-label{
   color: white;
 }
 
-.dygraph-legend {
+#flood_dygraph .dygraph-legend {
   background: #323232 !important;
   color: white;
 }
 
-.dygraph-legend {
+#flood_dygraph .dygraph-legend {
   z-index: 999999 !important;
 }
