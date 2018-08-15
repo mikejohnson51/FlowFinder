@@ -117,7 +117,7 @@ download_nomads_rda = function(fileList = NULL, number = 6, dir = NULL){
   colnames(map) <- c('num', 'min', 'max', 'filename')
   write.csv(map, paste0(dir,'/data/current_nc_new/map.csv'))
   
-  find_max_increases()
+  find_max_increases(dir = dir)
   create_high_flow_map(dir = dir)
   
   # Replace old data with new data
@@ -127,7 +127,7 @@ download_nomads_rda = function(fileList = NULL, number = 6, dir = NULL){
 }
 
 
-find_max_increases <- function(number = 1500) {
+find_max_increases <- function(number = 1500, dir = NULL) {
   
   # Get file list
   change.files =  list.files(paste0(dir,'/data/current_nc_new/changes/'), pattern = ".fst$", full.names = T)
@@ -146,7 +146,7 @@ find_max_increases <- function(number = 1500) {
   
 }
 
-create_high_flow_map <- function(dir) {
+create_high_flow_map <- function(dir = NUll) {
   
   # Make and save flood map
   flood_map = make_flood_risk_map(path = paste0(dir,'/data/current_nc_new/max_increase.fst'))
