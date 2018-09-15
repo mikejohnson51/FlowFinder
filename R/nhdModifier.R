@@ -29,10 +29,10 @@ prep_nhd <- function(flines, min_network_size = 2, min_path_length = 1, purge_no
     flines <- dplyr::filter(flines, !flines$terminalpa %in% unique(tiny_networks$terminalpa))
   }
   
-  warning(paste("Removed", orig_rows - nrow(flines), "flowlines that don't apply.\n",
-                "Includes: Coastlines, non-dendritic paths, \nand networks",
-                "with drainage area less than",
-                min_network_size, "sqkm"))
+  # warning(paste("Removed", orig_rows - nrow(flines), "flowlines that don't apply.\n",
+  #               "Includes: Coastlines, non-dendritic paths, \nand networks",
+  #               "with drainage area less than",
+  #               min_network_size, "sqkm"))
   
   # Join ToNode and FromNode along with COMID and Length to get downstream attributes.
   flines <- dplyr::left_join(flines, dplyr::select(flines, toCOMID = comid, fromnode), by = c("tonode" = "fromnode"))

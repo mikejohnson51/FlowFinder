@@ -90,7 +90,7 @@ h4 { font-weight: 400; }
 }
 
 /* Zoom Buttons */
-.leaflet-top.leaflet-left {
+#map .leaflet-top.leaflet-left {
   right: 10px;
   left: auto;
   top: auto;
@@ -313,6 +313,56 @@ h4 { font-weight: 400; }
 a.lat_lon {
   color: black !important;
   text-decoration: none !important;
+}
+
+/*****************************************
+*              Map 2                     *
+*****************************************/
+
+.tab-pane[data-value="Filter"] {
+  margin-top: -20px;
+  margin-left: -15px;
+  margin-right: -15px;
+}
+
+#nhd_options {
+    padding-left: 20px;
+}
+
+.table_opts {
+    color: black;
+    margin-left: -5px;
+}
+
+.multicol { 
+  height: 100px;
+  -webkit-column-count: 3; /* Chrome, Safari, Opera */ 
+  -moz-column-count: 3;    /* Firefox */ 
+  column-count: 3; 
+  -moz-column-fill: auto;
+  -column-fill: auto;
+}
+
+#info_modal_button {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    color: #999999;
+}
+
+#info_modal_button:hover {
+    color: #666666;
+}
+
+.float-left {
+  float: left;
+}
+
+#ts {text-align: center;}
+
+#ts h3 {
+  font-weight: bold;
+  color: #005593;
 }
 
 

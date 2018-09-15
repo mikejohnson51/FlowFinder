@@ -7,6 +7,7 @@ source("map_tab.R")
 source("data_tab.R")
 source("info_tab.R")
 source("high_flows_tab.R")
+source("filter_tab.R")
 
 # Define base variables
 month = as.numeric(substr(list.files("data/current_nc")[1], 1,2))
@@ -14,37 +15,20 @@ month_files = list.files("data/", pattern = as.character(month), full.names = T)
 norm = fst::read_fst(path = month_files)
 size = 15
 
+positive_pal <- colorBin(c('red', 'blue'), bins = c(-1, 0.000000000000000001, 9000000000000000000000))
+
 # Returns COMIDS from stream names
 # getIDs("Monument Creek COMID: 1529685") -> "1529685"
 # getIDs(c("Monument Creek COMID: 1529685", "Fountain Creek COMID: 1529677")) -> "1529685" "1529677"
 getIDs <- function(streams) {
-  ids = c()
-  for (stream in streams) {
-    ids = c(ids, unlist(strsplit(stream, split='COMID: ', fixed=TRUE))[2])
-  }
-  return(ids)
+  purrr::map_chr(streams, ~unlist(strsplit(., split='COMID: ', fixed=TRUE))[2])
 }
 
 # Show or hide all provided elements
 show_hide_all <- function(elements, action) {
-  if (action == "hide") {
-    for (element in elements) {
-      shinyjs::hide(element)
-    }
-  } else if (action == "show") {
-      for (element in elements) {
-        shinyjs::show(element)
-      }
-  } else if (action == "disable") {
-      for (element in elements) {
-        shinyjs::disable(element)
-      }
-  } else if (action == "enable") {
-      for (element in elements) {
-        shinyjs::enable(element)
-      }
-  }
+  capture.output(purrr::map(elements, get(action)))
 }
+
 
 # Get location
 get_location <- function(place) {
@@ -55,12 +39,7 @@ get_location <- function(place) {
     lon = as.numeric(split[2])
   } 
   else {
-    if (place == "") {
-      point = "National Water Center"
-    } 
-    else {
-      point = place
-    }
+    point = ifelse(place == "", "National Water Center", place)
     loc = AOI::geocode(location = point)
     lat = loc$lat
     lon = loc$lon
@@ -68,7 +47,7 @@ get_location <- function(place) {
   return(list(lat = lat, lon = lon))
 }
 
-
+#latlong2state(lat = loc$lat, lon = loc$lon)
 latlong2state <- function(lat, lon) {
   
   pointsDF = list(x=lon, y = lat)
@@ -76,14 +55,15 @@ latlong2state <- function(lat, lon) {
   conus = AOI::getBoundingBox(conus)
   lat = dplyr::between(pointsDF$y, conus@bbox[2,1], conus@bbox[2,2])
   lng = dplyr::between(pointsDF$x, conus@bbox[1,1], conus@bbox[1,2])
-
+  
   if((lat+lng) != 2){
     return(NULL)
   } 
   
   else {
     
-    tmp = sp::SpatialPoints(coords = cbind(pointsDF$x, pointsDF$y), proj4string = AOI::aoiProj)
+    tmp = sp::SpatialPoints(coords = cbind(pointsDF$x, pointsDF$y), proj4string = sp::CRS(AOI::aoiProj))
+    tmp = sp::spTransform(tmp, AOI::counties@proj4string)
     t = AOI::counties[tmp,]
     
     return(list(county = t$name,
@@ -92,6 +72,3 @@ latlong2state <- function(lat, lon) {
     
   }
 }
-
-
-

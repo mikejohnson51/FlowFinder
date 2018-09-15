@@ -9,7 +9,11 @@
 #' 
 #' @importFrom fst read_fst write_fst
 #' 
-#' @importFrom dplyr filter left_join select rename distinct mutate inner_join bind_rows
+#' @importFrom dplyr filter left_join select rename distinct mutate inner_join bind_rows summarise
+#' 
+#' @importFrom kableExtra footnote_marker_symbol kable_styling footnote column_spec
+#' 
+#' @importFrom knitr kable
 #' 
 #' @importFrom ncdf4 nc_open ncvar_get nc_close
 #' 
@@ -24,6 +28,10 @@
 #' @importFrom lutz tz_lookup_coords
 #' 
 #' @importFrom lubridate ymd_h ymd_hms with_tz
+#' 
+#' @importFrom purrr map_chr map map_lgl
+#' 
+#' @importFrom tidyr spread
 #' 
 #' @importFrom xts xts
 #' 

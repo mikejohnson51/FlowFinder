@@ -103,6 +103,10 @@ $(document).on("click", "#close_fl_gr", function(e) {
   });
 });
 
+$(document).on("click", 'h4 a', function(e) {
+    $(this).find('i').toggleClass('fa-caret-right fa-caret-down');
+});
+
 
 
 

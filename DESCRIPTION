@@ -1,3 +1,4 @@
+Encoding: UTF-8
 Package: FlowFinder
 Title: Find, Vizualize and Download NWM and NHD Data in 'Shiny'
 Version: 0.1.0
@@ -14,18 +15,26 @@ Depends:
     ggplot2,
     leaflet,
     dygraphs,
+    spdplyr,
+    shinydashboard,
+    shinyBS,
+    shinyWidgets,
     AOI
 Imports:
     shiny (>= 1.0.4),
     dplyr,
     DT,
     fst,
+    kableExtra,
+    knitr,
     shinyjs,
     ncdf4,
     magrittr,
+    tidyr,
     utils,
     lutz,
     sp,
+    purrr,
     lubridate,
     xts,
     reshape2
@@ -34,4 +43,4 @@ Suggests:
     testthat
 License: MIT + file LICENSE
 LazyData: true
-RoxygenNote: 6.0.1
+RoxygenNote: 6.1.0

@@ -21,18 +21,48 @@ shinyServer(function(input, output, session) {
         overlayGroups = c("USGS Stations", "NHD Flowlines", "Water bodies", "AOI"),
         options = layersControlOptions(collapsed = TRUE),
         position = "bottomleft"
-      )
+      ) %>% 
+      addEasyButton(easyButton(
+        icon="fa-crosshairs", title="Locate Me",
+        onClick=JS("function(btn, map){ 
+                      var num = Math.random();
+                      Shiny.onInputChange('currentLoc', {
+                        num: num,
+                      }); 
+                   }"))) 
+    # %>% 
+    #   addEasyButton(easyButton(
+    #     icon="fa-filter", title="Filter",
+    #     onClick=JS("function(btn, map){ $('#filterModal').modal('toggle') }")))
+    
   })
+  
+  observe({
+    req(input$currentLoc)
+    if(!is.null(input$lat)){
+      updateTextInput(session = session, inputId =  "place", value = paste(input$lat, input$long, sep = " "), placeholder = "Current Location")
+      shinyjs::click("do")
+    } else {
+      showNotification("Your current location can't be determined. Make sure you have given your browser the necessarry permissions.", type = "error")
+    }
+  })
+  
+  
   
   # Set map
   output$map <- renderLeaflet({ basemap() })
 
   # Define reactive values corresponding to current COMID
   update_cur_id <- function(input) {
-    values$id = unlist(strsplit(input, split='COMID: ', fixed=TRUE))[2]
-    values$i = match(values$id, values$flow_data$nhd@data$comid)
-    values$data = values$nwm[values$nwm$COMID == values$flow_data$nhd$comid[values$i],]
-    values$normals = norm[norm$COMID == values$flow_data$nhd$comid[values$i],]
+    
+    values$id = getIDs(input)[1]
+    
+    values$data = values$nwm %>% 
+      filter(COMID == values$id)
+    
+    values$normals = norm %>% 
+      filter(COMID == values$id)
+    
   }
   
   # On go, calculate reactive values
@@ -55,10 +85,12 @@ shinyServer(function(input, output, session) {
                             HydroData::findWaterbodies() %>% 
                             HydroData::findNWIS()
                          )
-      incProgress(4/8, detail = "Subsetting Stream Data")
       
       # Determine what state (or if) AOI is in
+  
       state = latlong2state(lat = values$loc$lat, lon = values$loc$lon)
+      
+      
       
       # Set global variable and show notification if no streams in AOI
       # Continue with data prep if there are streams
@@ -67,20 +99,116 @@ shinyServer(function(input, output, session) {
         if (is.null(state)) {
           showNotification("Warning: AOI appears to be outside CONUS", type = "warning", duration = 10)
         }
-      } else {
+      }
+      else {
         values$any_flow = TRUE
+        
+        incProgress(4/8, detail = "Subsetting Stream Data")
+
         # Subset data
-        values$nwm = subset_nomads(comids = values$flow_data$comid)
+        values$nwm = subset_nomads(comids = values$flow_data$comid) %>% 
+          mutate()
+        
+        # Merge nwm and nhd data sets
+        
+        vals = values$nwm %>% 
+          tidyr::spread(dateTime, Q_cfs) %>% 
+          select(-agency_code) %>% 
+          rename("comid" = COMID)
+        
+        values$flow_data$nhd <- values$flow_data$nhd %>% 
+          inner_join(vals, by = "comid")
+        
+        rm(vals)
+        
+        nwm_summary <- values$nwm %>% 
+          group_by(COMID) %>% 
+          summarise(max = max(Q_cfs), 
+                    mean = mean(Q_cfs), 
+                    min = min(Q_cfs)) %>%
+          mutate(range = max - min) %>% 
+          rename("comid" = COMID)
+        
+        averages = norm %>%
+          `colnames<-`(c("comid", "month_avg")) %>% 
+          mutate(month_avg = month_avg * 35.3147)
+        
+        values$flow_data$nhd <- values$flow_data$nhd %>% 
+          inner_join(nwm_summary, by = "comid") %>% 
+          inner_join(averages, by = "comid") %>% 
+          mutate(mean_dif = month_avg - mean)
+        
+        find_diff <- function(id) {
+          diff(values$nwm %>% filter(COMID == id) %>% .$Q_cfs)
+        }
+        
+        diff_matrix <- matrix(ncol=length(unique(values$nwm$dateTime)), nrow=length(nwm_summary$comid))
+        for (j in 1:length(nwm_summary$comid)) {
+          id = nwm_summary$comid[j]
+          diff_matrix[j,] <- c(id, find_diff(id))
+        }
+        diff_df <- data.frame(diff_matrix)
+        colnames(diff_df) <- c("comid", paste0('der_',unique(values$nwm$dateTime)[1:39]))
+      
+        values$flow_data$nhd <- values$flow_data$nhd %>% 
+          inner_join(diff_df, by = "comid")
+        
+        values$colors = c('#bdd3fb',
+                          '#01c6fa',
+                          '#0085a5',
+                          '#0074f6',
+                          '#004e7c',
+                          '#ad18dd',
+                          '#ffa50a',
+                          '#ff0017',
+                          '#b0062c')
+        
+        values$div_colors = c('#d73027',
+                              '#f46d43',
+                              '#fdae61',
+                              '#bababa',
+                              '#abd9e9',
+                              '#74add1',
+                              '#4575b4')
+        
+        create_div_palette <- function(mag) {
+          num_colors = length( values$div_colors)
+          bins <- as.double(seq(-3.5,3.5,1) %>% 
+                              purrr::map(function(x) ifelse(x > 0, ceiling(x * mag/3.5), floor(x * mag/3.5))))
+          pal <- colorBin(values$div_colors, bins = bins)
+          return(list(pal = pal, bins = bins))
+        }
+  
+        create_cont_palette <- function(vals) {
+          num_colors = length(values$colors)
+          diff <- max(vals, na.rm = T) - min(vals, na.rm = T)
+          bins <- as.double(0:num_colors %>% purrr::map(function(x) ceiling(x * diff/num_colors)))
+          pal <- colorBin(values$colors, bins = bins)
+          return(list(pal = pal, bins = bins))
+        }
+        
+        values$palette <- create_cont_palette(nwm_summary$max)
+        values$range_palette <- create_cont_palette(nwm_summary$range)
+        values$mean_palette <- create_cont_palette(nwm_summary$mean)
+        values$month_palette <- create_cont_palette(values$flow_data$nhd$month_avg)
+        
+        mag = max(abs(c(max(diff_matrix[,2:40], na.rm = T), min(diff_matrix[,2:40], na.rm = T))))
+        values$deriv_palette <- create_div_palette(mag)
+        
+        mag = max(abs(c(max(values$flow_data$nhd$mean_dif, na.rm = T), min(values$flow_data$nhd$mean_dif, na.rm = T))))
+
+        values$mean_dif_palette <- create_div_palette(mag)
+        
+        
         incProgress(2/8, detail = "Finding Upstream/Downstream")
         
         # Set upstream/downstream data
-        values$flow_data$nhd_prep = suppressWarnings(prep_nhd(flines = values$flow_data$nhd))
+        values$flow_data$nhd_prep = prep_nhd(flines = values$flow_data$nhd)
         values$hmm = get_upstream(flines = values$flow_data$nhd_prep)
       }
       incProgress(1/8, detail = "Mapping")
 
       # Map data
-      clearMarkers()
       clearMarkers()
       add_layers(map = leafletProxy("map"), values = values)
     })
@@ -102,7 +230,7 @@ shinyServer(function(input, output, session) {
     # Table 3: NWM info
     output$meta = renderTable(nwm_table(values), striped = TRUE)
     
-    ui_flow_only = c("prevCOMID", "nextCOMID", "flow_selector", 
+    ui_flow_only = list("prevCOMID", "nextCOMID", "flow_selector", 
                      "mark_flowline", "data_csv", "data_rda", 
                      "data_nhd", "plot_png", "plot_dygraph")
   
@@ -153,20 +281,8 @@ shinyServer(function(input, output, session) {
   # Clear markers on map
   clearMarkers <- function() {
       leafletProxy("map", session) %>%
-        clearGroup("view-on-map") %>%
-        clearGroup("up-stream") %>%
-        clearGroup("down-stream")
+        clearGroup(list("view-on-map", "up-stream", "down-stream"))
   }
-  
-  # Current location button
-  observeEvent(input$current_loc, {
-    if(!is.null(input$lat)){
-      updateTextInput(session = session, inputId =  "place", value = paste(input$lat, input$long, sep = " "), placeholder = "Current Location")
-      shinyjs::click("do")
-    } else {
-      showNotification("Your current location can't be determined. Make sure you have given your browser the necessarry permissions.", type = "error")
-    }
-  })
   
   # Reset button
   observeEvent(input$reset, { clearMarkers() })
@@ -176,7 +292,17 @@ shinyServer(function(input, output, session) {
     if (is.null(input$upStream))
       return()
     clearMarkers()
-    mark_up_down(map = leafletProxy("map", session), values = values, stream = input$upStream$comid, data = values$flow_data$nhd[values$flow_data$nhd$comid %in% c(values$hmm[values$hmm$comid == input$upStream$comid, 2]),], group = "up-stream", color = "#84bd00")
+    
+    from_nodes <- values$hmm %>% 
+      filter(comid == input$upStream$comid) %>% 
+      .$fromCOMID
+    
+    mark_up_down(map = leafletProxy("map", session), 
+                 values = values, 
+                 stream = input$upStream$comid, 
+                 data = values$flow_data$nhd[values$flow_data$nhd$comid %in% from_nodes,], 
+                 group = "up-stream", 
+                 color = "#84bd00")
   })
   
   # Mark downstream flows from leaflet popup
@@ -184,7 +310,17 @@ shinyServer(function(input, output, session) {
     if (is.null(input$downStream))
       return()
     clearMarkers()
-    mark_up_down(map = leafletProxy("map", session), values = values, stream = input$downStream$comid, data = values$flow_data$nhd[values$flow_data$nhd$comid %in% c(values$flow_data$nhd_prep[values$flow_data$nhd_prep$comid == input$downStream$comid, 4]),], group = "down-stream", color = "red")
+    
+    to_nodes <- values$flow_data$nhd_prep %>% 
+      filter(comid == input$downStream$comid) %>% 
+      .$toCOMID
+    
+    mark_up_down(map = leafletProxy("map", session), 
+                 values = values, 
+                 stream = input$downStream$comid, 
+                 data = values$flow_data$nhd[values$flow_data$nhd$comid %in% to_nodes,], 
+                 group = "down-stream", 
+                 color = "red")
   })
   
   # Select flowline from popup
@@ -257,7 +393,7 @@ shinyServer(function(input, output, session) {
   
   # Activate/Deactivate buttons depending on number of COMIDs selected
   observe({
-    elements = c("tbl_up", "tbl_down", "prevCOMID", "nextCOMID")
+    elements = list("tbl_up", "tbl_down", "prevCOMID", "nextCOMID")
     if (length(input$flow_selector) > 1) {
       show_hide_all(elements = elements, action = "hide")
     } else {
@@ -357,11 +493,12 @@ shinyServer(function(input, output, session) {
       } else {
         colors = c("orange", "green", "red", "purple",
                    "lightblue", "lightgreen", "pink", "lightred", "gray",
+                   "darkblue", "darkred", "darkgreen", "darkpurple",
+                   "orange", "green", "red", "purple",
+                   "lightblue", "lightgreen", "pink", "lightred", "gray",
                    "darkblue", "darkred", "darkgreen", "darkpurple")
         
-        
         color = colors[length(values$flood_data_ids) + 1]
-      
       
         leafletProxy("flood_map", session) %>%
           addAwesomeMarkers(
@@ -381,4 +518,224 @@ shinyServer(function(input, output, session) {
     })
   })
   
+  ########## FILTER TAB ####################################################################
+  
+  output$displayOptions <- renderUI({
+    req(values$nwm)
+    if (input$display_type == "Static") {
+      awesomeRadio(inputId = "flow_display", 
+                   label = NULL, 
+                   choices = c("Default" = "default",
+                               "Positive" = "positive",
+                               "Month Average" = "month_avg",
+                               "Average" = "mean",
+                               "Average Comparison" = "mean_dif",
+                               "Peak Flow" = "max_value",
+                               "Range" = "range"),
+                   checkbox = TRUE)
+    }
+    
+    else {
+      values$nwm <- values$nwm %>% 
+        mutate(data_char = as.character.POSIXt(values$nwm$dateTime, tz = "GMT"))
+      values$times = unique(values$nwm$data_char)
+      clearGroup(map = leafletProxy("map2"), group = "NHD Flowlines")
+      list(
+        awesomeRadio(inputId = "flow_display_dy", 
+                     label = NULL, 
+                     choices = c("Time Series" = "time_series",
+                                 "Change" = "deriv",
+                                 "Positive" = "positive"),
+                     checkbox = TRUE),
+        sliderInput("selected_time", NULL,
+                    min = as.POSIXct(values$times[1],tz = "GMT"), 
+                    max = as.POSIXct(values$times[length(values$times)], tz = "GMT"),
+                    ticks = FALSE,
+                    value = as.POSIXct(values$times[1], tz = "GMT"), step = 10800,
+                    timezone = "+0000",
+                    timeFormat = "%F %T",
+                    animate =
+                      animationOptions(interval = 750, loop = FALSE))
+      )
+    }
+    
+  })
+  
+  observe({
+    req(input$selected_time)
+    if (input$flow_display == "time_series") {
+      updateSliderInput(session = session, inputId = "selected_time", max = as.POSIXct(values$times[length(values$times)], tz = "GMT") )
+    }
+    else if (input$flow_display == "deriv") {
+      updateSliderInput(session = session, inputId = "selected_time", max = as.POSIXct(values$times[length(values$times)-1], tz = "GMT") )
+    }
+  })
+  
+  basemap_filter <- reactive({
+    leaflet() %>%
+      addProviderTiles(providers$CartoDB.Positron, group = "Basemap") %>%
+      addProviderTiles(providers$Esri.WorldImagery, group = "Imagery") %>%
+      setView(lng = -93.85, lat = 37.45, zoom = 4) %>%
+      addLayersControl(
+        baseGroups = c("Basemap","Imagery"),
+        options = layersControlOptions(collapsed = TRUE),
+        position = "bottomleft"
+      ) %>% 
+      addEasyButton(easyButton(
+        id = "legend_switch",
+        icon="fa-key", title="",
+        onClick=JS("function(btn, map){ 
+                      $('.legend').toggle();; 
+                    }")))
+  })
+  
+  output$map2 <- renderLeaflet({ 
+    req(values$flow_data$nhd)
+    basemap_filter() %>%  
+      add_bounds(AOI = values$flow_data$AOI) %>%
+      add_flows(data = values$flow_data$nhd, color = "blue")
+  })
+  
+  observe({
+    req(values$flow_data$nhd, values$filtered_data)
+    positive_pal <- colorBin(c('red', 'blue'), bins = c(-1, 0.000000000000000001, 9000000000000000000000))
+    values$static_dic = list(
+      default = list(c("blue"), list(c('blue'), c('Flowline'), NULL)),
+      positive = list(~positive_pal(values$filtered_data$max),list(c('red', 'blue'), c('0', '>0'), "Q_cfs")),
+      month_avg = list(~values$month_palette$pal(values$filtered_data$month_avg), values$month_palette),
+      mean = list(~values$mean_palette$pal(values$filtered_data$mean), values$mean_palette),
+      mean_dif = list(~values$mean_dif_palette$pal(values$filtered_data$mean_dif), values$mean_dif_palette),
+      max_value = list(~values$palette$pal(values$filtered_data$max), values$palette),
+      range = list(~values$range_palette$pal(values$filtered_data$range), values$range_palette)
+    )
+  })
+  
+  observe({
+    req(input$display_type == "Static")
+    req(values$static_dic, input$flow_display)
+    type = input$flow_display
+    isolate({
+       data = eval(parse(text = paste0('values$static_dic$', "`", type,"`")))
+       clearGroup(map = leafletProxy("map2"), group = "NHD Flowlines")
+       add_flows(map = leafletProxy("map2"), data = values$filtered_data, color = data[[1]])
+       if (!type %in% c("default", "positive")) {
+         add_legend(pal = data[[2]])
+       } 
+       else {
+         add_legend(colors = data[[2]][[1]], labels = data[[2]][[2]], title = data[[2]][[3]])
+       }
+    })
+  })
+  
+  observe({
+    req(values$flow_data$nhd, values$filtered_data)
+    positive_pal <- colorBin(c('red', 'blue'), bins = c(-1, 0.000000000000000001, 9000000000000000000000))
+    values$dynamic_dic = list(
+      # name = list(color, pal, legend)
+      deriv = list('values$filtered_data@data$`der_', values$deriv_palette$pal, values$deriv_palette),
+      time_series = list('values$filtered_data@data$`', values$palette$pal, values$palette),
+      positive = list('values$filtered_data@data$`', positive_pal, list(c('red', 'blue'), c('0', '>0'), "Q_cfs"))
+    )
+  })
+
+  observe({
+    req(input$display_type == "Dynamic")
+    req(input$selected_time, values$filtered_data, input$flow_display_dy, values$dynamic_dic)
+    type = input$flow_display_dy
+    isolate({
+      time = as.character.POSIXt(input$selected_time, format = "%Y-%m-%d %H:%M:%S", tz = "GMT")
+      data = eval(parse(text = paste0('values$dynamic_dic$', "`", type,"`")))
+      color_determination = eval(parse(text = paste0(data[[1]], time,"`")))
+      add_flows(map = leafletProxy("map2"), data =  values$filtered_data, ~data[[2]](color_determination))
+
+      if (input$flow_display_dy == "positive") {
+        add_legend(colors = data[[3]][[1]], labels = data[[3]][[2]], title = data[[3]][[3]])
+      }
+      else {
+        add_legend(pal = data[[3]])
+      }
+    })
+  })
+  
+  # Options Available For Table
+  output$nhd_options <- renderUI({
+    req(values$flow_data$nhd)
+    generate_options(href = "collapseNhd", inputID = "nhdSelector", 
+                     choices = c("comid",
+                                 "gnis_name",
+                                 "reachcode",
+                                 "lengthkm",
+                                 "streamorde",
+                                 "slope"), 
+                     selected = c("gnis_name", "comid", "lengthkm", "streamorde", "reachcode", "slope"))
+  })
+  
+  # Put time on map for dynamic sets
+  output$map_time <- renderUI({
+    # req(input$selected_time)
+    if (input$display_type == "Static") {
+      absolutePanel()
+    }
+    else {
+      absolutePanel(id = "time_stamp", top = 0, left = 0, right = 0,
+                    tags$div(id = "ts", tags$h3(HTML(paste(as.character.POSIXt(input$selected_time, format = "%Y-%m-%d %H:%M:%S", tz = "GMT"), "UTC"))))
+      )
+    }
+  })
+  
+  # Filterable table
+  output$nhd_table <- DT::renderDataTable({
+    req(values$flow_data$nhd, input$nhdSelector)
+    data <- values$flow_data$nhd@data %>% 
+      select(one_of(input$nhdSelector))
+    base_table(data)
+  })
+  
+  # Generate data set based on filtered table
+  observe({
+    req(values$flow_data$nhd, input$nhd_table_rows_all)
+    values$filtered_data <- values$flow_data$nhd %>% 
+      slice(input$nhd_table_rows_all)
+  })
+  
+  # Display info module 
+  output$display_info<- renderUI({ 
+    
+    if (input$chart_type == "Static") {
+    
+      description = c("Default", "Positive", "Month Average", "Average", "Average Comparison", "Peak Flow", "Range")
+      color = c("All streams are blue", 
+                "Blue: Streams with at least one measured value (Q_cfs) > 0 <br> Grey: Streams with no flow during time range",
+                paste0(kableExtra::footnote_marker_symbol(1), "Stream colors are determined by the monthly long term monthly average for each stream"),
+                paste0(kableExtra::footnote_marker_symbol(1), "Stream colors are determined by the average stream value during the time range"),
+                paste0(kableExtra::footnote_marker_symbol(1), "Stream colors are determined by the subtracting the long term average from the current average"),
+                paste0(kableExtra::footnote_marker_symbol(1), "Stream colors are determined by the maximum flow during the time range"),
+                paste0(kableExtra::footnote_marker_symbol(1), "Stream colors are determined by subtracting the minumum value during the time range from the maximum"))
+      df = data.frame(description, color)
+      colnames(df) <- c("", "Color Scheme")
+      HTML(paste0(df %>% knitr::kable(escape = F) %>% 
+             kableExtra::kable_styling(bootstrap_options = c("striped", "hover", "responsive")) %>% 
+             kableExtra::footnote(
+               general = "In all cases, stream width is determined by stream order. ",
+               symbol = "The range of values (Qcfs) are determined, split into 8 equal categories, and mapped to a color pallete") %>% 
+             kableExtra::column_spec(1, bold = T)), "<br>", "")
+    }
+    
+    else {
+      description = c("Time Series", "Change")
+      color = c(paste0(kableExtra::footnote_marker_symbol(1), "Stream colors are determined by the value during each time step"),
+                paste0(kableExtra::footnote_marker_symbol(1), "Stream colors are determined by calculating the change between the current point and the next"))
+      df = data.frame(description, color)
+      colnames(df) <- c("", "Color Scheme")
+      HTML(paste0(df %>% knitr::kable(escape = F) %>% 
+                    kableExtra::kable_styling(bootstrap_options = c("striped", "hover", "responsive")) %>% 
+                    kableExtra::footnote(
+                      general = "In all cases, stream width is determined by stream order. ",
+                      symbol = "The range of values (Qcfs) are determined, split into 8 equal categories, and mapped to a color pallete") %>% 
+                    kableExtra::column_spec(1, bold = T)), "<br>", "")
+    }
+    
+  })
+  
+
 })

@@ -1,24 +1,30 @@
 # Set initial COMID choices - used in drop down selector
 set_choices <- function(values) {
   
-  # Find comid that has max flow in forcast - used to set default
-  max_qcms = values$nwm[match(max(values$nwm$Q_cfs, na.rm = TRUE), values$nwm$Q_cfs),]$COMID
-  name = values$flow_data$nhd[values$flow_data$nhd$comid == max_qcms,]$gnis_name
-  text = paste0(paste0(ifelse(is.na(name), "", name)), paste0(" COMID: ", max_qcms))
+  names_ids <- values$flow_data$nhd@data %>% 
+    select(comid, gnis_name) %>% 
+    mutate(name = paste0(
+      paste0(ifelse(is.na(gnis_name), "", gnis_name)), 
+      paste0(" COMID: ", comid))) %>% 
+    select(-gnis_name)
   
-  choices = as.list(paste0(paste0(ifelse(is.na(values$flow_data$nhd@data$gnis_name), "", values$flow_data$nhd@data$gnis_name)),
-                           paste0(" COMID: ", values$flow_data$nhd$comid)))
+  max = values$nwm %>% 
+    top_n(1, Q_cfs) %>% 
+    .$COMID
   
-  # Find flows with at least one forcasted point > 0
-  non_zero = unique(values$nwm[values$nwm$Q_cfs > 0,]$COMID)
-  non_zeros = c()
-  for (stream in choices) {
-    id = unlist(strsplit(stream, split='COMID: ', fixed=TRUE))[2]
-    # Create vec of T/F values - used to determine style of text in selector
-    non_zeros = c(non_zeros, id %in% non_zero)
-  }
+  default = names_ids %>% 
+    filter(comid == max) %>% 
+    .$name
   
-  return(list(default = text, choices = choices, non_zeros = non_zeros))
+  positive = values$nwm %>%
+    filter(Q_cfs > 0) %>% 
+    select(COMID) %>% 
+    distinct() %>% 
+    .$COMID
+  
+  non_zeros = purrr::map_lgl(getIDs(names_ids$name), ~(. %in% positive))
+  
+  return(list(default = default, choices = names_ids$name, non_zeros = non_zeros))
 }
 
 # Generate Dygraph
@@ -29,9 +35,11 @@ dygraph_plot <- function(values, selected) {
   ids = c()
   for (j in 1:length(selected)) {
     text = selected[j]
-    id = unlist(strsplit(text, split='COMID: ', fixed=TRUE))[2]
-    i = match(id, values$flow_data$nhd@data$comid)
-    data = values$nwm[values$nwm$COMID == values$flow_data$nhd$comid[i],]
+    id = getIDs(text)[1]
+    
+    data = values$nwm %>% 
+      filter(COMID == id)
+
     output[,j] <- data$Q_cfs
     ids = c(ids, as.character(id))
   }
@@ -91,9 +99,10 @@ static_plot <- function(values, selected) {
   
   for (stream in selected) {
     text = stream
-    id = unlist(strsplit(text, split='COMID: ', fixed=TRUE))[2]
-    i = match(id, values$flow_data$nhd@data$comid)
-    data = values$nwm[values$nwm$COMID == values$flow_data$nhd$comid[i],]
+    
+    data = values$nwm %>% 
+      filter(COMID == getIDs(text)[1])
+
     df[as.character(id)] = data$Q_cfs
   }
 

@@ -1,4 +1,7 @@
 #' @export
+#' 
+#' 
+
 
 download_nomads_rda = function(fileList = NULL, number = 6, dir = NULL){
   if (is.null(dir)) {
@@ -87,6 +90,14 @@ download_nomads_rda = function(fileList = NULL, number = 6, dir = NULL){
     
     fst::write_fst(increases, path = paste0(dir,'/data/current_nc_new/changes/',i,'.fst'))
     
+    
+    
+    # writes df to the PostgreSQL database "postgres", table "cartable" 
+    # df <- df %>% rename(comid = COMID)
+    # dbWriteTable(con, paste0("flow_",i), 
+    #              value = df, overwrite = TRUE, row.names = FALSE)
+    
+    df <- df %>% rename(COMID = comid)
     # Reshape data frame: wide -> long
     Q <- reshape2::melt(df, id.vars=c("COMID")) %>% 
       dplyr::mutate(variable = lubridate::ymd_h(variable)) %>% 
@@ -95,6 +106,10 @@ download_nomads_rda = function(fileList = NULL, number = 6, dir = NULL){
     # Write file with data
     name = paste0(dir,"/data/current_nc_new/",month, "_", sprintf("%02d", i), ".fst")
     fst::write_fst(Q, path = name, compress = 100)
+    
+    names(Q) <- c("comid", "date_time", "q_cfs")
+
+    
     rm(Q)
     
     # Get min and maxs for mapping
