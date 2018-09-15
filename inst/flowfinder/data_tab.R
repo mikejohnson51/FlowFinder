@@ -13,7 +13,7 @@ set_choices <- function(values) {
     .$COMID
   
   default = names_ids %>% 
-    filter(comid == max) %>% 
+    filter(comid == max[1]) %>% 
     .$name
   
   positive = values$nwm %>%

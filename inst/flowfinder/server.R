@@ -25,17 +25,17 @@ shinyServer(function(input, output, session) {
       addEasyButton(easyButton(
         icon="fa-crosshairs", title="Locate Me",
         onClick=JS("function(btn, map){ 
-                      var num = Math.random();
-                      Shiny.onInputChange('currentLoc', {
-                        num: num,
-                      }); 
-                   }"))) 
+                   var num = Math.random();
+                   Shiny.onInputChange('currentLoc', {
+                   num: num,
+                   }); 
+  }"))) 
     # %>% 
     #   addEasyButton(easyButton(
     #     icon="fa-filter", title="Filter",
     #     onClick=JS("function(btn, map){ $('#filterModal').modal('toggle') }")))
     
-  })
+})
   
   observe({
     req(input$currentLoc)
@@ -51,7 +51,7 @@ shinyServer(function(input, output, session) {
   
   # Set map
   output$map <- renderLeaflet({ basemap() })
-
+  
   # Define reactive values corresponding to current COMID
   update_cur_id <- function(input) {
     
@@ -67,7 +67,7 @@ shinyServer(function(input, output, session) {
   
   # On go, calculate reactive values
   observeEvent(input$do, {
-
+    
     # Don't let user enter new location while processing previous
     shinyjs::disable("do")
     
@@ -80,14 +80,14 @@ shinyServer(function(input, output, session) {
       
       # Get spatial data
       values$flow_data = suppressMessages(
-                          AOI::getAOI(clip = list(values$loc$lat, values$loc$lon, size, size)) %>% 
-                            HydroData::findNHD(ids = TRUE) %>% 
-                            HydroData::findWaterbodies() %>% 
-                            HydroData::findNWIS()
-                         )
+        AOI::getAOI(clip = list(values$loc$lat, values$loc$lon, size, size)) %>% 
+          HydroData::findNHD(ids = TRUE) %>% 
+          HydroData::findWaterbodies() %>% 
+          HydroData::findNWIS()
+      )
       
       # Determine what state (or if) AOI is in
-  
+      
       state = latlong2state(lat = values$loc$lat, lon = values$loc$lon)
       
       
@@ -104,7 +104,7 @@ shinyServer(function(input, output, session) {
         values$any_flow = TRUE
         
         incProgress(4/8, detail = "Subsetting Stream Data")
-
+        
         # Subset data
         values$nwm = subset_nomads(comids = values$flow_data$comid) %>% 
           mutate()
@@ -149,7 +149,7 @@ shinyServer(function(input, output, session) {
         }
         diff_df <- data.frame(diff_matrix)
         colnames(diff_df) <- c("comid", paste0('der_',unique(values$nwm$dateTime)[1:39]))
-      
+        
         values$flow_data$nhd <- values$flow_data$nhd %>% 
           inner_join(diff_df, by = "comid")
         
@@ -171,33 +171,44 @@ shinyServer(function(input, output, session) {
                               '#74add1',
                               '#4575b4')
         
-        create_div_palette <- function(mag) {
-          num_colors = length( values$div_colors)
-          bins <- as.double(seq(-3.5,3.5,1) %>% 
-                              purrr::map(function(x) ifelse(x > 0, ceiling(x * mag/3.5), floor(x * mag/3.5))))
-          pal <- colorBin(values$div_colors, bins = bins)
-          return(list(pal = pal, bins = bins))
-        }
-  
-        create_cont_palette <- function(vals) {
-          num_colors = length(values$colors)
-          diff <- max(vals, na.rm = T) - min(vals, na.rm = T)
-          bins <- as.double(0:num_colors %>% purrr::map(function(x) ceiling(x * diff/num_colors)))
-          pal <- colorBin(values$colors, bins = bins)
+        create_palette <- function(vals = NULL, continuous = TRUE) {
+          
+          if (continuous) {
+            num_colors = length(values$colors)
+            diff <- max(vals, na.rm = T) - min(vals, na.rm = T)
+            bins <- as.double(0:num_colors %>% purrr::map(function(x) ceiling(x * diff/num_colors)))
+          }
+          else {
+            num_colors = length( values$div_colors)
+            bins <- as.double(seq(-3.5,3.5,1) %>% 
+                                purrr::map(function(x) ifelse(x > 0, ceiling(x * vals/3.5), floor(x * vals/3.5))))
+          }
+          
+          bins = unique(bins)
+          num_bins = length(bins)
+          
+          if (num_bins == 1) {
+            bins[2] <- bins[1] * 2 +1
+          }
+          
+          if (continuous) { bin_colors <- values$colors[1:(num_bins-1)] }
+          else { bin_colors <- values$div_colors[1:(num_bins-1)]  }
+          
+          pal <- colorBin(bin_colors, bins = bins, domain = NULL)
           return(list(pal = pal, bins = bins))
         }
         
-        values$palette <- create_cont_palette(nwm_summary$max)
-        values$range_palette <- create_cont_palette(nwm_summary$range)
-        values$mean_palette <- create_cont_palette(nwm_summary$mean)
-        values$month_palette <- create_cont_palette(values$flow_data$nhd$month_avg)
+        values$palette <- create_palette(vals = nwm_summary$max)
+        values$range_palette <- create_palette(vals = nwm_summary$range)
+        values$mean_palette <- create_palette(vals = nwm_summary$mean)
+        values$month_palette <- create_palette(vals = values$flow_data$nhd$month_avg)
         
         mag = max(abs(c(max(diff_matrix[,2:40], na.rm = T), min(diff_matrix[,2:40], na.rm = T))))
-        values$deriv_palette <- create_div_palette(mag)
+        values$deriv_palette <- create_palette(vals = mag, continuous = FALSE)
         
         mag = max(abs(c(max(values$flow_data$nhd$mean_dif, na.rm = T), min(values$flow_data$nhd$mean_dif, na.rm = T))))
-
-        values$mean_dif_palette <- create_div_palette(mag)
+        
+        values$mean_dif_palette <- create_palette(vals = mag, continuous = FALSE)
         
         
         incProgress(2/8, detail = "Finding Upstream/Downstream")
@@ -207,7 +218,7 @@ shinyServer(function(input, output, session) {
         values$hmm = get_upstream(flines = values$flow_data$nhd_prep)
       }
       incProgress(1/8, detail = "Mapping")
-
+      
       # Map data
       clearMarkers()
       add_layers(map = leafletProxy("map"), values = values)
@@ -223,7 +234,7 @@ shinyServer(function(input, output, session) {
     
     #Table 1: Station info
     output$stations = renderTable({station_table(values)}, striped = TRUE, sanitize.text.function = function(x) x)
-  
+    
     # Table 2: Flowline info
     output$Flowlines = renderTable(flowlines_table(values = values), striped = TRUE)
     
@@ -231,9 +242,9 @@ shinyServer(function(input, output, session) {
     output$meta = renderTable(nwm_table(values), striped = TRUE)
     
     ui_flow_only = list("prevCOMID", "nextCOMID", "flow_selector", 
-                     "mark_flowline", "data_csv", "data_rda", 
-                     "data_nhd", "plot_png", "plot_dygraph")
-  
+                        "mark_flowline", "data_csv", "data_rda", 
+                        "data_nhd", "plot_png", "plot_dygraph")
+    
     # Only set choices if there are flowlines in AOI
     if(values$any_flow) {
       # Get and set initial COMID choices 
@@ -241,11 +252,11 @@ shinyServer(function(input, output, session) {
       values$choices = choices$choices
       updatePickerInput(session, 'flow_selector', choices = values$choices, selected = choices$default,
                         choicesOpt = list(
-                                      style = ifelse(choices$non_zeros,
-                                                     yes = "color:#0069b5;font-weight:bold;",
-                                                     no = "style=color:#a8a8a8")
-                                      )
+                          style = ifelse(choices$non_zeros,
+                                         yes = "color:#0069b5;font-weight:bold;",
+                                         no = "style=color:#a8a8a8")
                         )
+      )
       
       # Set initial values based on default COMID
       update_cur_id(choices$default)
@@ -260,7 +271,7 @@ shinyServer(function(input, output, session) {
       updatePickerInput(session, 'flow_selector', choices = "", selected = NULL)
       show_hide_all(elements = ui_flow_only, action = "disable")
     }
-
+    
     # Re-enable search
     shinyjs::enable("do")
   })
@@ -280,8 +291,8 @@ shinyServer(function(input, output, session) {
   
   # Clear markers on map
   clearMarkers <- function() {
-      leafletProxy("map", session) %>%
-        clearGroup(list("view-on-map", "up-stream", "down-stream"))
+    leafletProxy("map", session) %>%
+      clearGroup(list("view-on-map", "up-stream", "down-stream"))
   }
   
   # Reset button
@@ -356,7 +367,7 @@ shinyServer(function(input, output, session) {
     current <- which(values$choices == input$flow_selector)
     if(current > 1){
       updatePickerInput(session, "flow_selector",
-                           selected = values$choices[current - 1])
+                        selected = values$choices[current - 1])
     }
   })
   
@@ -365,7 +376,7 @@ shinyServer(function(input, output, session) {
     current <- which(values$choices == input$flow_selector)
     if(current < length(values$choices)){
       updatePickerInput(session, "flow_selector",
-                           selected = values$choices[current + 1])
+                        selected = values$choices[current + 1])
     }
   })
   
@@ -445,7 +456,7 @@ shinyServer(function(input, output, session) {
             text.data = 'Check one or more boxes'
             ")
     }
-  })
+    })
   
   ########## MAP TAB ####################################################################
   
@@ -499,7 +510,7 @@ shinyServer(function(input, output, session) {
                    "darkblue", "darkred", "darkgreen", "darkpurple")
         
         color = colors[length(values$flood_data_ids) + 1]
-      
+        
         leafletProxy("flood_map", session) %>%
           addAwesomeMarkers(
             icon = awesomeIcons(
@@ -585,8 +596,8 @@ shinyServer(function(input, output, session) {
         id = "legend_switch",
         icon="fa-key", title="",
         onClick=JS("function(btn, map){ 
-                      $('.legend').toggle();; 
-                    }")))
+                   $('.legend').toggle();; 
+  }")))
   })
   
   output$map2 <- renderLeaflet({ 
@@ -615,15 +626,15 @@ shinyServer(function(input, output, session) {
     req(values$static_dic, input$flow_display)
     type = input$flow_display
     isolate({
-       data = eval(parse(text = paste0('values$static_dic$', "`", type,"`")))
-       clearGroup(map = leafletProxy("map2"), group = "NHD Flowlines")
-       add_flows(map = leafletProxy("map2"), data = values$filtered_data, color = data[[1]])
-       if (!type %in% c("default", "positive")) {
-         add_legend(pal = data[[2]])
-       } 
-       else {
-         add_legend(colors = data[[2]][[1]], labels = data[[2]][[2]], title = data[[2]][[3]])
-       }
+      data = eval(parse(text = paste0('values$static_dic$', "`", type,"`")))
+      clearGroup(map = leafletProxy("map2"), group = "NHD Flowlines")
+      add_flows(map = leafletProxy("map2"), data = values$filtered_data, color = data[[1]])
+      if (!type %in% c("default", "positive")) {
+        add_legend(pal = data[[2]])
+      } 
+      else {
+        add_legend(colors = data[[2]][[1]], labels = data[[2]][[2]], title = data[[2]][[3]])
+      }
     })
   })
   
@@ -637,7 +648,7 @@ shinyServer(function(input, output, session) {
       positive = list('values$filtered_data@data$`', positive_pal, list(c('red', 'blue'), c('0', '>0'), "Q_cfs"))
     )
   })
-
+  
   observe({
     req(input$display_type == "Dynamic")
     req(input$selected_time, values$filtered_data, input$flow_display_dy, values$dynamic_dic)
@@ -647,7 +658,7 @@ shinyServer(function(input, output, session) {
       data = eval(parse(text = paste0('values$dynamic_dic$', "`", type,"`")))
       color_determination = eval(parse(text = paste0(data[[1]], time,"`")))
       add_flows(map = leafletProxy("map2"), data =  values$filtered_data, ~data[[2]](color_determination))
-
+      
       if (input$flow_display_dy == "positive") {
         add_legend(colors = data[[3]][[1]], labels = data[[3]][[2]], title = data[[3]][[3]])
       }
@@ -702,7 +713,7 @@ shinyServer(function(input, output, session) {
   output$display_info<- renderUI({ 
     
     if (input$chart_type == "Static") {
-    
+      
       description = c("Default", "Positive", "Month Average", "Average", "Average Comparison", "Peak Flow", "Range")
       color = c("All streams are blue", 
                 "Blue: Streams with at least one measured value (Q_cfs) > 0 <br> Grey: Streams with no flow during time range",
@@ -714,11 +725,11 @@ shinyServer(function(input, output, session) {
       df = data.frame(description, color)
       colnames(df) <- c("", "Color Scheme")
       HTML(paste0(df %>% knitr::kable(escape = F) %>% 
-             kableExtra::kable_styling(bootstrap_options = c("striped", "hover", "responsive")) %>% 
-             kableExtra::footnote(
-               general = "In all cases, stream width is determined by stream order. ",
-               symbol = "The range of values (Qcfs) are determined, split into 8 equal categories, and mapped to a color pallete") %>% 
-             kableExtra::column_spec(1, bold = T)), "<br>", "")
+                    kableExtra::kable_styling(bootstrap_options = c("striped", "hover", "responsive")) %>% 
+                    kableExtra::footnote(
+                      general = "In all cases, stream width is determined by stream order. ",
+                      symbol = "The range of values (Qcfs) are determined, split into 8 equal categories, and mapped to a color pallete") %>% 
+                    kableExtra::column_spec(1, bold = T)), "<br>", "")
     }
     
     else {
@@ -737,5 +748,5 @@ shinyServer(function(input, output, session) {
     
   })
   
-
-})
+  
+    })
