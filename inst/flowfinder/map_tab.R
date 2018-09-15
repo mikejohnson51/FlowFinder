@@ -5,12 +5,35 @@ USGSicon = leaflet::makeIcon(
   iconAnchorX = 20, iconAnchorY = 10)
 
 # Add flowlines to map
-add_flows <- function(map, values) {
-  if(values$any_flow) {
-    addPolylines(map, data = values$flow_data$nhd, color = 'blue', weight = values$flow_data$nhd$streamorde,
+# add_flows <- function(map, values) {
+#   if(values$any_flow) {
+#     addPolylines(map, data = values$flow_data$nhd, color = 'blue', weight = values$flow_data$nhd$streamorde,
+#                  popup = paste(sep = " ",
+#                                paste0("<b><a class='open-stream'>",paste0(ifelse(is.na(values$flow_data$nhd@data$gnis_name), "", values$flow_data$nhd@data$gnis_name)),
+#                                       paste0(" COMID: ", values$flow_data$nhd$comid),"</a></b></br>"),
+#                                '<a class="stream-data"><i class="fa fa-line-chart"></i></a>',
+#                                '<a class="upstream-flow"><i class="fa fa-angle-double-up"></i></a>',
+#                                '<a class="downstream-flow"><i class="fa fa-angle-double-down"></i></a>'
+#                  ),
+#                  options = popupOptions(className = "stream_popup"), 
+#                  group = "NHD Flowlines",
+#                  highlight = highlightOptions(
+#                    weight = 10,
+#                    color = "#666",
+#                    fillOpacity = 0.7,
+#                    bringToFront = FALSE)
+#     )
+#   } else {
+#     return(map)
+#   }
+# }
+
+add_flows <- function(map, data, color) {
+  if(!is.null(data)) {
+    addPolylines(map, data = data, color = color, weight = data$streamorde, opacity = 1,
                  popup = paste(sep = " ",
-                               paste0("<b><a class='open-stream'>",paste0(ifelse(is.na(values$flow_data$nhd@data$gnis_name), "", values$flow_data$nhd@data$gnis_name)),
-                                      paste0(" COMID: ", values$flow_data$nhd$comid),"</a></b></br>"),
+                               paste0("<b><a class='open-stream'>",paste0(ifelse(is.na(data@data$gnis_name), "", data@data$gnis_name)),
+                                      paste0(" COMID: ", data$comid),"</a></b></br>"),
                                '<a class="stream-data"><i class="fa fa-line-chart"></i></a>',
                                '<a class="upstream-flow"><i class="fa fa-angle-double-up"></i></a>',
                                '<a class="downstream-flow"><i class="fa fa-angle-double-down"></i></a>'
@@ -21,12 +44,13 @@ add_flows <- function(map, values) {
                    weight = 10,
                    color = "#666",
                    fillOpacity = 0.7,
-                   bringToFront = FALSE)
+                   bringToFront = TRUE)
     )
   } else {
     return(map)
   }
 }
+
 
 add_location <- function(map, values) {
   addCircleMarkers(map, lng = as.numeric(values$loc$lon), lat = as.numeric(values$loc$lat), 
@@ -115,17 +139,51 @@ add_water_bodies <- function(map, wb) {
   }
 }
 
+# Add flowlines to map
+# add_non_zero_streams <- function(map, values) {
+#   
+#   positive_ids <- values$nwm %>%
+#     filter(Q_cfs > 0) %>% 
+#     select(COMID) %>% 
+#     distinct() %>% 
+#     .$COMID
+#   
+#   print(positive_ids)
+#   
+#   postive_streams <- values$flow_data$nhd %>% 
+#     filter(comid %in% positive_ids)
+#   
+#   if(values$any_flow) {
+#     addPolylines(map, data = postive_streams, color = 'blue', weight = postive_streams$streamorde,
+#                  # popup = paste(sep = " ",
+#                  #               paste0("<b><a class='open-stream'>",paste0(ifelse(is.na(values$flow_data$nhd@data$gnis_name), "", values$flow_data$nhd@data$gnis_name)),
+#                  #                      paste0(" COMID: ", values$flow_data$nhd$comid),"</a></b></br>"),
+#                  #               '<a class="stream-data"><i class="fa fa-line-chart"></i></a>',
+#                  #               '<a class="upstream-flow"><i class="fa fa-angle-double-up"></i></a>',
+#                  #               '<a class="downstream-flow"><i class="fa fa-angle-double-down"></i></a>'
+#                  # ),
+#                  options = popupOptions(className = "stream_popup"), 
+#                  group = "Positive Flowlines",
+#                  highlight = highlightOptions(
+#                    weight = 10,
+#                    color = "#666",
+#                    fillOpacity = 0.7,
+#                    bringToFront = FALSE),
+#     )
+#   } else {
+#     return(map)
+#   }
+# }
+
+
 # Add layers to a provided map
 add_layers <- function(map, values) {
-  map %>%
-    clearGroup("NHD Flowlines") %>%
-    clearGroup("Location") %>%
-    clearGroup("USGS Stations") %>%
-    clearGroup("Water bodies") %>% 
-    clearGroup("AOI") %>% 
+ map <- map %>%
+    clearGroup(group = list("NHD Flowlines", "Location", "USGS Stations", "Water bodies", "AOI")) %>%
     add_location(values = values) %>% 
     add_bounds(AOI = values$flow_data$AOI) %>% 
     add_water_bodies(wb = values$flow_data$waterbodies) %>% 
-    add_flows(values = values) %>%
+    add_flows(data = values$flow_data$nhd, color = "blue") %>%
     add_stations(values = values)
+    # add_non_zero_streams(values = values)
 }
