@@ -136,7 +136,7 @@ shinyServer(function(input, output, session) {
         values$flow_data$nhd <- values$flow_data$nhd %>% 
           inner_join(nwm_summary, by = "comid") %>% 
           inner_join(averages, by = "comid") %>% 
-          mutate(mean_dif = month_avg - mean)
+          mutate(mean_dif = mean - month_avg)
         
         find_diff <- function(id) {
           diff(values$nwm %>% filter(COMID == id) %>% .$Q_cfs)
