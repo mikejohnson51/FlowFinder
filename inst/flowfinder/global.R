@@ -15,8 +15,6 @@ month_files = list.files("data/", pattern = as.character(month), full.names = T)
 norm = fst::read_fst(path = month_files)
 size = 15
 
-positive_pal <- colorBin(c('red', 'blue'), bins = c(-1, 0.000000000000000001, 9000000000000000000000))
-
 # Returns COMIDS from stream names
 # getIDs("Monument Creek COMID: 1529685") -> "1529685"
 # getIDs(c("Monument Creek COMID: 1529685", "Fountain Creek COMID: 1529677")) -> "1529685" "1529677"

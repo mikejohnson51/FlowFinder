@@ -153,51 +153,6 @@ shinyServer(function(input, output, session) {
         values$flow_data$nhd <- values$flow_data$nhd %>% 
           inner_join(diff_df, by = "comid")
         
-        values$colors = c('#bdd3fb',
-                          '#01c6fa',
-                          '#0085a5',
-                          '#0074f6',
-                          '#004e7c',
-                          '#ad18dd',
-                          '#ffa50a',
-                          '#ff0017',
-                          '#b0062c')
-        
-        values$div_colors = c('#d73027',
-                              '#f46d43',
-                              '#fdae61',
-                              '#bababa',
-                              '#abd9e9',
-                              '#74add1',
-                              '#4575b4')
-        
-        create_palette <- function(vals = NULL, continuous = TRUE) {
-          
-          if (continuous) {
-            num_colors = length(values$colors)
-            diff <- max(vals, na.rm = T) - min(vals, na.rm = T)
-            bins <- as.double(0:num_colors %>% purrr::map(function(x) ceiling(x * diff/num_colors)))
-          }
-          else {
-            num_colors = length( values$div_colors)
-            bins <- as.double(seq(-3.5,3.5,1) %>% 
-                                purrr::map(function(x) ifelse(x > 0, ceiling(x * vals/3.5), floor(x * vals/3.5))))
-          }
-          
-          bins = unique(bins)
-          num_bins = length(bins)
-          
-          if (num_bins == 1) {
-            bins[2] <- bins[1] * 2 +1
-          }
-          
-          if (continuous) { bin_colors <- values$colors[1:(num_bins-1)] }
-          else { bin_colors <- values$div_colors[1:(num_bins-1)]  }
-          
-          pal <- colorBin(bin_colors, bins = bins, domain = NULL)
-          return(list(pal = pal, bins = bins))
-        }
-        
         values$palette <- create_palette(vals = nwm_summary$max)
         values$range_palette <- create_palette(vals = nwm_summary$range)
         values$mean_palette <- create_palette(vals = nwm_summary$mean)
@@ -604,15 +559,14 @@ shinyServer(function(input, output, session) {
     req(values$flow_data$nhd)
     basemap_filter() %>%  
       add_bounds(AOI = values$flow_data$AOI) %>%
-      add_flows(data = values$flow_data$nhd, color = "blue")
+      add_flows(data = values$flow_data$nhd, color = divergent_colors(1))
   })
   
   observe({
     req(values$flow_data$nhd, values$filtered_data)
-    positive_pal <- colorBin(c('red', 'blue'), bins = c(-1, 0.000000000000000001, 9000000000000000000000))
     values$static_dic = list(
-      default = list(c("blue"), list(c('blue'), c('Flowline'), NULL)),
-      positive = list(~positive_pal(values$filtered_data$max),list(c('red', 'blue'), c('0', '>0'), "Q_cfs")),
+      default = list(divergent_colors(1), list(divergent_colors(1), c('Flowline'), NULL)),
+      positive = list(~positive_pal(values$filtered_data$max),list(divergent_colors(2), c('0', '>0'), "Q_cfs")),
       month_avg = list(~values$month_palette$pal(values$filtered_data$month_avg), values$month_palette),
       mean = list(~values$mean_palette$pal(values$filtered_data$mean), values$mean_palette),
       mean_dif = list(~values$mean_dif_palette$pal(values$filtered_data$mean_dif), values$mean_dif_palette),
@@ -640,12 +594,11 @@ shinyServer(function(input, output, session) {
   
   observe({
     req(values$flow_data$nhd, values$filtered_data)
-    positive_pal <- colorBin(c('red', 'blue'), bins = c(-1, 0.000000000000000001, 9000000000000000000000))
     values$dynamic_dic = list(
       # name = list(color, pal, legend)
       deriv = list('values$filtered_data@data$`der_', values$deriv_palette$pal, values$deriv_palette),
       time_series = list('values$filtered_data@data$`', values$palette$pal, values$palette),
-      positive = list('values$filtered_data@data$`', positive_pal, list(c('red', 'blue'), c('0', '>0'), "Q_cfs"))
+      positive = list('values$filtered_data@data$`', positive_pal, list(divergent_colors(2), c('0', '>0'), "Q_cfs"))
     )
   })
   
