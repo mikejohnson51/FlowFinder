@@ -44,7 +44,7 @@
       </nav>
     </header>
 
-    <main role="main">
+    <main>
       <div class="album py-5 bg-light">
         <div class="container">
 
@@ -69,7 +69,7 @@
                   <div class="modal-content">
                     <div class="container">
                       <div class="modal-header">
-                        <h5 class="modal-title" id="exampleModalLabel">Map Tab</h5>
+                        <h5 class="modal-title" id="mapDocumentationModal">Map Tab</h5>
                         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                           <span aria-hidden="true">&times;</span>
                         </button>
@@ -78,9 +78,9 @@
                           <h3>Overview</h3> 
                           <p>The map tab acts as the landing page for FlowFinder and allows users to define and explore their area of interest (AOI).</p>
                           <div class="text-center">
-                            <img class="overview_img" src="./images/documentation/map_tab.png">
+                            <img class="overview_img" src="./images/documentation/map_tab.png" alt="Map Tab">
                           </div>
-                          <h4>Location Navigation:</h3>
+                          <h4>Location Navigation:</h4>
                           <ul>
                             <li>
                               <strong>Initial Load </strong>— When FlowFiner is initiated, it defaults to one of the following locations in decreasing priority:
@@ -173,7 +173,7 @@
                   <div class="modal-content">
                     <div class="container">
                       <div class="modal-header">
-                        <h5 class="modal-title" id="exampleModalLabel">Data Tab</h5>
+                        <h5 class="modal-title" id="dataDocumentationModal">Data Tab</h5>
                         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                           <span aria-hidden="true">&times;</span>
                         </button>
@@ -182,10 +182,10 @@
                           <h3>Overview</h3> 
                           <p>The data tab serves as a location to interact with, view, and download data for one or multiple NHD streams.</p>
                           <div class="text-center">
-                            <img class="overview_img" src="./images/documentation/data_tab.png">
+                            <img class="overview_img" src="./images/documentation/data_tab.png" alt="Data Tab">
                           </div>
 
-                          <h4>Stream Selection</h3>
+                          <h4>Stream Selection</h4>
                           <ul>
                             <li>
                               <strong>Initial Selection </strong>— If a user selects a stream in the map tab, it will be defaulted to when brought to the data tab.  Otherwise, selection defaults to the reach with the highest flow measurement over the five day period.
@@ -211,7 +211,7 @@
                           <h5>Interactability</h5>
                           <p>Hovering hover the graph will display values for each data point in the time series.  A region can be zoomed in on either by clicking and dragging over the region of interest on the graph or using the slider below the x-axis.</p>
                           <h5>Additional Data</h5>
-                          <p>When only one reach is selected, the following data is also shown when possible:
+                          <p>When only one reach is selected, the following data is also shown when possible:</p>
                             <ul>
                               <li>
                                 A red horizontal line representing the reaches <a href="#" data-toggle="tooltip" title="Long term average come from a 23-years retrospective run of the NWM version 1.0 provided by NCAR and the OWP">mean monthly flow</a>. 
@@ -220,16 +220,16 @@
                                 Behind the plot is a gray shaded bar indicating one standard deviation of the forecasted data.
                               </li>
                             </ul>
-                          </p>
+                          
 
                           <h4>Data Tables</h4>
                           <p>When one stream is selected, two tables display streams that are up/downstream from the one selected.  Eye-icon buttons provide a convenient way to select this streams.</p>
                           <div class="text-center">
-                            <img src="images/documentation/data_tab/tables.png" width="80%" height="auto">
+                            <img src="images/documentation/data_tab/tables.png" style="width: 80%; height: auto;" alt="Up/downstream tables">
                           </div>
                           
                           <h4>Downloads</h4>
-                          <p>Another core task of the Data tab is that ability to download the NHD and flow data as well PNG images and interactive HTML files of the data. Clicking on the ‘Downloads’ button presents the user with a menu of radio buttons. The user can select as many as they like and the selections are downloaded as a zip file. Options for download include:
+                          <p>Another core task of the Data tab is that ability to download the NHD and flow data as well PNG images and interactive HTML files of the data. Clicking on the ‘Downloads’ button presents the user with a menu of radio buttons. The user can select as many as they like and the selections are downloaded as a zip file. Options for download include:</p>
                             <ul>
                               <li>A .csv of the flow values (COMID, dateTime (UTC), dataTime local, and flow values (cfs))</li>
                               <li>The same data as a RData file</li>
@@ -239,10 +239,6 @@
                               <li>An interactive HTML file of the High Flow Tab</li>
                               <li>An interactive HTML file of the Map Tab</li>
                             </ul>
-
-                          </p>
-
-
                       </div>
                       <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
@@ -272,7 +268,7 @@
                   <div class="modal-content">
                     <div class="container">
                       <div class="modal-header">
-                        <h5 class="modal-title" id="exampleModalLabel">High Flows Tab</h5>
+                        <h5 class="modal-title" id="highFlowsDocumentationModal">High Flows Tab</h5>
                         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                           <span aria-hidden="true">&times;</span>
                         </button>
@@ -281,19 +277,19 @@
                         <h3>Overview</h3> 
                         <p>The high flows tab maps and provides data for the 1,500 reaches with the highest percent exceedance from the their <a href="#" data-toggle="tooltip" title="Long term average come from a 23-years retrospective run of the NWM version 1.0 provided by NCAR and the OWP">monthly average</a>.  It therefore serves as basis for flood detection.</p>
                         <div class="text-center">
-                          <img class="overview_img" src="./images/documentation/high_flows_tab.png">
+                          <img class="overview_img" src="./images/documentation/high_flows_tab.png" alt="High Flows Tab">
                         </div>
 
                         <h4>Map</h4>
                         <p>The map uses a modified version of the leaflet clustering function to group reaches at high zoom levels. Hovering over a marker generates a convex hule outlining the points clustered to that area. Double clicking on a marker, or zooming in manually,  causes these clusters to dissipate to finer resolution clusters. Zooming in far enough will yield the individual reach markers. Clicking on one of these will prompt a popup window containing the reaches COMID, local time zone, Time of Peak Flow both in local and UTC time, and a button to graph the stream’s flow data.</p>
                         <div class="text-center">
-                          <img class="overview_img" src="images/documentation/high_flows_tab/label.png">
+                          <img class="overview_img" src="images/documentation/high_flows_tab/label.png" alt="Map Label">
                         </div>
 
                         <h4>Plots</h4>
                         <p>When a user selects a stream to graph, a colored marker will be placed at its location and a dygraph will appear in the bottom portion of the screen.  Multiple streams can be plotted, and the marker color will match the color of the data points/line. </p>
                         <div class="text-center">
-                          <img class="overview_img" src="images/documentation/high_flows_tab/plot.png">
+                          <img class="overview_img" src="images/documentation/high_flows_tab/plot.png" alt="Example Plot"> 
                         </div>
 
                       </div>
@@ -325,7 +321,7 @@
                     <div class="modal-content">
                       <div class="container">
                         <div class="modal-header">
-                          <h5 class="modal-title" id="exampleModalLabel">Info Tab</h5>
+                          <h5 class="modal-title" id="infoDocumentationModal">Info Tab</h5>
                           <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                             <span aria-hidden="true">&times;</span>
                           </button>
@@ -334,7 +330,7 @@
                           <h3>Overview</h3> 
                           <p>The info tab which contains tables of metadata relating to the NHD and USGS networks in the AOI, as well as the NWM data being accessed.</p>
                           <div class="text-center">
-                            <img class="overview_img" src="./images/documentation/info_tab.png">
+                            <img class="overview_img" src="./images/documentation/info_tab.png" alt="Info Tab">
                           </div>
 
 
@@ -372,12 +368,12 @@
                 </div>
               </div>
               <!-- Modal -->
-              <div class="modal fade" id="filterModal" tabindex="-1" role="dialog" aria-labelledby="filterModal" aria-hidden="true">
+              <div class="modal fade" id="filterModal" tabindex="-1" role="dialog" aria-labelledby="filterModalDocumentation" aria-hidden="true">
                 <div class="modal-dialog" role="document">
                   <div class="modal-content">
                     <div class="container">
                       <div class="modal-header">
-                        <h5 class="modal-title" id="filterModalLabel">Filter Tab</h5>
+                        <h5 class="modal-title" id="filterModalDocumentation">Filter Tab</h5>
                         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                           <span aria-hidden="true">&times;</span>
                         </button>
@@ -388,7 +384,7 @@
                         The page layout can be split into three pieces: (1) Display Settings (2) Map (3) Filterable Table.  
                         </p>
                         <div class="text-center">
-                          <img class="overview_img" src="images/documentation/filter_tab.png">
+                          <img class="overview_img" src="images/documentation/filter_tab.png" alt="Filter Tab">
                         </div>
 
                         <h4>Display Settings</h4>
@@ -404,13 +400,12 @@
                             </p>
                           </div>
                         </div> -->
-                        <p>The display settings determine the data/color scheme used to map the NHD flowlines and are grouped into two sections: Static and Dynamic.  
+                        <p>The display settings determine the data/color scheme used to map the NHD flowlines and are grouped into two sections: Static and Dynamic.</p>
                           <ul>
                             <li><strong>Static options </strong>- used to map summary statistics for flow data such as maximums and means</li>
                             <li><strong>Dynamic options </strong>- used to map data as a function of time and can be looped through as a means of animation</li>
                           </ul>
-                        The tables below summarize the what each display settings does, and can also be accessed in the app via the info icon next to the "Display Settings" title.
-                        </p>
+                        <p>The tables below summarize the what each display settings does, and can also be accessed in the app via the info icon next to the "Display Settings" title.</p>
                         <div class="clearfix">
                           <div class="table-responsive col-md-6 float-left">
                             <table class="table table-striped table-hover table-sm table table-striped table-hover table-responsive" style="margin-left: auto; margin-right: auto; margin-left: auto; margin-right: auto;">
@@ -451,10 +446,10 @@
                               </tr>
                               </tbody>
                               <tfoot>
-                              <tr><td style="padding: 0; border: 0;" colspan="100%"><span style="font-style: italic;">Note: </span></td></tr>
-                              <tr><td style="padding: 0; border: 0;" colspan="100%">
+                              <tr><td style="padding: 0; border: 0;" colspan=2><span style="font-style: italic;">Note: </span></td></tr>
+                              <tr><td style="padding: 0; border: 0;" colspan=2>
                               <sup></sup> In all cases, stream width is determined by stream order. </td></tr>
-                              <tr><td style="padding: 0; border: 0;" colspan="100%">
+                              <tr><td style="padding: 0; border: 0;" colspan=2>
                               <sup>*</sup> The range of values (Qcfs) are determined, split into 8 equal categories, and mapped to a color pallete</td></tr>
                               </tfoot>
                             </table>
@@ -482,10 +477,10 @@
                                 </tr>
                               </tbody>
                               <tfoot>
-                              <tr><td style="padding: 0; border: 0;" colspan="100%"><span style="font-style: italic;">Note: </span></td></tr>
-                              <tr><td style="padding: 0; border: 0;" colspan="100%">
+                              <tr><td style="padding: 0; border: 0;" colspan=2><span style="font-style: italic;">Note: </span></td></tr>
+                              <tr><td style="padding: 0; border: 0;" colspan=2>
                               <sup></sup> In all cases, stream width is determined by stream order. </td></tr>
-                              <tr><td style="padding: 0; border: 0;" colspan="100%">
+                              <tr><td style="padding: 0; border: 0;" colspan=2>
                               <sup>*</sup> The range of values (Qcfs) are determined, split into 8 equal categories, and mapped to a color pallete</td></tr>
                               </tfoot>
                             </table>
@@ -496,7 +491,7 @@
                         <p>A table is provided that can be used view data for each stream.  These attributes can be filtered and only the resulting streams will be mapped.</p>
 
                         <h5>Options</h5>
-                        <p>The following options can be added or removed from the table:
+                        <p>The following options can be added or removed from the table:</p>
                           <ul>
                             <li><code>COMID</code></li>
                             <li><code>Stream Length</code></li>
@@ -505,30 +500,29 @@
                             <li><code>Reach Code</code></li>
                             <li><code>Slope</code></li>
                           </ul>
-                        </p>
-
+                  
                         <h5>Filtering</h5>
-                        <p>The table can be filtered in two ways:
+                        <p>The table can be filtered in two ways:</p>
                           <ul>
                             <li><strong>Search Bar </strong>- The search bar can be used to filter across any column</li>
                             <li><strong>Column Filters </strong>- Above each column there is a box that can be to filter values. Depending on the data type, you can either enter text or use a slider.</li>
                           </ul>
                           <div class="text-center">
                             <figure class="figure">
-                              <img src="images/documentation/filter_tab/full_table.png" alt="Table" height="300px">
-                              <img src="images/documentation/filter_tab/filtered_table.png" alt="Filtered Table." height="300px">
+                              <img src="images/documentation/filter_tab/full_table.png" alt="Table" height="300">
+                              <img src="images/documentation/filter_tab/filtered_table.png" alt="Filtered Table." height="300">
                               <figcaption class="figure-caption">Image 1 shows the full table underneath the options.  Image 2 depicts the table being filtered based on stream order and length.</figcaption>
                             </figure>
                           </div>
-                        </p>
+                        
 
                         <h4>Map</h4>
                         <p>The displayed map is dependent on the display settings and filtered table.  In all cases, a legend is shown and stream width is dependent on stream order. </p>
                         <div class="text-center">
                           <figure class="figure">
-                            <img src="images/documentation/filter_tab/positive.png" alt="Positive Flows" height="200px">
-                            <img src="images/documentation/filter_tab/avg.png" alt="Average Value" height="200px">
-                            <img src="images/documentation/filter_tab/avg_comp.png" alt="Average Comparison" height="200px">
+                            <img src="images/documentation/filter_tab/positive.png" alt="Positive Flows" height="200">
+                            <img src="images/documentation/filter_tab/avg.png" alt="Average Value" height="200">
+                            <img src="images/documentation/filter_tab/avg_comp.png" alt="Average Comparison" height="200">
                             <figcaption class="figure-caption">Image 1: Zero vs. non-zero flows. Image 2: Average flow.  Image 3: Average flow compared to long term average.</figcaption>
                           </figure>
                         </div>
@@ -559,12 +553,12 @@
                 </div>
               </div>
               <!-- Modal -->
-              <div class="modal fade" id="additionalResourcesModal" tabindex="-1" role="dialog" aria-labelledby="additionalResourcesModal" aria-hidden="true">
+              <div class="modal fade" id="additionalResourcesModal" tabindex="-1" role="dialog" aria-labelledby="resourcesDocumentationModal" aria-hidden="true">
                 <div class="modal-dialog" role="document">
                   <div class="modal-content">
                     <div class="container">
                       <div class="modal-header">
-                        <h5 class="modal-title" id="filterModalLabel">Additional Resources</h5>
+                        <h5 class="modal-title" id="resourcesDocumentationModal">Additional Resources</h5>
                         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                           <span aria-hidden="true">&times;</span>
                         </button>
