@@ -2,6 +2,13 @@
   --jumbotron-padding-y: 3rem;
 }
 
+.fa-github {
+  height: 1.87em;
+  margin-bottom: -1em;
+  margin-top: -1em;
+  margin-right: -.8em;
+}
+
 .jumbotron {
   padding-top: var(--jumbotron-padding-y);
   padding-bottom: var(--jumbotron-padding-y);
