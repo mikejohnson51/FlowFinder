@@ -107,6 +107,13 @@ $(document).on("click", 'h4 a', function(e) {
     $(this).find('i').toggleClass('fa-caret-right fa-caret-down');
 });
 
+Shiny.addCustomMessageHandler("started_editing", isEditing);
+
+function isEditing(message) {
+  Shiny.onInputChange(map.id+'_draw_editstart', false);
+  Shiny.onInputChange(map.id+'_draw_editstop', false);
+}
+
 
 
 

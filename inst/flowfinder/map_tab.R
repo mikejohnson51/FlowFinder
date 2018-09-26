@@ -104,10 +104,18 @@ add_bounds <- function(map, AOI) {
     addRectangles(
       lng1 = AOI@bbox[1] , lat1 = AOI@bbox[2],
       lng2 = AOI@bbox[3] , lat2 = AOI@bbox[4],
-      fillColor = "transparent",
+      fill = FALSE,
       group = 'AOI', 
       color = "red"
     ) 
+}
+
+add_bounding_lines <- function(map, AOI) {
+  fitBounds(map, AOI@bbox[1], AOI@bbox[2], AOI@bbox[3], AOI@bbox[4]) %>%
+    addPolylines(lng = c(AOI@bbox[1], AOI@bbox[3]), lat = c(AOI@bbox[4], AOI@bbox[4]), group = "AOI") %>% #top
+    addPolylines(lng = c(AOI@bbox[3], AOI@bbox[3]), lat = c(AOI@bbox[4], AOI@bbox[2]), group = "AOI") %>% #right
+    addPolylines(lng = c(AOI@bbox[3], AOI@bbox[1]), lat = c(AOI@bbox[2], AOI@bbox[2]), group = "AOI") %>% #bottom
+    addPolylines(lng = c(AOI@bbox[1], AOI@bbox[1]), lat = c(AOI@bbox[2], AOI@bbox[4]), group = "AOI")     #left
 }
 
 # Add water boundaries to map
@@ -181,7 +189,8 @@ add_layers <- function(map, values) {
  map <- map %>%
     clearGroup(group = list("NHD Flowlines", "Location", "USGS Stations", "Water bodies", "AOI")) %>%
     add_location(values = values) %>% 
-    add_bounds(AOI = values$flow_data$AOI) %>% 
+    add_bounds(AOI = values$flow_data$AOI) %>%
+    # add_bounding_lines(AOI = values$flow_data$AOI) %>% 
     add_water_bodies(wb = values$flow_data$waterbodies) %>% 
     add_flows(data = values$flow_data$nhd, color = "blue") %>%
     add_stations(values = values)

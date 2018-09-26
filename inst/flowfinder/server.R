@@ -1,4 +1,5 @@
 library(FlowFinder)
+
 shinyServer(function(input, output, session) {
   
   # Include code for download handler
@@ -21,6 +22,18 @@ shinyServer(function(input, output, session) {
         overlayGroups = c("USGS Stations", "NHD Flowlines", "Water bodies", "AOI"),
         options = layersControlOptions(collapsed = TRUE),
         position = "bottomleft"
+      ) %>% 
+      leaflet.extras::addDrawToolbar(
+        targetGroup='AOI',
+        polylineOptions = FALSE,
+        polygonOptions = FALSE,
+        circleOptions = FALSE,
+        rectangleOptions = FALSE,
+        markerOptions = FALSE,
+        circleMarkerOptions = FALSE,
+        editOptions = leaflet.extras::editToolbarOptions(
+          selectedPathOptions = leaflet.extras::selectedPathOptions(), 
+          remove = FALSE)
       ) %>% 
       addEasyButton(easyButton(
         icon="fa-crosshairs", title="Locate Me",
@@ -79,19 +92,33 @@ shinyServer(function(input, output, session) {
       incProgress(1/8, detail = "Getting Spatial Objects")
       
       # Get spatial data
-      values$flow_data = suppressMessages(
-        AOI::getAOI(clip = list(values$loc$lat, values$loc$lon, size, size)) %>% 
-          HydroData::findNHD(ids = TRUE) %>% 
-          HydroData::findWaterbodies() %>% 
-          HydroData::findNWIS()
-      )
       
+      if (is.null(values$bbox)) {
+        values$flow_data = suppressMessages(
+          AOI::getAOI(clip = list(values$loc$lat, values$loc$lon, size, size)) %>% 
+            HydroData::findNHD(ids = TRUE) %>% 
+            HydroData::findWaterbodies() %>% 
+            HydroData::findNWIS()
+        )
+      }
+      
+      else {
+        print(values$bbox)
+        values$flow_data = suppressMessages(
+          AOI::bbox_sp(values$bbox) %>% 
+            HydroData::findNHD(ids = TRUE) %>% 
+            HydroData::findWaterbodies() %>% 
+            HydroData::findNWIS()
+        )
+        values$bbox <- NULL
+      }
+      
+    
       # Determine what state (or if) AOI is in
       
       state = latlong2state(lat = values$loc$lat, lon = values$loc$lon)
       
-      
-      
+    
       # Set global variable and show notification if no streams in AOI
       # Continue with data prep if there are streams
       if (!exists('nhd', where=values$flow_data) || (is.null(state))) {
@@ -177,6 +204,8 @@ shinyServer(function(input, output, session) {
       # Map data
       clearMarkers()
       add_layers(map = leafletProxy("map"), values = values)
+      # values$start_editing <- 0 
+      # values$end_editing <- 0 
     })
     
     # Update title
@@ -295,6 +324,117 @@ shinyServer(function(input, output, session) {
       return()
     updatePickerInput(session = session, inputId = "flow_selector", selected = input$goto$text)
   })
+  
+  
+  observeEvent(input$map_draw_edited_features,{
+    feature <- input$map_draw_edited_features
+    
+    if (!length(feature$features) == 0) {
+      lng <- c(
+        feature$features[[1]]$geometry$coordinates[[1]][[1]][[1]],
+        feature$features[[1]]$geometry$coordinates[[1]][[3]][[1]]
+      )
+      
+      lat <- c(
+        feature$features[[1]]$geometry$coordinates[[1]][[1]][[2]],
+        feature$features[[1]]$geometry$coordinates[[1]][[2]][[2]]
+      )
+      
+      values$cent_lat <- ((max(lat) - min(lat))/2) + min(lat)
+      values$cent_lng <- ((max(lng) - min(lng))/2) + min(lng)
+      
+      values$bbox <- append(lng, lat)
+      
+      region_info <- AOI::bbox_sp(values$bbox) %>% describe()
+      area = region_info$height * region_info$width
+      
+      if (area < 4000) {
+        updateTextInput(session = session, inputId =  "place", value = paste(values$cent_lat, values$cent_lng, sep = " "), placeholder = "Current Location")
+        shinyjs::click("do")
+      } else {
+        confirmSweetAlert(
+          session = session, inputId = "aoiconfirmation", type = "warning",
+          text = "This AOI is greater than 400 square miles and may take a while to load.",
+          title = "Are you sure?", 
+          danger_mode = TRUE
+        )
+      }
+    }
+    
+    
+    
+  })
+  
+  observeEvent(input$aoiconfirmation,{
+    if (input$aoiconfirmation) {
+      updateTextInput(session = session, inputId =  "place", value = paste(values$cent_lat, values$cent_lng, sep = " "), placeholder = "Current Location")
+      shinyjs::click("do")
+    } else {
+      leafletProxy("map", session) %>% 
+        clearGroup("AOI") %>% 
+        add_bounds(AOI = values$flow_data$AOI)
+    }
+  })
+  
+  observeEvent(input$map_shape_click,{
+    object = input$map_shape_click
+    if (object$group == "AOI") {
+      runjs("
+            var editButton = document.getElementsByClassName('leaflet-draw-edit-edit')[0];
+            editButton.click();
+            ")
+    } 
+  })
+  
+  observeEvent(input$map_click, {
+    req(input$map_draw_editstart)
+    isolate({
+      loc = input$map_click
+      bbox = values$flow_data$AOI@bbox
+      if (loc$lng < bbox[1] || loc$lng > bbox[3] || loc$lat > bbox[2] || loc$lat < bbox[4]) {
+        runjs("
+          var saveButton = document.getElementsByClassName('leaflet-draw-actions')[0].firstChild.firstChild;
+              saveButton.click();
+              ")
+      }
+    })
+    
+  })
+  
+  observe({
+    req(input$map_draw_editstart)
+    runjs("
+          document.getElementsByClassName('leaflet-draw-tooltip-subtext')[0].innerHTML = 'Press esc to cancel changes';
+          var el = document.getElementsByClassName('leaflet-draw-tooltip')[0].children[2];
+          var newEl = document.createElement('span');
+          newEl.innerHTML = '<br>Press enter or outside of AOI to save changes';
+          newEl.className = 'editConfirm';
+          el.parentNode.insertBefore(newEl, el.nextSibling);
+          ")
+  })
+  
+  observeEvent(input[["enterPressed"]], {
+    req(input$map_draw_editstart)
+    runjs("
+          var saveButton = document.getElementsByClassName('leaflet-draw-actions')[0].firstChild.firstChild;
+          saveButton.click();
+          ")
+  })
+  
+  observeEvent(input[["escPressed"]], {
+    req(input$map_draw_editstart)
+    runjs("
+          var exitButton = document.getElementsByClassName('leaflet-draw-actions')[0].lastChild.firstChild;
+          exitButton.click();
+          ")
+  })
+  
+  # reset editing variables
+  observeEvent(input$map_draw_editstop, {
+    session$sendCustomMessage("started_editing", "stop")
+  })
+  
+  
   
   ########## DATA TAB ####################################################################
   

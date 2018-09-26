@@ -35,6 +35,7 @@ Imports:
     lutz,
     sp,
     purrr,
+    leaflet.extras,
     lubridate,
     xts,
     reshape2

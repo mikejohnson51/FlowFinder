@@ -77,6 +77,20 @@ shinyUI(
                                         }
                                         });
                                         '),
+                            tags$script('
+                                        $(document).on("keyup", function(e) {
+                                        if(e.keyCode == 13){
+                                        Shiny.onInputChange("enterPressed", Math.random());
+                                        }
+                                        });
+                                        '),
+                            tags$script('
+                                        $(document).on("keyup", function(e) {
+                                        if(e.keyCode == 27){
+                                        Shiny.onInputChange("escPressed", Math.random());
+                                        }
+                                        });
+                                        '),
                             leafletOutput("map", width="100%", height="100%"),
                             absolutePanel(style="display:inline-block", id = "controls", class = "panel panel-default", fixed = TRUE,
                                           draggable = TRUE, top = 60, left = 10, right = "auto", bottom = "auto",

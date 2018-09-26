@@ -21,9 +21,11 @@
 #' 
 #' @importFrom utils download.file head write.csv read.csv
 #' 
-#' @importFrom AOI getAOI getBoundingBox aoiProj geocode
+#' @importFrom AOI getAOI getBoundingBox aoiProj geocode describe
 #' 
 #' @importFrom sp SpatialPoints over
+#' 
+#' @importFrom leaflet.extras addDrawToolbar editToolbarOptions selectedPathOptions
 #' 
 #' @importFrom lutz tz_lookup_coords
 #' 

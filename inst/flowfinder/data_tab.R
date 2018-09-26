@@ -1,6 +1,6 @@
 # Set initial COMID choices - used in drop down selector
 set_choices <- function(values) {
-  
+
   names_ids <- values$flow_data$nhd@data %>% 
     select(comid, gnis_name) %>% 
     mutate(name = paste0(

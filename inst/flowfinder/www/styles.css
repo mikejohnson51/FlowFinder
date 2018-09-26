@@ -205,9 +205,35 @@ h4 { font-weight: 400; }
     width: 18px;
     border-top-left-radius: 0;
     border-bottom-left-radius: 0;
-    box-shadow: 4px 1px 4px rgba(0,0,0,0.13),0px -1px 0px rgba(0,0,0,0.02);
+    box-shadow: 4px 1px 4px rgba(0,0,0,0.13),0 -1px 0 rgba(0,0,0,0.02);
     border-left: none;
 }
+
+.leaflet-touch .leaflet-draw-actions {
+    left: 132px !important;
+}
+
+.leaflet-draw-actions a {
+  background-color: transparent !important;
+  color: transparent !important;
+}
+
+
+.swal-icon--warning {
+  border-color: #f27474 !important;
+  animation: none !important;
+}
+
+.swal-icon--warning__body, 
+.swal-icon--warning__dot {
+  background-color: #f27474 !important;
+}
+
+.editConfirm {
+  color: #e4f8d5;
+}
+
+
 
 
 /*****************************************
