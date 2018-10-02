@@ -114,6 +114,9 @@ function isEditing(message) {
   Shiny.onInputChange(map.id+'_draw_editstop', false);
 }
 
-
-
-
+$(document).on("click", "a[data-value='data']", function(e) { 
+  console.log('clickeeeeed!');
+  Shiny.onInputChange("on_data_tab", {
+    clicked : "t"
+  });
+});

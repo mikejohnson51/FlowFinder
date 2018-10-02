@@ -65,18 +65,6 @@ shinyUI(
                                         }, "json");
                                         });
                                         '),
-                            #Enter button activates search, only on focus
-                            tags$script('
-                                        document.addEventListener("keypress", function(event) {
-                                        if (event.keyCode === 13 || event.which === 13) {
-                                        var dummyEl = document.getElementById("place");
-                                        var isFocused = (document.activeElement === dummyEl);
-                                        if (isFocused) {
-                                        document.getElementById("do").click();
-                                        }
-                                        }
-                                        });
-                                        '),
                             tags$script('
                                         $(document).on("keyup", function(e) {
                                         if(e.keyCode == 13){
@@ -92,11 +80,17 @@ shinyUI(
                                         });
                                         '),
                             leafletOutput("map", width="100%", height="100%"),
-                            absolutePanel(style="display:inline-block", id = "controls", class = "panel panel-default", fixed = TRUE,
-                                          draggable = TRUE, top = 60, left = 10, right = "auto", bottom = "auto",
-                                          width = 430, height = "auto",
-                                          textInput(inputId = 'place', label = NULL, value = "", placeholder = "Search FlowFinder"),
-                                          actionButton("do", "", icon("search")),
+                            absolutePanel(id = "controls", fixed = TRUE,
+                                          top = 60, left = 10, right = "auto", bottom = "auto",
+                                          width = 460, height = "auto",
+                                          # textInput(inputId = 'place', label = NULL, value = "", placeholder = "Search FlowFinder"),
+                                          searchInput(
+                                            inputId = "place",
+                                            label = NULL,
+                                            placeholder = "Search FlowFinder",
+                                            btnSearch = icon("search"),
+                                            width = "85%"
+                                          ),
                                           actionButton("slide", "", icon = icon("caret-left"))
                             ),
                             # absolutePanel(id = "settings", class = "panel panel-default", fixed = TRUE,
@@ -122,12 +116,12 @@ shinyUI(
                             )
                             )
                             ),
-               tabPanel("Data", icon = icon("line-chart"),
+               tabPanel("Data", icon = icon("line-chart"), value = "data",
                         fluidRow(
                           column(5, 
                                  column(12, pickerInput(inputId = "flow_selector", 
                                                         choices = "", 
-                                                        multiple = TRUE, 
+                                                        multiple = FALSE, 
                                                         label = NULL,
                                                         options = list(
                                                           `max-options`= 10,
@@ -162,7 +156,7 @@ shinyUI(
                           )
                         ),
                         br(), br(),
-                        dygraphs::dygraphOutput("dygraph"),
+                        dygraphs::dygraphOutput("dygraph") %>% withSpinner(type = 2, color.background = "#FFFFFF"),
                         # Keep as easy way to vizualize downloadable ggplot
                         # plotOutput("plot2"),
                         br(), br(),
@@ -172,7 +166,7 @@ shinyUI(
                         ),
                         DT::DTOutput('tbl')
                ),
-               tabPanel("High Flows", icon = icon("tint"),
+               tabPanel("High Flows", icon = icon("tint"), value = "high_flows",
                         div(class="outer dark_bg",
                             leafletOutput("flood_map", height = "100%"),
                             div(class = "fl_map_div",
