@@ -121,7 +121,7 @@ shinyUI(
                           column(5, 
                                  column(12, pickerInput(inputId = "flow_selector", 
                                                         choices = "", 
-                                                        multiple = FALSE, 
+                                                        multiple = TRUE, 
                                                         label = NULL,
                                                         options = list(
                                                           `max-options`= 10,

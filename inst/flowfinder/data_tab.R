@@ -148,8 +148,9 @@ static_plot <- function(values, selected) {
 
 
 # Generate upstream and downstream tables
-stream_table <- function(data = NULL, direction = NULL, values= NULL, session = NULL) {
+stream_table <- function(data = NULL, direction = NULL, current_id = NULL, session = NULL) {
   if (length(data) > 0) {
+    print(data)
     df <- data %>%
       dplyr::mutate(View = paste('<a class="go-stream" href="" data-stream="', data[[1]], '"><i class="fa fa-eye"></i></a>', sep=""))
     
@@ -165,7 +166,7 @@ stream_table <- function(data = NULL, direction = NULL, values= NULL, session = 
     )
   } else {
     df <- data
-    df <- rbind(df, paste0("No ", direction, " reaches from COMID ", values$id))
+    df <- rbind(df, paste0("No ", direction, " reaches from COMID ", current_id))
     colnames(df) = ifelse(direction == "upstream", "Upstream", "Downstream")
     table = DT::datatable(df, options = list(dom = 't'), escape = FALSE, selection = 'none')
   }

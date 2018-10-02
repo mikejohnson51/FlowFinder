@@ -168,7 +168,6 @@ shinyServer(function(input, output, session) {
       area = region_info$height * region_info$width
       
       if (area < 400) {
-        print('here')
         updateSearchInput(session = session, inputId =  "place", 
                           value = paste(location_information$cent_lat, location_information$cent_lng, sep = " "), 
                           placeholder = "Current Location",
@@ -256,10 +255,20 @@ shinyServer(function(input, output, session) {
   ########## DATA TAB ####################################################################
   
   NWM <- reactive({
-    req(input$on_data_tab)
+    req(input$nav=="data")
     withProgress(message = 'Fetching Data', value = .6, {
       subset_nomads(comids = rawData()$nhd$comid)
     })
+  })
+  
+  timezone <- reactive({
+    req(input$nav=="data")
+    lutz::tz_lookup_coords(location()$lat, location()$lon, method = "accurate")
+  })
+  
+  normals <- reactive({
+    req(input$nav=="data")
+    fst::read_fst(path = month_files)
   })
   
   streams <- reactive({
@@ -271,13 +280,18 @@ shinyServer(function(input, output, session) {
       select(-gnis_name)
   })
   
-  # positive_streams <- reactive({
-  #   NWM() %>%
-  #     filter(Q_cfs > 0) %>%
-  #     select(COMID) %>%
-  #     distinct() %>%
-  #     .$COMID
-  # })
+  positive_streams <- reactive({
+    NWM() %>%
+      filter(Q_cfs > 0) %>%
+      select(COMID) %>%
+      distinct() %>%
+      .$COMID 
+  })
+  
+  positive_stream_names <- reactive({
+    req(positive_streams())
+    purrr::map_lgl(getIDs(streams()$name), ~(. %in% positive_streams()))
+  })
   
   max_stream <- reactive({
     req(NWM())
@@ -293,10 +307,49 @@ shinyServer(function(input, output, session) {
   })
   
   observe({
-    req(NWM())
+    req(NWM(), positive_stream_names())
     updatePickerInput(session, 'flow_selector', 
                       choices = streams()$name,
-                      selected = default_stream())
+                      selected = default_stream(),
+                      choicesOpt = list(
+                        style = ifelse(positive_stream_names(),
+                                       yes = "color:#0069b5;font-weight:bold;",
+                                       no = "style=color:#a8a8a8")
+                      ))
+  })
+  
+  # Previous stream button
+  observeEvent(input$prevCOMID, {
+    current <- which(streams()$name == input$flow_selector)
+    if(current > 1){
+      updatePickerInput(session, "flow_selector",
+                        selected = streams()$name[current - 1])
+    }
+  })
+  
+  # Next stream button
+  observeEvent(input$nextCOMID, {
+    current <- which(streams()$name == input$flow_selector)
+    if(current < length(streams()$name)){
+      updatePickerInput(session, "flow_selector",
+                        selected = streams()$name[current + 1])
+    }
+  })
+  
+  # View on map button
+  observeEvent(input$mark_flowline, {
+    clearMarkers()
+    reaches = rawData()$nhd[rawData()$nhd$comid %in% getIDs(input$flow_selector), ]
+    bb = AOI::getBoundingBox(reaches)
+    leafletProxy("map", session) %>%
+      fitBounds(min(bb@bbox[1,]), min(bb@bbox[2,]), max(bb@bbox[1,]), max(bb@bbox[2,])) %>% 
+      addPolylines(data = reaches, 
+                   color = "red", 
+                   weight = 15,
+                   opacity = 0.8,
+                   options = pathOptions(clickable = FALSE),
+                   group = "view-on-map"
+      )
   })
   
   current_id <- reactive({
@@ -316,7 +369,6 @@ shinyServer(function(input, output, session) {
     isolate({
       output <- matrix(ncol=length(selected), nrow=length(current_data()$dateTime))
       ids = c()
-      print(selected)
       for (j in 1:length(selected)) {
         text = selected[j]
         id = getIDs(text)[1]
@@ -329,16 +381,111 @@ shinyServer(function(input, output, session) {
       }
       df <- data.frame(output)
       colnames(df) <- ids
-      
-      # timeZone = lutz::tz_lookup_coords(values$loc$lat, values$loc$lon, method = "accurate")
-      xts::xts(df, order.by = lubridate::with_tz(data$dateTime))
+      xts::xts(df, order.by = lubridate::with_tz(data$dateTime, tzone = timezone()), tz = timezone())
+      # xts::xts(df, order.by = lubridate::with_tz(data$dateTime))
     })
   })
   
-  output$dygraph <- dygraphs::renderDygraph({
+  dygraph <- reactive({
     req(current_xts())
-    dygraphs::dygraph(current_xts())
+    
+    graph <- dygraphs::dygraph(current_xts())  %>%
+      dyOptions(drawPoints = TRUE,
+                pointSize = 2,
+                gridLineColor = "lightblue",
+                useDataTimezone = TRUE) %>%
+      dyRangeSelector(height = 20) %>%
+      dyAxis("x", drawGrid = FALSE) %>%
+      dyHighlight(highlightCircleSize = 5,
+                  highlightSeriesBackgroundAlpha = 1) %>%
+      dyAxis("y", label = "Streamflow (cfs)" )%>%
+      dyLegend(show = "onmouseover")
+    
+    if (length(input$flow_selector) == 1) {
+      
+      mn = mean(zoo::coredata(current_xts()), na.rm = TRUE)
+      std = sd(zoo::coredata(current_xts()), na.rm = TRUE)
+      
+      cutoff <- norm %>% 
+        filter(COMID == current_id())
+      
+      cutoff = cutoff[,2] * 35.3147
+    
+      graph = graph %>%
+        dyOptions(
+          useDataTimezone = TRUE,
+          drawPoints = TRUE, 
+          pointSize = 2,
+          gridLineColor = "lightblue",
+          fillGraph = TRUE, 
+          fillAlpha = 0.1 ) %>% 
+        dyLimit(cutoff, 
+                strokePattern = "solid", 
+                color = "red", 
+                label = paste0("Monthly Average (", round(cutoff,2), " cfs)")) %>%
+        dyShading(from = mn - std, 
+                  to = mn + std, 
+                  axis = "y")
+    }
+    graph
   })
+  
+  output$dygraph <- dygraphs::renderDygraph({
+    dygraph()
+  })
+  
+  upstream_from <- reactive({
+    req(current_id())
+    upstream = data.frame(Upstream=NA)[numeric(0), ]
+    up = rawData()$nhd[rawData()$nhd$comid %in% c(upstream()[upstream()$comid == current_id(), 2]),]
+    if (length(up) > 0) {
+      upstream = data.frame(paste0(paste0(ifelse(is.na(up$gnis_name), "", up$gnis_name)), paste0(" COMID: ", up$comid)))
+      colnames(upstream) = c("Upstream")
+    }
+    upstream
+  })
+  
+  # Upstream Table
+  output$tbl_up <- DT::renderDataTable({
+    req(upstream_from())
+    isolate({
+      stream_table(data = upstream_from(), direction = "upstream", current_id = current_id(), session = session)
+    })
+  })
+  
+  downstream_from <- reactive({
+    req(current_id())
+    downstream = data.frame(Downstream=NA)[numeric(0), ]
+    down = rawData()$nhd[rawData()$nhd$comid %in% c(downstream()[downstream()$comid == current_id(), 4]),]
+    if (length(down) > 0) {
+      downstream = data.frame(paste0(paste0(ifelse(is.na(down$gnis_name), "", down$gnis_name)), paste0(" COMID: ", down$comid)))
+      colnames(downstream) = c("Downstream")
+    }
+    downstream
+  })
+  
+  # Downstream Table
+  output$tbl_down <- DT::renderDataTable({
+    req(downstream_from())
+    stream_table(data = downstream_from(), direction = "downstream", current_id = current_id(), session = session)
+  })
+  
+  # After 'eye' icon is clicked in up/downstream tables
+  observe({
+    if (is.null(input$switchStream))
+      return()
+    else {
+      streams = unlist(strsplit(input$switchStream$stream ,","))
+      isolate({
+        if (length(streams) > 1) {
+          streams = c(streams, input$flow_selector)
+        }
+        updatePickerInput(session = session, inputId = "flow_selector", selected = streams)
+      })
+    }
+  })
+  
+  
   
   ########## HIGH FLOWS TAB ####################################################################
   
@@ -354,9 +501,5 @@ shinyServer(function(input, output, session) {
     req(flood_map())
     flood_map() 
   })
-  
-  observe({
-    print(input$nav)
-  })
-  
+
 })
