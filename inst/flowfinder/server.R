@@ -5,12 +5,16 @@ shinyServer(function(input, output, session) {
   # Include code for download handler
   source("server_download_handler.R", local = TRUE)$value
   
-  ########## Initial Setup ####################################################################
+  ########## MAP TAB ####################################################################
   
-  # Set up reactive values
-  values <- reactiveValues()
+  location_information <- reactiveValues()
+  flags <- reactiveValues(nwm_calculated = FALSE,
+                          high_flows_loaded = FALSE,
+                          filter_initial_draw = FALSE,
+                          filterable_data = FALSE)
   
-  # Define base map
+  # Create reactive base map
+  # Using as a reactive allows re-use for downloads
   basemap <- reactive({
     leaflet() %>%
       addProviderTiles(providers$CartoDB.Positron, group = "Basemap") %>%
@@ -38,293 +42,145 @@ shinyServer(function(input, output, session) {
       addEasyButton(easyButton(
         icon="fa-crosshairs", title="Locate Me",
         onClick=JS("function(btn, map){ 
-                   var num = Math.random();
-                   Shiny.onInputChange('currentLoc', {
-                   num: num,
-                   }); 
-  }"))) 
-    # %>% 
-    #   addEasyButton(easyButton(
-    #     icon="fa-filter", title="Filter",
-    #     onClick=JS("function(btn, map){ $('#filterModal').modal('toggle') }")))
-    
-})
+                      var num = Math.random();
+                      Shiny.onInputChange('currentLoc', {
+                        num: num,
+                      }); 
+                    }"))) 
+  })
   
-  observe({
-    req(input$currentLoc)
+  move_to_current_location <- function() {
     if(!is.null(input$lat)){
-      updateTextInput(session = session, inputId =  "place", value = paste(input$lat, input$long, sep = " "), placeholder = "Current Location")
-      shinyjs::click("do")
-    } else {
-      showNotification("Your current location can't be determined. Make sure you have given your browser the necessarry permissions.", type = "error")
+      updateSearchInput(session = session, inputId =  "place", 
+                        value = paste(input$lat, input$long, sep = " "), 
+                        placeholder = "Current Location",
+                        trigger = TRUE)
+    } else if (!is.null(input$getIP)) {
+      updateSearchInput(session = session, inputId =  "place", 
+                        value = paste(input$getIP$latitude, input$getIP$longitude, sep = " "),
+                        placeholder = "Search FlowFinder",
+                        trigger = TRUE)
     }
-  })
-  
-  
-  
-  # Set map
-  output$map <- renderLeaflet({ basemap() })
-  
-  # Define reactive values corresponding to current COMID
-  update_cur_id <- function(input) {
-    
-    values$id = getIDs(input)[1]
-    
-    values$data = values$nwm %>% 
-      filter(COMID == values$id)
-    
-    values$normals = norm %>% 
-      filter(COMID == values$id)
-    
   }
-  
-  # On go, calculate reactive values
-  observeEvent(input$do, {
-    
-    # Don't let user enter new location while processing previous
-    shinyjs::disable("do")
-    
-    # Initialize progress bar
-    withProgress(message = 'Analyzing Location', value = 0, {
-      
-      # Get initial location
-      values$loc = get_location(place = input$place)
-      incProgress(1/8, detail = "Getting Spatial Objects")
-      
-      # Get spatial data
-      
-      if (is.null(values$bbox)) {
-        values$flow_data = suppressMessages(
-          AOI::getAOI(clip = list(values$loc$lat, values$loc$lon, size, size)) %>% 
-            HydroData::findNHD(ids = TRUE) %>% 
-            HydroData::findWaterbodies() %>% 
-            HydroData::findNWIS()
-        )
-      }
-      
-      else {
-        print(values$bbox)
-        values$flow_data = suppressMessages(
-          AOI::bbox_sp(values$bbox) %>% 
-            HydroData::findNHD(ids = TRUE) %>% 
-            HydroData::findWaterbodies() %>% 
-            HydroData::findNWIS()
-        )
-        values$bbox <- NULL
-      }
-      
-    
-      # Determine what state (or if) AOI is in
-      
-      state = latlong2state(lat = values$loc$lat, lon = values$loc$lon)
-      
-    
-      # Set global variable and show notification if no streams in AOI
-      # Continue with data prep if there are streams
-      if (!exists('nhd', where=values$flow_data) || (is.null(state))) {
-        values$any_flow = FALSE
-        if (is.null(state)) {
-          showNotification("Warning: AOI appears to be outside CONUS", type = "warning", duration = 10)
-        }
-      }
-      else {
-        values$any_flow = TRUE
-        
-        incProgress(4/8, detail = "Subsetting Stream Data")
-        
-        # Subset data
-        values$nwm = subset_nomads(comids = values$flow_data$comid) %>% 
-          mutate()
-        
-        # Merge nwm and nhd data sets
-        
-        vals = values$nwm %>% 
-          tidyr::spread(dateTime, Q_cfs) %>% 
-          select(-agency_code) %>% 
-          rename("comid" = COMID)
-        
-        values$flow_data$nhd <- values$flow_data$nhd %>% 
-          inner_join(vals, by = "comid")
-        
-        rm(vals)
-        
-        nwm_summary <- values$nwm %>% 
-          group_by(COMID) %>% 
-          summarise(max = max(Q_cfs), 
-                    mean = mean(Q_cfs), 
-                    min = min(Q_cfs)) %>%
-          mutate(range = max - min) %>% 
-          rename("comid" = COMID)
-        
-        averages = norm %>%
-          `colnames<-`(c("comid", "month_avg")) %>% 
-          mutate(month_avg = month_avg * 35.3147)
-        
-        values$flow_data$nhd <- values$flow_data$nhd %>% 
-          inner_join(nwm_summary, by = "comid") %>% 
-          inner_join(averages, by = "comid") %>% 
-          mutate(mean_dif = mean - month_avg)
-        
-        find_diff <- function(id) {
-          diff(values$nwm %>% filter(COMID == id) %>% .$Q_cfs)
-        }
-        
-        diff_matrix <- matrix(ncol=length(unique(values$nwm$dateTime)), nrow=length(nwm_summary$comid))
-        for (j in 1:length(nwm_summary$comid)) {
-          id = nwm_summary$comid[j]
-          diff_matrix[j,] <- c(id, find_diff(id))
-        }
-        diff_df <- data.frame(diff_matrix)
-        colnames(diff_df) <- c("comid", paste0('der_',unique(values$nwm$dateTime)[1:39]))
-        
-        values$flow_data$nhd <- values$flow_data$nhd %>% 
-          inner_join(diff_df, by = "comid")
-        
-        values$palette <- create_palette(vals = nwm_summary$max)
-        values$range_palette <- create_palette(vals = nwm_summary$range)
-        values$mean_palette <- create_palette(vals = nwm_summary$mean)
-        values$month_palette <- create_palette(vals = values$flow_data$nhd$month_avg)
-        
-        mag = max(abs(c(max(diff_matrix[,2:40], na.rm = T), min(diff_matrix[,2:40], na.rm = T))))
-        values$deriv_palette <- create_palette(vals = mag, continuous = FALSE)
-        
-        mag = max(abs(c(max(values$flow_data$nhd$mean_dif, na.rm = T), min(values$flow_data$nhd$mean_dif, na.rm = T))))
-        
-        values$mean_dif_palette <- create_palette(vals = mag, continuous = FALSE)
-        
-        
-        incProgress(2/8, detail = "Finding Upstream/Downstream")
-        
-        # Set upstream/downstream data
-        values$flow_data$nhd_prep = prep_nhd(flines = values$flow_data$nhd)
-        values$hmm = get_upstream(flines = values$flow_data$nhd_prep)
-      }
-      incProgress(1/8, detail = "Mapping")
-      
-      # Map data
-      clearMarkers()
-      add_layers(map = leafletProxy("map"), values = values)
-      # values$start_editing <- 0 
-      # values$end_editing <- 0 
-    })
-    
-    # Update title
-    if (input$do == 1) {
-      updateTextInput(session = session, inputId =  "place", value = "")
-    }
-    
-    # Page title
-    output$data_loc <- renderText({ input$place })
-    
-    #Table 1: Station info
-    output$stations = renderTable({station_table(values)}, striped = TRUE, sanitize.text.function = function(x) x)
-    
-    # Table 2: Flowline info
-    output$Flowlines = renderTable(flowlines_table(values = values), striped = TRUE)
-    
-    # Table 3: NWM info
-    output$meta = renderTable(nwm_table(values), striped = TRUE)
-    
-    ui_flow_only = list("prevCOMID", "nextCOMID", "flow_selector", 
-                        "mark_flowline", "data_csv", "data_rda", 
-                        "data_nhd", "plot_png", "plot_dygraph")
-    
-    # Only set choices if there are flowlines in AOI
-    if(values$any_flow) {
-      # Get and set initial COMID choices 
-      choices = set_choices(values = values)
-      values$choices = choices$choices
-      updatePickerInput(session, 'flow_selector', choices = values$choices, selected = choices$default,
-                        choicesOpt = list(
-                          style = ifelse(choices$non_zeros,
-                                         yes = "color:#0069b5;font-weight:bold;",
-                                         no = "style=color:#a8a8a8")
-                        )
-      )
-      
-      # Set initial values based on default COMID
-      update_cur_id(choices$default)
-      
-      show_hide_all(elements = ui_flow_only, action = "enable")
-      
-    } 
-    # Disable stream-specific UI elements
-    else {
-      showNotification("No flowlines found in this AOI", type = "error", duration = 10)
-      values$choices = NULL
-      updatePickerInput(session, 'flow_selector', choices = "", selected = NULL)
-      show_hide_all(elements = ui_flow_only, action = "disable")
-    }
-    
-    # Re-enable search
-    shinyjs::enable("do")
-  })
   
   # Move to current location when possible
   observe({
-    if(!is.null(input$lat)){
-      updateTextInput(session = session, inputId =  "place", value = paste(input$lat, input$long, sep = " "), placeholder = "Current Location")
-      shinyjs::click("do")
-    } else if (!is.null(input$getIP)) {
-      updateTextInput(session = session, inputId = "place", value = paste(input$getIP$latitude, input$getIP$longitude, sep = " "), placeholder = "Search FlowFinder")
-      shinyjs::click("do")
+    lat <- input$lat
+    ip <- input$getIP
+    move_to_current_location()
+  })
+  
+  observe({
+    req(input$currentLoc)
+    move_to_current_location()
+  })
+  
+  clearMarkers <- function() {
+    leafletProxy("map") %>%
+      clearGroup(list("view-on-map", "up-stream", "down-stream"))
+  }
+  
+  # Render map
+  output$map <- renderLeaflet({ basemap() })
+  
+  location <- reactive({
+   get_location(place = input$place)
+  })
+ 
+  state <- reactive({
+   latlong2state(lat = location()$lat, lon = location()$lon)
+  })
+ 
+  observe({
+    if (is.null(state())) {
+      showNotification("Warning: AOI appears to be outside CONUS", type = "warning", duration = 10)
     }
   })
   
-  ########## MAP TAB ####################################################################
+  rawData <- reactive({
+    req(input$place)
+    req(location()$lat)
+    req(state())
+    isolate({
+      withProgress(message = 'Analyzing Location', value = 0, {
+        incProgress(1/8, detail = "Getting location information")
+        if (is.null(location_information$bbox)) {
+          location_information$area <- 15^2
+          AOI <- AOI::getAOI(clip = list(location()$lat, location()$lon, 15, 15))
+        } else {
+          AOI <- AOI::bbox_sp(location_information$bbox)
+        }
+        incProgress(2/8, detail = "Finding nearby streams")
+        NHD <- HydroData::findNHD(AOI = AOI, ids = TRUE)
+        incProgress(4/8, detail = "Finding nearby waterbodies")
+        WB <- HydroData::findWaterbodies(AOI = AOI)
+        incProgress(6/8, detail = "Finding nearby NWIS stations")
+        NWIS <- findNWIS(AOI = AOI)
+        location_information$bbox <- NULL
+        flags$nwm_calculated <- FALSE
+        flags$filter_initial_draw = FALSE
+        flags$filterable_data = FALSE
+      })
+      list(AOI = NHD$AOI, nhd = NHD$nhd, waterbodies = WB$waterbodies, nwis = NWIS$nwis)
+    })
+  })
   
-  # Clear markers on map
-  clearMarkers <- function() {
-    leafletProxy("map", session) %>%
-      clearGroup(list("view-on-map", "up-stream", "down-stream"))
-  }
+  observe({
+    req(rawData())
+    isolate({
+      leafletProxy("map") %>%
+        clearGroup(group = list("NHD Flowlines", "Location", "USGS Stations", "Water bodies", "AOI")) %>%
+        add_location(values = location()) %>% 
+        add_bounds(AOI = rawData()$AOI) %>%
+        add_water_bodies(wb = rawData()$waterbodies) %>%
+        add_flows(data = rawData()$nhd, color = "blue", opacity = 0.5) %>%
+        add_stations(values = rawData()$nwis)
+    })
+  })
+  
+  # Get Downstream Values
+  downstream <- reactive({
+    prep_nhd(flines = rawData()$nhd)
+  })
+  
+  # Map Downstream Flows
+  observe({
+    req(input$downStream)
+    clearMarkers()
+    downstream() %>% 
+      filter(comid == input$downStream$comid) %>% 
+      .$toCOMID %>% (function(df) {
+        mark_up_down(map = leafletProxy("map", session), 
+                     values = rawData(), 
+                     stream = input$downStream$comid, 
+                     data = rawData()$nhd[rawData()$nhd$comid %in% df,], 
+                     group = "down-stream", 
+                     color = "red")
+      }) 
+  })
+  
+  upstream <- reactive({
+    get_upstream(flines = downstream())
+  })
   
   # Reset button
   observeEvent(input$reset, { clearMarkers() })
   
-  # Mark upstream flows from leaflet popup
+  # Map Upstream Flows
   observe({
-    if (is.null(input$upStream))
-      return()
+    req(input$upStream)
     clearMarkers()
-    
-    from_nodes <- values$hmm %>% 
+    upstream() %>% 
       filter(comid == input$upStream$comid) %>% 
-      .$fromCOMID
-    
-    mark_up_down(map = leafletProxy("map", session), 
-                 values = values, 
-                 stream = input$upStream$comid, 
-                 data = values$flow_data$nhd[values$flow_data$nhd$comid %in% from_nodes,], 
-                 group = "up-stream", 
-                 color = "#84bd00")
+      .$fromCOMID %>% (function(df) {
+        mark_up_down(map = leafletProxy("map", session), 
+                     values = rawData(), 
+                     stream = input$upStream$comid, 
+                     data = rawData()$nhd[rawData()$nhd$comid %in% df,], 
+                     group = "up-stream", 
+                     color = "#84bd00")
+      }) 
   })
-  
-  # Mark downstream flows from leaflet popup
-  observe({
-    if (is.null(input$downStream))
-      return()
-    clearMarkers()
-    
-    to_nodes <- values$flow_data$nhd_prep %>% 
-      filter(comid == input$downStream$comid) %>% 
-      .$toCOMID
-    
-    mark_up_down(map = leafletProxy("map", session), 
-                 values = values, 
-                 stream = input$downStream$comid, 
-                 data = values$flow_data$nhd[values$flow_data$nhd$comid %in% to_nodes,], 
-                 group = "down-stream", 
-                 color = "red")
-  })
-  
-  # Select flowline from popup
-  observe({
-    if (is.null(input$goto))
-      return()
-    updatePickerInput(session = session, inputId = "flow_selector", selected = input$goto$text)
-  })
-  
   
   observeEvent(input$map_draw_edited_features,{
     feature <- input$map_draw_edited_features
@@ -340,17 +196,19 @@ shinyServer(function(input, output, session) {
         feature$features[[1]]$geometry$coordinates[[1]][[2]][[2]]
       )
       
-      values$cent_lat <- ((max(lat) - min(lat))/2) + min(lat)
-      values$cent_lng <- ((max(lng) - min(lng))/2) + min(lng)
+      location_information$bbox <- append(lng, lat)
       
-      values$bbox <- append(lng, lat)
+      region_info <- AOI::bbox_sp(location_information$bbox) %>% describe()
       
-      region_info <- AOI::bbox_sp(values$bbox) %>% describe()
-      area = region_info$height * region_info$width
+      location_information$cent_lat <- region_info$latCent
+      location_information$cent_lng <- region_info$lngCent
+      location_information$area = region_info$height * region_info$width
       
-      if (area < 4000) {
-        updateTextInput(session = session, inputId =  "place", value = paste(values$cent_lat, values$cent_lng, sep = " "), placeholder = "Current Location")
-        shinyjs::click("do")
+      if (location_information$area < 400) {
+        updateSearchInput(session = session, inputId =  "place", 
+                          value = paste(location_information$cent_lat, location_information$cent_lng, sep = " "), 
+                          placeholder = "Current Location",
+                          trigger = TRUE)
       } else {
         confirmSweetAlert(
           session = session, inputId = "aoiconfirmation", type = "warning",
@@ -360,19 +218,16 @@ shinyServer(function(input, output, session) {
         )
       }
     }
-    
-    
-    
   })
   
   observeEvent(input$aoiconfirmation,{
     if (input$aoiconfirmation) {
-      updateTextInput(session = session, inputId =  "place", value = paste(values$cent_lat, values$cent_lng, sep = " "), placeholder = "Current Location")
-      shinyjs::click("do")
+      updateTextInput(session = session, inputId =  "place", value = paste(location_information$cent_lat, location_information$cent_lng, sep = " "), placeholder = "Current Location")
+      shinyjs::click("place_search")
     } else {
       leafletProxy("map", session) %>% 
         clearGroup("AOI") %>% 
-        add_bounds(AOI = values$flow_data$AOI)
+        add_bounds(AOI = rawData()$AOI)
     }
   })
   
@@ -390,10 +245,10 @@ shinyServer(function(input, output, session) {
     req(input$map_draw_editstart)
     isolate({
       loc = input$map_click
-      bbox = values$flow_data$AOI@bbox
+      bbox = rawData()$AOI@bbox
       if (loc$lng < bbox[1] || loc$lng > bbox[3] || loc$lat > bbox[2] || loc$lat < bbox[4]) {
         runjs("
-          var saveButton = document.getElementsByClassName('leaflet-draw-actions')[0].firstChild.firstChild;
+              var saveButton = document.getElementsByClassName('leaflet-draw-actions')[0].firstChild.firstChild;
               saveButton.click();
               ")
       }
@@ -434,51 +289,114 @@ shinyServer(function(input, output, session) {
     session$sendCustomMessage("started_editing", "stop")
   })
   
-  
-  
   ########## DATA TAB ####################################################################
   
-  # Update current ID info when selector is changed
-  observeEvent(input$flow_selector, {
-    req(input$flow_selector)
-    update_cur_id(input$flow_selector)
+  NWM <- reactiveValues()
+  
+  
+  # Select flowline from popup
+  observe({
+    if (is.null(input$goto))
+      return()
+    updatePickerInput(session = session, inputId = "flow_selector", selected = input$goto$text)
   })
   
-  # Generate dygraph plot
-  output$dygraph <- dygraphs::renderDygraph({
-    req(values$any_flow, input$flow_selector)
-    withProgress(message = 'Analyzing Location', value = .5, {
-      dygraph_plot(values = values, selected = input$flow_selector )
+  # Calculate NWM when data tab is switched to
+  # flags$nwm_calculated is used to prevent unnecessarily re-calculating NWM
+  observe({
+    req(input$nav=="data" || input$nav=="filter")
+    isolate({
+      if(!flags$nwm_calculated) {
+        withProgress(message = 'Fetching Data', value = .6, {
+          flags$nwm_calculated <- TRUE
+          NWM$data <- subset_nomads(comids = rawData()$nhd$comid)
+        })
+      }
     })
   })
   
-  # Keep as easy way to vizualize downloadable ggplot
-  # output$plot2<-renderPlot({
-  #   static_plot(values = values, selected = input$flow_selector )
-  # })
+  timezone <- reactive({
+    req(input$nav=="data" || input$nav=="Info")
+    lutz::tz_lookup_coords(location()$lat, location()$lon, method = "accurate")
+  })
+  
+  normals <- reactive({
+    req(input$nav=="data" || input$nav=="filter")
+    fst::read_fst(path = month_files)
+  })
+  
+  streams <- reactive({
+    rawData()$nhd@data %>%
+      select(comid, gnis_name) %>%
+      mutate(name = paste0(
+        paste0(ifelse(is.na(gnis_name), "", gnis_name)),
+        paste0(" COMID: ", comid))) %>%
+      select(-gnis_name)
+  })
+  
+  positive_streams <- reactive({
+    NWM$data %>%
+      filter(Q_cfs > 0) %>%
+      select(COMID) %>%
+      distinct() %>%
+      .$COMID 
+  })
+  
+  positive_stream_names <- reactive({
+    req(positive_streams())
+    purrr::map_lgl(getIDs(streams()$name), ~(. %in% positive_streams()))
+  })
+  
+  max_stream <- reactive({
+    req(NWM$data)
+    NWM$data %>%
+      top_n(1, Q_cfs) %>%
+      .$COMID
+  })
+  
+  default_stream <- reactive({
+    streams() %>%
+      filter(comid == max_stream()[1]) %>%
+      .$name
+  })
+
+  observe({
+    req(NWM$data, positive_stream_names())
+    isolate({
+      default <- ifelse(is.null(input$goto), default_stream(), input$goto)
+      updatePickerInput(session, 'flow_selector', 
+                        choices = streams()$name,
+                        selected = default,
+                        choicesOpt = list(
+                          style = ifelse(positive_stream_names(),
+                                         yes = "color:#0069b5;font-weight:bold;",
+                                         no = "style=color:#a8a8a8")
+                        ))
+    })
+  })
   
   # Previous stream button
   observeEvent(input$prevCOMID, {
-    current <- which(values$choices == input$flow_selector)
+    current <- which(streams()$name == input$flow_selector)
     if(current > 1){
       updatePickerInput(session, "flow_selector",
-                        selected = values$choices[current - 1])
+                        selected = streams()$name[current - 1])
     }
   })
   
   # Next stream button
   observeEvent(input$nextCOMID, {
-    current <- which(values$choices == input$flow_selector)
-    if(current < length(values$choices)){
+    current <- which(streams()$name == input$flow_selector)
+    if(current < length(streams()$name)){
       updatePickerInput(session, "flow_selector",
-                        selected = values$choices[current + 1])
+                        selected = streams()$name[current + 1])
     }
   })
   
   # View on map button
   observeEvent(input$mark_flowline, {
     clearMarkers()
-    reaches = values$flow_data$nhd[values$flow_data$comid %in% getIDs(input$flow_selector), ]
+    reaches = rawData()$nhd[rawData()$nhd$comid %in% getIDs(input$flow_selector), ]
     bb = AOI::getBoundingBox(reaches)
     leafletProxy("map", session) %>%
       fitBounds(min(bb@bbox[1,]), min(bb@bbox[2,]), max(bb@bbox[1,]), max(bb@bbox[2,])) %>% 
@@ -491,32 +409,130 @@ shinyServer(function(input, output, session) {
       )
   })
   
-  # Find up/downstream streams for current COMID
-  observe({
-    req(values$flow_data$nhd)
-    values$up_down_stream = find_connecting_streams(values = values)
+  current_id <- reactive({
+    getIDs(input$flow_selector)[1]
   })
   
-  # Activate/Deactivate buttons depending on number of COMIDs selected
-  observe({
-    elements = list("tbl_up", "tbl_down", "prevCOMID", "nextCOMID")
-    if (length(input$flow_selector) > 1) {
-      show_hide_all(elements = elements, action = "hide")
-    } else {
-      show_hide_all(elements = elements, action = "show")
+  current_data <- reactive({
+    req(NWM$data)
+    NWM$data %>%
+      filter(COMID == current_id())
+  })
+
+  current_xts <- reactive({
+    req(NWM$data)
+    req(!is.null(input$flow_selector))
+    selected = input$flow_selector
+    isolate({
+      output <- matrix(ncol=length(selected), nrow=length(current_data()$dateTime))
+      ids = c()
+      for (j in 1:length(selected)) {
+        text = selected[j]
+        id = getIDs(text)[1]
+        
+        data = NWM$data %>% 
+          filter(COMID == id)
+        
+        output[,j] <- data$Q_cfs
+        ids = c(ids, as.character(id))
+      }
+      df <- data.frame(output)
+      colnames(df) <- ids
+      xts::xts(df, order.by = lubridate::with_tz(data$dateTime, tzone = timezone()), tz = timezone())
+      # xts::xts(df, order.by = lubridate::with_tz(data$dateTime))
+    })
+  })
+  
+  dygraph <- reactive({
+    req(current_xts())
+    
+    graph <- dygraphs::dygraph(current_xts())  %>%
+      dyOptions(drawPoints = TRUE,
+                pointSize = 2,
+                gridLineColor = "lightblue",
+                useDataTimezone = TRUE) %>%
+      dyRangeSelector(height = 20) %>%
+      dyAxis("x", drawGrid = FALSE) %>%
+      dyHighlight(highlightCircleSize = 5,
+                  highlightSeriesBackgroundAlpha = 1) %>%
+      dyAxis("y", label = "Streamflow (cfs)" )%>%
+      dyLegend(show = "onmouseover")
+    
+    if (length(input$flow_selector) == 1) {
+      
+      mn = mean(zoo::coredata(current_xts()), na.rm = TRUE)
+      std = sd(zoo::coredata(current_xts()), na.rm = TRUE)
+      
+      cutoff <- normals() %>% 
+        filter(COMID == current_id())
+      
+      cutoff = cutoff[,2] * 35.3147
+    
+      graph = graph %>%
+        dyOptions(
+          useDataTimezone = TRUE,
+          drawPoints = TRUE, 
+          pointSize = 2,
+          gridLineColor = "lightblue",
+          fillGraph = TRUE, 
+          fillAlpha = 0.1 ) %>% 
+        dyLimit(cutoff, 
+                strokePattern = "solid", 
+                color = "red", 
+                label = paste0("Monthly Average (", round(cutoff,2), " cfs)")) %>%
+        dyShading(from = mn - std, 
+                  to = mn + std, 
+                  axis = "y")
     }
+    graph
+  })
+  
+  output$dygraph <- dygraphs::renderDygraph({
+    dygraph()
+  })
+  
+  # Keep as easy way to vizualize downloadable ggplot
+  # output$plot2<-renderPlot({
+  #   req(NWM$data, input$flow_selector)
+  #   static_plot(values = NWM, selected = input$flow_selector, id = current_id(), normals = normals())
+  # })
+  
+  upstream_from <- reactive({
+    req(current_id())
+    upstream = data.frame(Upstream=NA)[numeric(0), ]
+    up = rawData()$nhd[rawData()$nhd$comid %in% c(upstream()[upstream()$comid == current_id(), 2]),]
+    if (length(up) > 0) {
+      upstream = data.frame(paste0(paste0(ifelse(is.na(up$gnis_name), "", up$gnis_name)), paste0(" COMID: ", up$comid)))
+      colnames(upstream) = c("Upstream")
+    }
+    upstream
   })
   
   # Upstream Table
   output$tbl_up <- DT::renderDataTable({
-    req(values$any_flow)
-    stream_table(data = values$up_down_stream$upstream, direction = "upstream", values = values, session = session)
+    upstream <- upstream_from()
+    isolate({
+      stream_table(data = upstream, direction = "upstream", current_id = current_id(), session = session)
+    })
+  })
+  
+  downstream_from <- reactive({
+    req(current_id())
+    downstream = data.frame(Downstream=NA)[numeric(0), ]
+    down = rawData()$nhd[rawData()$nhd$comid %in% c(downstream()[downstream()$comid == current_id(), 4]),]
+    if (length(down) > 0) {
+      downstream = data.frame(paste0(paste0(ifelse(is.na(down$gnis_name), "", down$gnis_name)), paste0(" COMID: ", down$comid)))
+      colnames(downstream) = c("Downstream")
+    }
+    downstream
   })
   
   # Downstream Table
   output$tbl_down <- DT::renderDataTable({
-    req(values$any_flow)
-    stream_table(data = values$up_down_stream$downstream, direction = "downstream", values = values, session = session)
+    downstream <- downstream_from()
+    isolate({
+      stream_table(data = downstream, direction = "downstream", current_id = current_id(), session = session)
+    })
   })
   
   # After 'eye' icon is clicked in up/downstream tables
@@ -531,6 +547,16 @@ shinyServer(function(input, output, session) {
         }
         updatePickerInput(session = session, inputId = "flow_selector", selected = streams)
       })
+    }
+  })
+  
+  # Activate/Deactivate buttons depending on number of COMIDs selected
+  observe({
+    elements = list("tbl_up", "tbl_down", "prevCOMID", "nextCOMID")
+    if (length(input$flow_selector) > 1) {
+      show_hide_all(elements = elements, action = "hide")
+    } else {
+      show_hide_all(elements = elements, action = "show")
     }
   })
   
@@ -551,61 +577,82 @@ shinyServer(function(input, output, session) {
             text.data = 'Check one or more boxes'
             ")
     }
-    })
+  })
   
-  ########## MAP TAB ####################################################################
+  
+  
+  ########## HIGH FLOWS TAB ####################################################################
   
   # Set high flows map
-  output$flood_map <- renderLeaflet({ flood_map })
+  
+  # flood_map <- reactive({
+  #   req(input$nav=="high_flows")
+  #   load('data/current_nc/flood_map.rda')
+  #   flood_map
+  # })
+  
+  high_flows_data <- reactiveValues()
+  
+  observe({
+    # req(input$nav=="high_flows")
+    tab = input$nav
+    isolate({
+      if(!flags$high_flows_loaded && (tab == "high_flows" || tab == "data")) {
+        load('data/current_nc/flood_map.rda')
+        flags$high_flows_loaded <- TRUE
+        high_flows_data$map <- flood_map
+      }
+    })
+  })
+  
+  
+  output$flood_map <- renderLeaflet({ 
+    req(high_flows_data$map)
+    high_flows_data$map
+  })
+  
+
+  colors = rep(c("orange", "green", "red", "purple",
+                 "lightblue", "lightgreen", "pink", "lightred", "gray",
+                 "darkblue", "darkred", "darkgreen", "darkpurple"), 10)
   
   # Generate dygraph plot
   output$flood_dygraph <- dygraphs::renderDygraph({
     req(input$map_flood$comid)
-    reset = values$reset_fl_graph
     comid = input$map_flood$comid
     isolate({
       if (comid == "reset") {
-        values$flood_data <- NULL
-        dygraph(data = data.frame(x = 1)) %>%
-          dyOptions(drawGrid = FALSE,
-                    drawYAxis = FALSE,
-                    drawXAxis = FALSE)
+        high_flows_data$data <- NULL
       } else {
-        #values$flood_data_ids <- ifelse(is.null(values$flood_data_ids), comid, c(values$flood_data_ids, comid))
-        if (is.null(values$flood_data_ids)) {
-          values$flood_data_ids <- comid
+        if (is.null(high_flows_data$data_ids)) {
+          high_flows_data$data_ids <- comid
         } else {
-          values$flood_data_ids <- c(values$flood_data_ids, comid)
+          high_flows_data$data_ids <- c(high_flows_data$data_ids, comid)
         }
-        
         withProgress(message = 'Making plot', value = .5, {
-          new_data = dygraph_flood(comid = comid, data = values$flood_data, number = length(values$flood_data_ids))
-          values$flood_data = new_data$data_set
+          new_data = dygraph_flood(comid = comid, data = high_flows_data$data, number = length(high_flows_data$data_ids))
+          high_flows_data$data = new_data$data_set
           new_data$graph
         })
       }
     })
   })
   
+  high_flows_selected_id <- reactive({
+    req(input$map_flood$comid)
+    input$map_flood$comid
+  })
+  
   observe({
     req(input$map_flood$comid)
     comid = input$map_flood$comid
-    
     isolate({
       if (comid == "reset") {
-        values$flood_data_ids <- NULL
+        high_flows_data$data_ids <- NULL
         leafletProxy("flood_map", session) %>%
           clearGroup("flood_markers")
       } else {
-        colors = c("orange", "green", "red", "purple",
-                   "lightblue", "lightgreen", "pink", "lightred", "gray",
-                   "darkblue", "darkred", "darkgreen", "darkpurple",
-                   "orange", "green", "red", "purple",
-                   "lightblue", "lightgreen", "pink", "lightred", "gray",
-                   "darkblue", "darkred", "darkgreen", "darkpurple")
-        
-        color = colors[length(values$flood_data_ids) + 1]
-        
+        color = colors[length(high_flows_data$data_ids) + 1]
         leafletProxy("flood_map", session) %>%
           addAwesomeMarkers(
             icon = awesomeIcons(
@@ -614,7 +661,6 @@ shinyServer(function(input, output, session) {
               library = 'fa',
               markerColor = color
             ),
-            data = data,
             lat = as.numeric(input$map_flood$lat),
             lng = as.numeric(input$map_flood$lon),
             popup = paste0("<strong>NHD COMID: </strong>", comid),
@@ -624,47 +670,136 @@ shinyServer(function(input, output, session) {
     })
   })
   
+  ########## INFO TAB ####################################################################
+  
+  # Page title
+  output$data_loc <- renderText({ 
+    input$place 
+  })
+  
+  # Table 1: Station info
+  output$stations = renderTable({
+    station_table(rawData()$nwis)
+  }, striped = TRUE, sanitize.text.function = function(x) x)
+
+  # Table 2: Flowline info
+  output$Flowlines = renderTable({
+    flowlines_table(values = rawData()$nhd, 
+                    area = location_information$area, 
+                    waterbodies = length(rawData()$waterbodies))
+  }, striped = TRUE)
+
+  # Table 3: NWM info
+  output$meta = renderTable({
+    nwm_table(timezone = timezone())
+  }, striped = TRUE)
+
   ########## FILTER TAB ####################################################################
   
+  filterable <- reactiveValues()
+  values <- reactiveValues() # TODO Replace
+  
+  find_diff <- function(id) {
+    diff(NWM$data %>% filter(COMID == id) %>% .$Q_cfs)
+  }
+  
+  observe({
+    req(NWM$data, input$nav=="filter")
+    isolate({
+      if(!flags$filterable_data) {
+        withProgress(message = 'Generating Filterable Data', value = .6, {
+          
+          vals = NWM$data %>% 
+            tidyr::spread(dateTime, Q_cfs) %>% 
+            select(-agency_code) %>% 
+            rename("comid" = COMID)
+          
+          nwm_summary <- NWM$data %>% 
+            group_by(COMID) %>% 
+            summarise(max = max(Q_cfs), 
+                      mean = mean(Q_cfs), 
+                      min = min(Q_cfs)) %>%
+            mutate(range = max - min) %>% 
+            rename("comid" = COMID)
+          
+          averages = normals() %>%
+            `colnames<-`(c("comid", "month_avg")) %>% 
+            mutate(month_avg = month_avg * 35.3147)
+            
+          diff_matrix <- matrix(ncol=length(unique(NWM$data$dateTime)), nrow=length(nwm_summary$comid))
+          for (j in 1:length(nwm_summary$comid)) {
+            id = nwm_summary$comid[j]
+            diff_matrix[j,] <- c(id, find_diff(id))
+          }
+          
+          diff_df <- data.frame(diff_matrix)
+          colnames(diff_df) <- c("comid", paste0('der_',unique(NWM$data$dateTime)[1:39]))
+            
+          filterable$data <- rawData()$nhd %>%
+            inner_join(vals, by = "comid") %>% 
+            inner_join(nwm_summary, by = "comid") %>% 
+            inner_join(averages, by = "comid") %>% 
+            mutate(mean_dif = mean - month_avg) %>% 
+            inner_join(diff_df, by = "comid")
+            
+          values$palette <- create_palette(vals = nwm_summary$max)
+          values$range_palette <- create_palette(vals = nwm_summary$range)
+          values$mean_palette <- create_palette(vals = nwm_summary$mean)
+          values$month_palette <- create_palette(vals = filterable$data$month_avg)
+            
+          mag = max(abs(c(max(diff_matrix[,2:40], na.rm = T), min(diff_matrix[,2:40], na.rm = T))))
+          values$deriv_palette <- create_palette(vals = mag, continuous = FALSE)
+            
+          mag = max(abs(c(max(filterable$data$mean_dif, na.rm = T), min(filterable$data$mean_dif, na.rm = T))))
+            
+          values$mean_dif_palette <- create_palette(vals = mag, continuous = FALSE)
+          flags$filterable_data <- TRUE
+     
+        })
+      }
+    })
+  })
+  
   output$displayOptions <- renderUI({
-    req(values$nwm)
-    if (input$display_type == "Static") {
-      awesomeRadio(inputId = "flow_display", 
-                   label = NULL, 
-                   choices = c("Default" = "default",
-                               "Positive" = "positive",
-                               "Month Average" = "month_avg",
-                               "Average" = "mean",
-                               "Average Comparison" = "mean_dif",
-                               "Peak Flow" = "max_value",
-                               "Range" = "range"),
-                   checkbox = TRUE)
-    }
-    
-    else {
-      values$nwm <- values$nwm %>% 
-        mutate(data_char = as.character.POSIXt(values$nwm$dateTime, tz = "GMT"))
-      values$times = unique(values$nwm$data_char)
-      clearGroup(map = leafletProxy("map2"), group = "NHD Flowlines")
-      list(
-        awesomeRadio(inputId = "flow_display_dy", 
+    # req(values$nwm)
+    req(input$display_type)
+    isolate({
+      if (input$display_type == "Static") {
+        awesomeRadio(inputId = "flow_display", 
                      label = NULL, 
-                     choices = c("Time Series" = "time_series",
-                                 "Change" = "deriv",
-                                 "Positive" = "positive"),
-                     checkbox = TRUE),
-        sliderInput("selected_time", NULL,
-                    min = as.POSIXct(values$times[1],tz = "GMT"), 
-                    max = as.POSIXct(values$times[length(values$times)], tz = "GMT"),
-                    ticks = FALSE,
-                    value = as.POSIXct(values$times[1], tz = "GMT"), step = 10800,
-                    timezone = "+0000",
-                    timeFormat = "%F %T",
-                    animate =
-                      animationOptions(interval = 750, loop = FALSE))
-      )
-    }
-    
+                     choices = c("Default" = "default",
+                                 "Positive" = "positive",
+                                 "Month Average" = "month_avg",
+                                 "Average" = "mean",
+                                 "Average Comparison" = "mean_dif",
+                                 "Peak Flow" = "max_value",
+                                 "Range" = "range"),
+                     checkbox = TRUE)
+      }
+      
+      else {
+        values$times = unique(as.character(.POSIXct(NWM$data$dateTime, tz = "GMT")))
+
+        clearGroup(map = leafletProxy("map_filter"), group = "NHD Flowlines")
+        list(
+          awesomeRadio(inputId = "flow_display_dy", 
+                       label = NULL, 
+                       choices = c("Time Series" = "time_series",
+                                   "Change" = "deriv",
+                                   "Positive" = "positive"),
+                       checkbox = TRUE),
+          sliderInput("selected_time", NULL,
+                      min = as.POSIXct(values$times[1],tz = "GMT"), 
+                      max = as.POSIXct(values$times[length(values$times)], tz = "GMT"),
+                      ticks = FALSE,
+                      value = as.POSIXct(values$times[1], tz = "GMT"), step = 10800,
+                      timezone = "+0000",
+                      timeFormat = "%F %T",
+                      animate =
+                        animationOptions(interval = 750, loop = FALSE))
+        )
+      }
+    })
   })
   
   observe({
@@ -691,79 +826,24 @@ shinyServer(function(input, output, session) {
         id = "legend_switch",
         icon="fa-key", title="",
         onClick=JS("function(btn, map){ 
-                   $('.legend').toggle();; 
-  }")))
+                      $('.legend').toggle();; 
+                    }")))
   })
   
-  output$map2 <- renderLeaflet({ 
-    req(values$flow_data$nhd)
-    basemap_filter() %>%  
-      add_bounds(AOI = values$flow_data$AOI) %>%
-      add_flows(data = values$flow_data$nhd, color = divergent_colors(1))
-  })
-  
-  observe({
-    req(values$flow_data$nhd, values$filtered_data)
-    values$static_dic = list(
-      default = list(divergent_colors(1), list(divergent_colors(1), c('Flowline'), NULL)),
-      positive = list(~positive_pal(values$filtered_data$max),list(divergent_colors(2), c('0', '>0'), "Q_cfs")),
-      month_avg = list(~values$month_palette$pal(values$filtered_data$month_avg), values$month_palette),
-      mean = list(~values$mean_palette$pal(values$filtered_data$mean), values$mean_palette),
-      mean_dif = list(~values$mean_dif_palette$pal(values$filtered_data$mean_dif), values$mean_dif_palette),
-      max_value = list(~values$palette$pal(values$filtered_data$max), values$palette),
-      range = list(~values$range_palette$pal(values$filtered_data$range), values$range_palette)
-    )
-  })
-  
-  observe({
-    req(input$display_type == "Static")
-    req(values$static_dic, input$flow_display)
-    type = input$flow_display
+  output$map_filter <- renderLeaflet({ 
+    req(input$nav=="filter")
     isolate({
-      data = eval(parse(text = paste0('values$static_dic$', "`", type,"`")))
-      clearGroup(map = leafletProxy("map2"), group = "NHD Flowlines")
-      add_flows(map = leafletProxy("map2"), data = values$filtered_data, color = data[[1]])
-      if (!type %in% c("default", "positive")) {
-        add_legend(pal = data[[2]])
-      } 
-      else {
-        add_legend(colors = data[[2]][[1]], labels = data[[2]][[2]], title = data[[2]][[3]])
-      }
-    })
-  })
-  
-  observe({
-    req(values$flow_data$nhd, values$filtered_data)
-    values$dynamic_dic = list(
-      # name = list(color, pal, legend)
-      deriv = list('values$filtered_data@data$`der_', values$deriv_palette$pal, values$deriv_palette),
-      time_series = list('values$filtered_data@data$`', values$palette$pal, values$palette),
-      positive = list('values$filtered_data@data$`', positive_pal, list(divergent_colors(2), c('0', '>0'), "Q_cfs"))
-    )
-  })
-  
-  observe({
-    req(input$display_type == "Dynamic")
-    req(input$selected_time, values$filtered_data, input$flow_display_dy, values$dynamic_dic)
-    type = input$flow_display_dy
-    isolate({
-      time = as.character.POSIXt(input$selected_time, format = "%Y-%m-%d %H:%M:%S", tz = "GMT")
-      data = eval(parse(text = paste0('values$dynamic_dic$', "`", type,"`")))
-      color_determination = eval(parse(text = paste0(data[[1]], time,"`")))
-      add_flows(map = leafletProxy("map2"), data =  values$filtered_data, ~data[[2]](color_determination))
-      
-      if (input$flow_display_dy == "positive") {
-        add_legend(colors = data[[3]][[1]], labels = data[[3]][[2]], title = data[[3]][[3]])
-      }
-      else {
-        add_legend(pal = data[[3]])
+      if(!flags$filter_initial_draw) {
+        # flags$filter_initial_draw <- TRUE
+        basemap_filter() %>%  
+          add_bounds(AOI = rawData()$AOI)# %>%
+          # add_flows(data = rawData()$nhd, color = divergent_colors(1))
       }
     })
   })
   
   # Options Available For Table
   output$nhd_options <- renderUI({
-    req(values$flow_data$nhd)
     generate_options(href = "collapseNhd", inputID = "nhdSelector", 
                      choices = c("comid",
                                  "gnis_name",
@@ -774,32 +854,86 @@ shinyServer(function(input, output, session) {
                      selected = c("gnis_name", "comid", "lengthkm", "streamorde", "reachcode", "slope"))
   })
   
-  # Put time on map for dynamic sets
-  output$map_time <- renderUI({
-    # req(input$selected_time)
-    if (input$display_type == "Static") {
-      absolutePanel()
-    }
-    else {
-      absolutePanel(id = "time_stamp", top = 0, left = 0, right = 0,
-                    tags$div(id = "ts", tags$h3(HTML(paste(as.character.POSIXt(input$selected_time, format = "%Y-%m-%d %H:%M:%S", tz = "GMT"), "UTC"))))
-      )
-    }
-  })
   
   # Filterable table
   output$nhd_table <- DT::renderDataTable({
-    req(values$flow_data$nhd, input$nhdSelector)
-    data <- values$flow_data$nhd@data %>% 
+    req(filterable$data, input$nhdSelector)
+    data <- filterable$data@data %>% 
       select(one_of(input$nhdSelector))
     base_table(data)
   })
   
   # Generate data set based on filtered table
+  filtered_data <- reactive({
+    req(filterable$data, input$nhd_table_rows_all)
+    isolate({
+      filterable$data %>% 
+        slice(input$nhd_table_rows_all)
+    })
+  })
+  
+  
+  
   observe({
-    req(values$flow_data$nhd, input$nhd_table_rows_all)
-    values$filtered_data <- values$flow_data$nhd %>% 
-      slice(input$nhd_table_rows_all)
+    req(filtered_data())
+    values$static_dic = list(
+      default = list(divergent_colors(1), list(divergent_colors(1), c('Flowline'), NULL)),
+      positive = list(~positive_pal(filtered_data()$max),list(divergent_colors(2), c('0', '>0'), "Q_cfs")),
+      month_avg = list(~values$month_palette$pal(filtered_data()$month_avg), values$month_palette),
+      mean = list(~values$mean_palette$pal(filtered_data()$mean), values$mean_palette),
+      mean_dif = list(~values$mean_dif_palette$pal(filtered_data()$mean_dif), values$mean_dif_palette),
+      max_value = list(~values$palette$pal(filtered_data()$max), values$palette),
+      range = list(~values$range_palette$pal(filtered_data()$range), values$range_palette)
+    )
+  })
+  
+  observe({
+    req(input$display_type == "Static")
+    req(values$static_dic, input$flow_display)
+    type = input$flow_display
+    tab = input$nav
+    isolate({
+      data = eval(parse(text = paste0('values$static_dic$', "`", type,"`")))
+      clearGroup(map = leafletProxy("map_filter"), group = "NHD Flowlines")
+      add_flows(map = leafletProxy("map_filter"), data = filtered_data(), color = data[[1]])
+      if (!type %in% c("default", "positive")) {
+        add_legend(pal = data[[2]])
+      } 
+      else {
+        add_legend(colors = data[[2]][[1]], labels = data[[2]][[2]], title = data[[2]][[3]])
+      }
+    })
+  })
+  
+  observe({
+    req(rawData()$nhd, filtered_data())
+    values$dynamic_dic = list(
+      # name = list(color, pal, legend)
+      deriv = list('filtered_data()@data$`der_', values$deriv_palette$pal, values$deriv_palette),
+      time_series = list('filtered_data()@data$`', values$palette$pal, values$palette),
+      positive = list('filtered_data()@data$`', positive_pal, list(divergent_colors(2), c('0', '>0'), "Q_cfs"))
+    )
+  })
+  
+  observe({
+    req(input$display_type == "Dynamic")
+    req(input$selected_time, input$flow_display_dy, values$dynamic_dic)
+    type = input$flow_display_dy
+    tab = input$nav
+    isolate({
+      time = as.character.POSIXt(input$selected_time, format = "%Y-%m-%d %H:%M:%S", tz = "GMT")
+      data = eval(parse(text = paste0('values$dynamic_dic$', "`", type,"`")))
+      
+      color_determination = eval(parse(text = paste0(data[[1]], time,"`")))
+      add_flows(map = leafletProxy("map_filter"), data = filtered_data(), ~data[[2]](color_determination))
+      
+      if (input$flow_display_dy == "positive") {
+        add_legend(colors = data[[3]][[1]], labels = data[[3]][[2]], title = data[[3]][[3]])
+      }
+      else {
+        add_legend(pal = data[[3]])
+      }
+    })
   })
   
   # Display info module 
@@ -842,4 +976,5 @@ shinyServer(function(input, output, session) {
   })
   
   
-    })
+})
+

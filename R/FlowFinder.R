@@ -33,6 +33,8 @@
 #' 
 #' @importFrom purrr map_chr map map_lgl
 #' 
+#' @importFrom shinycssloaders withSpinner
+#' 
 #' @importFrom tidyr spread
 #' 
 #' @importFrom xts xts

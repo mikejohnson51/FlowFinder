@@ -1,5 +1,3 @@
-load('data/current_nc/flood_map.rda')
-
 # Generate Dygraph
 dygraph_flood <- function(comid, data, number) {
   

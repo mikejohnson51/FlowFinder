@@ -1,10 +1,10 @@
 #Table 1: Station info
 station_table <- function(values) {
-  if(typeof(values$flow_data$nwis) == "S4") {
+  if(typeof(values) == "S4") {
     station_data = cbind(paste0('<a href=',sprintf(
-                            "https://waterdata.usgs.gov/nwis/inventory/?site_no=%s",values$flow_data$nwis$site_no),' target="_blank">',values$flow_data$nwis$site_name,"</a>"),
-                         values$flow_data$nwis$site_no, 
-                         round(values$flow_data$nwis$da_sqkm, digits = 0)
+                            "https://waterdata.usgs.gov/nwis/inventory/?site_no=%s",values$site_no),' target="_blank">',values$site_name,"</a>"),
+                         values$site_no, 
+                         round(values$da_sqkm, digits = 0)
                          )
   } else {
     station_data = cbind('NA', 'NA', 'NA')
@@ -14,37 +14,54 @@ station_table <- function(values) {
 }
 
 # Table 2: Flowline info 
-flowlines_table <- function(values) {
+flowlines_table <- function(values, area, waterbodies) {
   
-  max_order = ifelse(values$any_flow, max(values$flow_data$nhd@data$streamorde), "NA")
-  stream_name = ifelse(values$any_flow, values$flow_data$nhd@data$gnis_name[match(max_order, values$flow_data$nhd@data$streamorde)], "NA")
-  num_flowlines = ifelse(values$any_flow, length(values$flow_data$nhd), 0)
-  num_wb = ifelse(exists('waterbodies', where=values$flow_data), length(values$flow_data$waterbodies), 0)
-  size = 15^2
-  unique_huc8 = ifelse(values$any_flow, paste(unique(as.numeric(na.omit(unique(substr(values$flow_data$nhd$reachcode,1,8))))), collapse = ", "), "NA")
+  max_order = ifelse(!is.null(values), max(values@data$streamorde), "NA")
+  stream_name = ifelse(!is.null(values), values@data$gnis_name[match(max_order, values@data$streamorde)], "NA")
+  num_flowlines = length(values)
+  unique_huc8 = ifelse(!is.null(values), paste(unique(as.numeric(na.omit(unique(substr(values$reachcode,1,8))))), collapse = ", "), "NA")
   
-  table = rbind(cbind("Largest Stream Order: ", max_order),
-                cbind("Largest Stream Name: ", stream_name),
-                cbind("Number of Flowlines: ", num_flowlines),
-                cbind("Number of Water Bodies: ", num_wb),
-                cbind("Total Area (SqMi): ", size),
-                cbind("Unique HUC8 units: ", unique_huc8))
-  colnames(table) = c('Hydrography', 'Value')
+  table = data.frame(
+    "Hydrography" = c("Largest Stream Order", 
+                      "Largest Stream Name",
+                      "Number of Flowlines",
+                      "Number of Water Bodies",
+                      "Total Area (SqMi)",
+                      "Unique HUC8 units"),
+    "Value" = c(max_order, 
+                stream_name,
+                num_flowlines,
+                waterbodies,
+                area,
+                unique_huc8)
+  ) %>% mutate(Hydrography = paste0(Hydrography,": "))
+
   return(table)
 }
 
+get_local_time <- function(dateTime, timezone) {
+  return(as.POSIXct(paste(dateTime$date, dateTime$time), "%Y-%m-%d %H", tz = timezone))
+}
+
 # Table 3: NWM info
-nwm_table <- function(values) {
+nwm_table <- function(timezone = NULL) {
     dateTime = read.csv('data/current_nc/dateTime.csv', stringsAsFactors = FALSE)
-    timeZone = lutz::tz_lookup_coords(values$loc$lat, values$loc$lon, method = "accurate")
-    dif = as.POSIXct(paste(dateTime$date, dateTime$time), "%Y-%m-%d %H", tz = "GMT") - as.POSIXct(paste(dateTime$date, dateTime$time), "%Y-%m-%d %H", tz = timeZone)
     
-    nwm_table = rbind(cbind("Forcast Type: ", "Medium"),
-                      cbind("Forcast Date: ", dateTime$date),
-                      cbind("Forcast Time: ", paste(dateTime$time, "UTC")),
-                      cbind("Local Time Zone: ", timeZone),
-                      cbind("Time Difference: ", dif)
-    )
-    colnames(nwm_table) = c("NWM", "Value")
-    return(nwm_table)
+    dif <- get_local_time(dateTime = dateTime, timezone = "GMT") -
+      get_local_time(dateTime = dateTime, timezone = timezone)
+    
+    table <- data.frame(
+      "NWM" = c("Forcast Type",
+                "Forcast Date",
+                "Forcast Time",
+                "Local Time Zone",
+                "Time Difference"),
+      "Value" = c("Medium",
+                  dateTime$date,
+                  paste(dateTime$time, "UTC"),
+                  timezone,
+                  dif)
+    ) %>% mutate(NWM = paste0(NWM,": "))
+    
+    return(table)
 }
