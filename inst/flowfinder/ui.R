@@ -156,9 +156,9 @@ shinyUI(
                           )
                         ),
                         br(), br(),
-                        dygraphs::dygraphOutput("dygraph") %>% withSpinner(type = 2, color.background = "#FFFFFF"),
+                        dygraphs::dygraphOutput("dygraph") %>% shinycssloaders::withSpinner(type = 7, color.background = "#FFFFFF"),
                         # Keep as easy way to vizualize downloadable ggplot
-                        # plotOutput("plot2"),
+                        #plotOutput("plot2"),
                         br(), br(),
                         fluidRow(
                           column(6,DT::DTOutput('tbl_up')),
@@ -183,7 +183,7 @@ shinyUI(
                           column(5, tableOutput("meta"))
                         )
                ),
-               tabPanel("Filter", icon = icon("filter"),
+               tabPanel("Filter", icon = icon("filter"), value = "filter",
                         dashboardPage(
                           dashboardHeader(disable = TRUE),
                           dashboardSidebar(disable = TRUE),
@@ -235,7 +235,7 @@ shinyUI(
                                      )),
                               column(width = 9,
                                      box(width = NULL,
-                                                leafletOutput("map2", height = 500),
+                                                leafletOutput("map_filter", height = 500) %>% shinycssloaders::withSpinner(type = 7, color.background = "#FFFFFF"),
                                                 uiOutput("map_time")
                                             ),
                                             tags$div(id = "table_box",

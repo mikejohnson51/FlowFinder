@@ -55,7 +55,7 @@ positive_pal <- colorBin(divergent_colors(2), bins = c(-1, 0.000000000000000001,
 
 add_legend <- function(pal = NULL, colors = NULL, labels = NULL, title = NULL) {
   if(!is.null(pal)) {
-    addLegend(map = leafletProxy("map2"),
+    addLegend(map = leafletProxy("map_filter"),
               position = 'topleft',
               layerId = 'legend',
               pal = pal$pal,
@@ -64,7 +64,7 @@ add_legend <- function(pal = NULL, colors = NULL, labels = NULL, title = NULL) {
               title = "Q_cfs")
   }
   else {
-    addLegend(map = leafletProxy("map2"),
+    addLegend(map = leafletProxy("map_filter"),
               position = 'topleft',
               layerId = 'legend',
               colors = colors,

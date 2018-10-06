@@ -13,8 +13,6 @@ source("filter_tab.R")
 month = as.numeric(substr(list.files("data/current_nc")[1], 1,2))
 month_files = list.files("data/", pattern = as.character(month), full.names = T)
 
-size = 15
-
 # Returns COMIDS from stream names
 # getIDs("Monument Creek COMID: 1529685") -> "1529685"
 # getIDs(c("Monument Creek COMID: 1529685", "Fountain Creek COMID: 1529677")) -> "1529685" "1529677"
