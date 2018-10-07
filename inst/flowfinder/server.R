@@ -321,7 +321,7 @@ shinyServer(function(input, output, session) {
   })
   
   normals <- reactive({
-    req(input$nav=="data" || input$nav=="filter")
+    req(input$nav=="data" || input$nav=="filter" || input$nav=="high_flows")
     fst::read_fst(path = month_files)
   })
   
@@ -584,13 +584,6 @@ shinyServer(function(input, output, session) {
   ########## HIGH FLOWS TAB ####################################################################
   
   # Set high flows map
-  
-  # flood_map <- reactive({
-  #   req(input$nav=="high_flows")
-  #   load('data/current_nc/flood_map.rda')
-  #   flood_map
-  # })
-  
   high_flows_data <- reactiveValues()
   
   observe({
@@ -618,7 +611,7 @@ shinyServer(function(input, output, session) {
   
   # Generate dygraph plot
   output$flood_dygraph <- dygraphs::renderDygraph({
-    req(input$map_flood$comid)
+    req(input$map_flood$comid, normals())
     comid = input$map_flood$comid
     isolate({
       if (comid == "reset") {
@@ -630,7 +623,9 @@ shinyServer(function(input, output, session) {
           high_flows_data$data_ids <- c(high_flows_data$data_ids, comid)
         }
         withProgress(message = 'Making plot', value = .5, {
-          new_data = dygraph_flood(comid = comid, data = high_flows_data$data, number = length(high_flows_data$data_ids))
+          new_data = dygraph_flood(comid = comid, data = high_flows_data$data, 
+                                   number = length(high_flows_data$data_ids),
+                                   normals = normals())
           high_flows_data$data = new_data$data_set
           new_data$graph
         })

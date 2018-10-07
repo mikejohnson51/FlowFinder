@@ -1,12 +1,9 @@
 # Generate Dygraph
-dygraph_flood <- function(comid, data, number) {
+dygraph_flood <- function(comid, data, number, normals) {
   
   colors = c("orange", "green", "red", "purple",
              "lightblue", "lightgreen", "pink", "lightred", "gray",
              "darkblue", "darkred", "darkgreen", "darkpurple")
-  
-  
-  color_set = colors[1:(number + 1)]
   
   # Get data for new comid
   subset = subset_nomads(comids = comid)
@@ -36,8 +33,17 @@ dygraph_flood <- function(comid, data, number) {
     dyAxis("y", label = "Streamflow (cfs)" )%>%
     dyLegend(show = "onmouseover")
   
+  
+  
   if (ncol(df) == 1) {
-    cutoff = norm[norm$COMID == comid,][[2]]
+    
+    #cutoff = norm[norm$COMID == comid,][[2]]
+    
+    cutoff <- normals %>% 
+      filter(COMID == comid)
+    
+    cutoff = cutoff[,2] * 35.3147
+    
     mn = mean(df[[2]], na.rm = TRUE)
     std = sd(df[[2]], na.rm = TRUE)
     
