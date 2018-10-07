@@ -266,6 +266,13 @@ h4 { font-weight: 400; }
 
 .table-striped > tbody > tr:nth-of-type(2n+1) { background-color: #e8f5ff; }
 
+#Flowlines {
+    float: left;
+    margin-right: 20px;
+}
+
+#meta { float: left; }
+
 /*****************************************
 *            Stream Flow                 *
 *****************************************/

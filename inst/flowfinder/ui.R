@@ -178,10 +178,12 @@ shinyUI(
                tabPanel("Info", icon = icon("info-circle"),
                         textOutput("data_loc"),   
                         tableOutput("stations"),
-                        fluidRow(
-                          column(5, tableOutput("Flowlines")),
-                          column(5, tableOutput("meta"))
-                        )
+                        tableOutput("Flowlines"),
+                        tableOutput("meta")
+                        # fluidRow(
+                        #   column(5, tableOutput("Flowlines")),
+                        #   column(5, tableOutput("meta"))
+                        # )
                ),
                tabPanel("Filter", icon = icon("filter"), value = "filter",
                         dashboardPage(

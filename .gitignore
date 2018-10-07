@@ -10,4 +10,4 @@ token.rds
 inst/flowfinder/data/*
 inst/flowfinder/data/current_nc/*
 inst/flowfinder/data/current_nc_new/*
-FlowlineFinder.pem.txt
+FlowFinder.pem.txt
