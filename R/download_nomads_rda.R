@@ -2,8 +2,8 @@
 #' 
 #' 
 
-
 download_nomads_rda = function(fileList = NULL, number = 6, dir = NULL){
+  
   if (is.null(dir)) {
     dir <- system.file("flowfinder", package = "FlowFinder")
   }
@@ -11,6 +11,7 @@ download_nomads_rda = function(fileList = NULL, number = 6, dir = NULL){
   dir.create(paste0(dir,'/data/current_nc_new'))
   
   tmp = tempdir()
+  
   for (i in seq_along(fileList[[3]])) {
     download.file(
       url = fileList[[3]][i],
@@ -21,7 +22,7 @@ download_nomads_rda = function(fileList = NULL, number = 6, dir = NULL){
   all.files =  list.files(tmp, pattern = ".nc$", full.names = T)
   
   date  = fileList$date
-  time = fileList$startTime
+  time  = fileList$startTime
   
   month = sprintf("%02d", lubridate::month(date))
   month_files = list.files(paste0(dir,"/data"), pattern = as.character(month), full.names = T)
@@ -47,32 +48,41 @@ download_nomads_rda = function(fileList = NULL, number = 6, dir = NULL){
   
   # Opening first file to get necessary data
   nc_gd <- ncdf4::nc_open(filename = all.files[1])
-  len = nc_gd[["var"]][["streamflow"]][["varsize"]]
-  inc = floor(len/25)
-  start = 1
-  end = start + inc - 1
-  mappingList <- list()
+  # len = nc_gd[["var"]][["streamflow"]][["varsize"]]
+  # inc = floor(len/25)
+  # start = 1
+  # end = start + inc - 1
+  # mappingList <- list()
+  
+  comids = ncdf4::ncvar_get(nc_gd, "feature_id")
+  len = length(comids)
+  mat = matrix(c(comids, rep(NA,23)), ncol = 25, byrow = FALSE) %>% data.frame()
+  
   dir.create(paste0(dir,'/data/current_nc_new/changes'))
   
   message("Entering Loop!")
   
   # We are splitting the ~2.7 million COMIDS into 40 files
   for (i in 1:25) {
-    end = start + inc - 1
-    comids = nc_gd$var$streamflow$dim[[1]]$vals[start:end]
-    df <- matrix(ncol=(length(all.files)+1), nrow=length(comids))
-    df[,1] <- comids
-    # Grab a section of comids from each file
-    for (j in 1:length(all.files)) {
-      nc = ncdf4::nc_open(filename = all.files[j])
-      vals = ncdf4::ncvar_get(nc, "streamflow", start = start, count = inc) * 35.3147
-      #df[, as.character(dates[j])] = vals
-      df[,(j+1)] <- vals
-      ncdf4::nc_close(nc)
-    }
+  
+  start = (i*nrow(mat)) - (nrow(mat) - 1)
+  size = sum(!is.na(mat[,i]))
+      
+      get = function(f, start, size){
+        nc = ncdf4::nc_open(filename = all.files[f])
+        var = ncvar_get(nc, "streamflow", start = start , count = size) * 35.3147
+        nc_close(nc)
+        var
+      }
     
-    df = data.frame(df)
-    colnames(df) <- c("COMID", dates)
+    comids = mat[,i] %>% na.omit()
+    
+    df = data.frame(comids,
+                    lapply(seq_along(all.files),
+                           get,
+                           start = start, size = size) %>%
+                      bind_cols()) %>%
+      setNames(c("COMID", dates))
     
     # Calculate and save changes 
     increases <- df %>%
@@ -90,33 +100,19 @@ download_nomads_rda = function(fileList = NULL, number = 6, dir = NULL){
     
     fst::write_fst(increases, path = paste0(dir,'/data/current_nc_new/changes/',i,'.fst'))
     
-    
-    
-    # writes df to the PostgreSQL database "postgres", table "cartable" 
-    # df <- df %>% rename(comid = COMID)
-    # dbWriteTable(con, paste0("flow_",i), 
-    #              value = df, overwrite = TRUE, row.names = FALSE)
-    
-    df <- df %>% rename(COMID = comid)
-    # Reshape data frame: wide -> long
-    Q <- reshape2::melt(df, id.vars=c("COMID")) %>% 
-      dplyr::mutate(variable = lubridate::ymd_h(variable)) %>% 
-      dplyr::rename(dateTime = variable, Q_cfs = value)
+    Q <- reshape2::melt(df, id.vars=c("COMID"))
+    Q$variable = lubridate::ymd_h(Q$variable)
+    Q <-  dplyr::rename(Q, dateTime = variable, Q_cfs = value)
     
     # Write file with data
     name = paste0(dir,"/data/current_nc_new/",month, "_", sprintf("%02d", i), ".fst")
     fst::write_fst(Q, path = name, compress = 100)
-    
-    names(Q) <- c("comid", "date_time", "q_cfs")
 
-    
-    rm(Q)
-    
     # Get min and maxs for mapping
-    min = min(comids)
-    max = max(comids)
+    min = min(Q$COMID, na.rm = T)
+    max = max(Q$COMID, na.rm = T)
     mappingList[[i]] <- c(i,min,max, as.character(paste0(month, "_", sprintf("%02d", i), ".fst")))
-    start = end +1
+    rm(Q)
     
     message(paste("Completed: ", i))
   }
