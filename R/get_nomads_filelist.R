@@ -23,7 +23,7 @@ get_nomads_filelist = function(type = NULL,
   #}
 
   if (is.null(type)) {
-    type = "medium_range"
+    type = "medium_range_mem1"
   }
 
   base.url <-
@@ -75,7 +75,7 @@ tryCatch({
 
   fileList = fileList[grep("channel", fileList)] ## Extract channel data
 
-  if (type == "medium_range") {
+  if (type == "medium_range_mem1") {
     interval = 6
 
     for (i in seq(18, 0,-6)) {
