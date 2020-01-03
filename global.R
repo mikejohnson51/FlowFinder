@@ -1,5 +1,13 @@
-library(FlowFinder)
 library(dygraphs)
+library(ggplot2)
+library(leaflet)
+library(spdplyr)
+library(shinydashboard)
+library(shinyBS)
+library(shinyWidgets)
+library(HydroData)
+library(AOI)
+
 options(shiny.sanitize.errors = FALSE)
 
 # Add additional R files
