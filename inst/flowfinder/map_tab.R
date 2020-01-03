@@ -78,10 +78,11 @@ add_stations <- function(map, values) {
 
 # Add boundaries to map
 add_bounds <- function(map, AOI) {
-  fitBounds(map, AOI@bbox[1], AOI@bbox[2], AOI@bbox[3], AOI@bbox[4]) %>%
+  bb = AOI::bbox_st(AOI)
+  fitBounds(map, lng1 = bb$xmin, lat1 = bb$ymin, lng2 = bb$xmin, lat2 = bb$ymax) %>%
     addRectangles(
-      lng1 = AOI@bbox[1] , lat1 = AOI@bbox[2],
-      lng2 = AOI@bbox[3] , lat2 = AOI@bbox[4],
+      lng1 = bb$xmin , lat1 = bb$ymin,
+      lng2 = bb$xmax , lat2 = bb$ymax,
       fill = FALSE,
       group = 'AOI', 
       color = "red"
@@ -89,11 +90,12 @@ add_bounds <- function(map, AOI) {
 }
 
 add_bounding_lines <- function(map, AOI) {
-  fitBounds(map, AOI@bbox[1], AOI@bbox[2], AOI@bbox[3], AOI@bbox[4]) %>%
-    addPolylines(lng = c(AOI@bbox[1], AOI@bbox[3]), lat = c(AOI@bbox[4], AOI@bbox[4]), group = "AOI") %>% #top
-    addPolylines(lng = c(AOI@bbox[3], AOI@bbox[3]), lat = c(AOI@bbox[4], AOI@bbox[2]), group = "AOI") %>% #right
-    addPolylines(lng = c(AOI@bbox[3], AOI@bbox[1]), lat = c(AOI@bbox[2], AOI@bbox[2]), group = "AOI") %>% #bottom
-    addPolylines(lng = c(AOI@bbox[1], AOI@bbox[1]), lat = c(AOI@bbox[2], AOI@bbox[4]), group = "AOI")     #left
+  bb = AOI::bbox_st(AOI)
+  fitBounds(map, bb$xmin, bb$ymin, bb$xmax, bb$ymax) %>%
+    addPolylines(lng = c(bb$xmin, bb$xmax), lat = c(bb$ymax, bb$ymax), group = "AOI") %>% #top
+    addPolylines(lng = c(bb$xmax, bb$xmax), lat = c(bb$ymax, bb$ymin), group = "AOI") %>% #right
+    addPolylines(lng = c(bb$xmax, bb$xmin), lat = c(bb$ymin, bb$ymin), group = "AOI") %>% #bottom
+    addPolylines(lng = c(bb$xmin, bb$xmin), lat = c(bb$ymin, bb$ymax), group = "AOI")     #left
 }
 
 # Add water boundaries to map

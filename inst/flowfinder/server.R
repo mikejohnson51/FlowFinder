@@ -111,7 +111,8 @@ shinyServer(function(input, output, session) {
           AOI <- AOI::bbox_sp(location_information$bbox)
         }
         incProgress(2/8, detail = "Finding nearby streams")
-        NHD <- HydroData::findNHD(AOI = AOI, ids = TRUE)
+        NHD <- HydroData::findNHD(AOI = AOI)
+        #NHD = NHD$nhd$comid
         incProgress(4/8, detail = "Finding nearby waterbodies")
         WB <- HydroData::findWaterbodies(AOI = AOI)
         incProgress(6/8, detail = "Finding nearby NWIS stations")
