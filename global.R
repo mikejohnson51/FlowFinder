@@ -54,6 +54,10 @@ get_location <- function(place) {
 # latlong2state(lat = loc$lat, lon = loc$lon)
 latlong2state <- function(lat, lon) {
   
+  return(list(county = "El Paso",
+              state  = "Colorado",
+              state.abb = "CO"))
+  
   df = data.frame(lon = lon, lat = lat)
   pt = sf::st_as_sf(df, coords = c('lon', 'lat'), crs = AOI::aoiProj)
   conus = getAOI(state = "conus") %>% AOI::bbox_st()
