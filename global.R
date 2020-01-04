@@ -54,26 +54,21 @@ get_location <- function(place) {
 # latlong2state(lat = loc$lat, lon = loc$lon)
 latlong2state <- function(lat, lon) {
   
-  return(
-    list(county = "El Paso",
-         state  = "Colorado",
-         state.abb = "CO")
-  )
-  
   df = data.frame(lon = lon, lat = lat)
-  pointsDF = sf::st_as_sf(df, coords = c(lat, lon))
-  conus = getAOI(state = "conus")
-  conus = AOI::bbox_st(conus)
-  lat = dplyr::between(pointsDF$y, conus$ymin, conus$ymax)
-  lng = dplyr::between(pointsDF$x, conus$xmin, conus$xmax)
+  pt = sf::st_as_sf(df, coords = c('lon', 'lat'), crs = AOI::aoiProj)
+  conus = getAOI(state = "conus") %>% AOI::bbox_st()
+  # 
+  # lat = dplyr::between(pointsDF$y, conus$ymin, conus$ymax)
+  # lng = dplyr::between(pointsDF$x, conus$xmin, conus$xmax)
   
-  if((lat+lng) != 2){
+  if (AOI::is_inside(pt, conus)) {
+  #if((lat+lng) != 2){ 
     return(NULL)
   } else {
     
-    tmp = sp::SpatialPoints(coords = cbind(pointsDF$x, pointsDF$y), 
-                            proj4string = sp::CRS(AOI::aoiProj)) %>% sf::st_as_sf()
-    t = AOI::counties[tmp,]
+    # tmp = sp::SpatialPoints(coords = cbind(pointsDF$x, pointsDF$y), 
+    #                         proj4string = sp::CRS(AOI::aoiProj)) %>% sf::st_as_sf()
+    t = AOI::counties[pt,]
     
     return(list(county = t$name,
                 state  = t$state_name,
