@@ -1,14 +1,17 @@
 #' @export
 #' 
 #' 
+library(ncdf4)
 
 download_nomads_rda = function(fileList = NULL, number = 6, dir = NULL){
   
-  if (is.null(dir)) {
-    dir <- system.file("flowfinder", package = "FlowFinder")
-  }
+  # if (is.null(dir)) {
+  #   dir <- system.file("flowfinder", package = "FlowFinder")
+  # }
   
-  dir.create(paste0(dir,'/data/current_nc_new'))
+  dir <- 'data/current_nc_new'
+  
+  fs::dir_create('data/current_nc_new')
   
   tmp = tempdir()
   
@@ -25,14 +28,14 @@ download_nomads_rda = function(fileList = NULL, number = 6, dir = NULL){
   time  = fileList$startTime
   
   month = sprintf("%02d", lubridate::month(date))
-  month_files = list.files(paste0(dir,"/data"), pattern = as.character(month), full.names = T)
+  month_files = list.files("data", pattern = as.character(month), full.names = T)
   norm = fst::read_fst(path = month_files)
   colnames(norm) <- c("COMID", "month_avg")
   
   
   # Write csv for info tab data
   dateTime <- data.frame(date = date, time = time, stringsAsFactors = FALSE)
-  write.csv(dateTime, paste0(dir,'/data/current_nc_new/dateTime.csv'))
+  write.csv(dateTime, 'data/current_nc_new/dateTime.csv')
   
   if(length(grep(all.files, pattern = "medium")) > 1){
     interval = 3
@@ -58,7 +61,7 @@ download_nomads_rda = function(fileList = NULL, number = 6, dir = NULL){
   len = length(comids)
   mat = matrix(c(comids, rep(NA,23)), ncol = 25, byrow = FALSE) %>% data.frame()
   
-  dir.create(paste0(dir,'/data/current_nc_new/changes'))
+  fs::dir_create("data/current_nc_new/changes")
   
   message("Entering Loop!")
   
@@ -98,14 +101,14 @@ download_nomads_rda = function(fileList = NULL, number = 6, dir = NULL){
       ) %>% 
       dplyr::filter(max_val >= 25 & max_val > month_avg )
     
-    fst::write_fst(increases, path = paste0(dir,'/data/current_nc_new/changes/',i,'.fst'))
+    fst::write_fst(increases, path = paste0('data/current_nc_new/changes/',i,'.fst'))
     
     Q <- reshape2::melt(df, id.vars=c("COMID"))
     Q$variable = lubridate::ymd_h(Q$variable)
     Q <-  dplyr::rename(Q, dateTime = variable, Q_cfs = value)
     
     # Write file with data
-    name = paste0(dir,"/data/current_nc_new/",month, "_", sprintf("%02d", i), ".fst")
+    name = paste0("data/current_nc_new/",month, "_", sprintf("%02d", i), ".fst")
     fst::write_fst(Q, path = name, compress = 100)
 
     # Get min and maxs for mapping
@@ -126,14 +129,14 @@ download_nomads_rda = function(fileList = NULL, number = 6, dir = NULL){
   tmp = do.call("rbind",mappingList)
   map <- data.frame(tmp, stringsAsFactors = FALSE)
   colnames(map) <- c('num', 'min', 'max', 'filename')
-  write.csv(map, paste0(dir,'/data/current_nc_new/map.csv'))
+  write.csv(map, 'data/current_nc_new/map.csv')
   
   find_max_increases(dir = dir)
   create_high_flow_map(dir = dir)
   
   # Replace old data with new data
-  unlink(paste0(dir,'/data/current_nc'), recursive=TRUE)
-  file.rename(paste0(dir,'/data/current_nc_new/'), 'data/current_nc')
+  unlink('data/current_nc', recursive=TRUE)
+  file.rename('data/current_nc_new/', 'data/current_nc')
   
 }
 
@@ -141,7 +144,7 @@ download_nomads_rda = function(fileList = NULL, number = 6, dir = NULL){
 find_max_increases <- function(number = 1500, dir = NULL) {
   
   # Get file list
-  change.files =  list.files(paste0(dir,'/data/current_nc_new/changes/'), pattern = ".fst$", full.names = T)
+  change.files =  list.files('data/current_nc_new/changes/', pattern = ".fst$", full.names = T)
   
   max_increases = data.frame()
   
@@ -153,15 +156,15 @@ find_max_increases <- function(number = 1500, dir = NULL) {
     dplyr::arrange(dplyr::desc(change))  %>% 
     dplyr::filter(row_number() <= number)
   
-  fst::write_fst(max_increase, path = paste0(dir,'/data/current_nc_new/max_increase.fst'))
+  fst::write_fst(max_increase, path = 'data/current_nc_new/max_increase.fst')
   
 }
 
 create_high_flow_map <- function(dir = NUll) {
   
   # Make and save flood map
-  flood_map = make_flood_risk_map(path = paste0(dir,'/data/current_nc_new/max_increase.fst'))
-  base::save(flood_map, file = paste0(dir,'/data/current_nc_new/flood_map.rda'))
+  flood_map = make_flood_risk_map(path = 'data/current_nc_new/max_increase.fst')
+  base::save(flood_map, file = 'data/current_nc_new/flood_map.rda')
 
 }
 
