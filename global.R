@@ -1,3 +1,5 @@
+options(shiny.sanitize.errors = FALSE)
+
 library(dygraphs)
 library(ggplot2)
 library(leaflet)
@@ -7,8 +9,6 @@ library(shinyBS)
 library(shinyWidgets)
 library(HydroData)
 library(AOI)
-
-options(shiny.sanitize.errors = FALSE)
 
 # Add additional R files
 source("R/map_tab.R")
