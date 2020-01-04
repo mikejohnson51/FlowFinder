@@ -55,7 +55,7 @@ get_location <- function(place) {
   return(list(lat = lat, lon = lon))
 }
 
-latlong2state(lat = 38.8339, lon = -104.821)
+# latlong2state(lat = 38.8339, lon = -104.821)
 # latlong2state(lat = loc$lat, lon = loc$lon)
 latlong2state <- function(lat, lon) {
   
