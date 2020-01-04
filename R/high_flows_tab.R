@@ -1,6 +1,5 @@
 # Generate Dygraph
 dygraph_flood <- function(comid, data, number, normals) {
-  
   colors = c("orange", "green", "red", "purple",
              "lightblue", "lightgreen", "pink", "lightred", "gray",
              "darkblue", "darkred", "darkgreen", "darkpurple")

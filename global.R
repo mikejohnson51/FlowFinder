@@ -11,6 +11,10 @@ library(HydroData)
 library(AOI)
 
 # Add additional R files
+source("R/subset_nomads.R")
+source("R/get_upstream.R")
+source("R/get_nomads_filelist.R")
+source("R/nhdModifier.R")
 source("R/map_tab.R")
 source("R/data_tab.R")
 source("R/info_tab.R")
@@ -51,21 +55,22 @@ get_location <- function(place) {
   return(list(lat = lat, lon = lon))
 }
 
+latlong2state(lat = 38.8339, lon = -104.821)
 # latlong2state(lat = loc$lat, lon = loc$lon)
 latlong2state <- function(lat, lon) {
   
-  return(list(county = "El Paso",
-              state  = "Colorado",
-              state.abb = "CO"))
+  # return(list(county = "El Paso",
+  #             state  = "Colorado",
+  #             state.abb = "CO"))
   
   df = data.frame(lon = lon, lat = lat)
   pt = sf::st_as_sf(df, coords = c('lon', 'lat'), crs = AOI::aoiProj)
-  conus = getAOI(state = "conus") %>% AOI::bbox_st()
+  conus = getAOI(state = "conus") #%>% AOI::bbox_st()
   # 
   # lat = dplyr::between(pointsDF$y, conus$ymin, conus$ymax)
   # lng = dplyr::between(pointsDF$x, conus$xmin, conus$xmax)
   
-  if (AOI::is_inside(pt, conus)) {
+  if (!AOI::is_inside(obj = pt, AOI = conus)) {
   #if((lat+lng) != 2){ 
     return(NULL)
   } else {
