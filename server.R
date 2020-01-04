@@ -1,5 +1,3 @@
-library(FlowFinder)
-
 shinyServer(function(input, output, session) {
   
   # Include code for download handler
