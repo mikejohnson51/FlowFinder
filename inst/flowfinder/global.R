@@ -8,11 +8,14 @@ source("data_tab.R")
 source("info_tab.R")
 source("high_flows_tab.R")
 source("filter_tab.R")
-
+print(getwd())
 # Define base variables
-month = as.numeric(substr(list.files("data/current_nc")[1], 1,2))
-month_files = list.files("data/", pattern = as.character(month), full.names = T)
+month_string <- substr(list.files("data/current_nc")[1], 1,2)
+month <- as.numeric(month_string)
+# month = as.numeric(substr(list.files("data/current_nc")[1], 1,2))
+month_files = list.files("data/", pattern = month_string, full.names = T)
 
+# print(month_files)
 # Returns COMIDS from stream names
 # getIDs("Monument Creek COMID: 1529685") -> "1529685"
 # getIDs(c("Monument Creek COMID: 1529685", "Fountain Creek COMID: 1529677")) -> "1529685" "1529677"
@@ -44,23 +47,19 @@ get_location <- function(place) {
 }
 
 #latlong2state(lat = loc$lat, lon = loc$lon)
-latlong2state <- function(lat, lon) {
+latlong2state <- function(lat = 30.332184, lon = -81.655647) {
   
-  pointsDF = list(x=lon, y = lat)
-  conus = AOI::states[!(AOI::states$state_abbr %in% c("HI", "AK", 'PR')),]
-  conus = AOI::getBoundingBox(conus)
-  lat = dplyr::between(pointsDF$y, conus@bbox[2,1], conus@bbox[2,2])
-  lng = dplyr::between(pointsDF$x, conus@bbox[1,1], conus@bbox[1,2])
   
-  if((lat+lng) != 2){
+  
+  pointsDF = data.frame(name = "tmp", x=lon, y = lat)
+  states = AOI::aoi_get(state = "conus", county = "all")
+  t <- states[sf::st_as_sf(pointsDF, coords = c("x", "y"), crs = sf::st_crs(states)),]
+  
+  if(nrow(t) == 0){
     return(NULL)
   } 
   
   else {
-    
-    tmp = sp::SpatialPoints(coords = cbind(pointsDF$x, pointsDF$y), proj4string = sp::CRS(AOI::aoiProj))
-    tmp = sp::spTransform(tmp, AOI::counties@proj4string)
-    t = AOI::counties[tmp,]
     
     return(list(county = t$name,
                 state  = t$state_name,

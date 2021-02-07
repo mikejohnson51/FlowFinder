@@ -1,7 +1,10 @@
 #' @export
 
 get_upstream <- function(flines) {
-  dplyr::left_join(dplyr::select(flines, comid), dplyr::select(flines, comid, toCOMID),
-                   by = c("comid" = "toCOMID")) %>%
-    dplyr::rename(fromCOMID = comid.y)
+  dplyr::select(flines, COMID) %>% 
+    dplyr::left_join(
+      dplyr::select(flines, COMID, toCOMID),
+      by = c("COMID" = "toCOMID")
+    ) %>%
+    dplyr::rename(fromCOMID = COMID.y)
 }

@@ -10,7 +10,7 @@ add_flows <- function(map, data, color, opacity = 1) {
   if(!is.null(data)) {
     addPolylines(map, data = data, color = color, weight = data$streamorde, opacity = opacity,
                  popup = paste(sep = " ",
-                               paste0("<b><a class='open-stream'>",paste0(ifelse(is.na(data@data$gnis_name), "", data@data$gnis_name)),
+                               paste0("<b><a class='open-stream'>",paste0(ifelse(is.na(data$gnis_name), "", data$gnis_name)),
                                       paste0(" COMID: ", data$comid),"</a></b></br>"),
                                '<a class="stream-data"><i class="fa fa-line-chart"></i></a>',
                                '<a class="upstream-flow"><i class="fa fa-angle-double-up"></i></a>',
@@ -47,7 +47,7 @@ mark_up_down <- function(map, values, stream, data, group, color) {
                  opacity = 1,
                  group = group,
                  options = pathOptions(clickable = FALSE))  %>%
-    addPolylines(data = data, 
+    addPolylines(data = data,
                  color = color,
                  opacity = 1,
                  group = group,
@@ -57,7 +57,7 @@ mark_up_down <- function(map, values, stream, data, group, color) {
 
 # Add stations to map
 add_stations <- function(map, values) {
-  if(typeof(values) == "S4") {
+  if(typeof(values) == "list") {
     addMarkers(map, data = values,
                icon = USGSicon,
                group = "USGS Stations",
@@ -78,10 +78,11 @@ add_stations <- function(map, values) {
 
 # Add boundaries to map
 add_bounds <- function(map, AOI) {
-  fitBounds(map, AOI@bbox[1], AOI@bbox[2], AOI@bbox[3], AOI@bbox[4]) %>%
+  bb <- sf::st_bbox(AOI) %>% as.numeric()
+  fitBounds(map, bb[1], bb[2], bb[3], bb[4])  %>%
     addRectangles(
-      lng1 = AOI@bbox[1] , lat1 = AOI@bbox[2],
-      lng2 = AOI@bbox[3] , lat2 = AOI@bbox[4],
+      lng1 = bb[1], lat1 = bb[2],
+      lng2 = bb[3], lat2 = bb[4],
       fill = FALSE,
       group = 'AOI', 
       color = "red"
@@ -89,11 +90,12 @@ add_bounds <- function(map, AOI) {
 }
 
 add_bounding_lines <- function(map, AOI) {
-  fitBounds(map, AOI@bbox[1], AOI@bbox[2], AOI@bbox[3], AOI@bbox[4]) %>%
-    addPolylines(lng = c(AOI@bbox[1], AOI@bbox[3]), lat = c(AOI@bbox[4], AOI@bbox[4]), group = "AOI") %>% #top
-    addPolylines(lng = c(AOI@bbox[3], AOI@bbox[3]), lat = c(AOI@bbox[4], AOI@bbox[2]), group = "AOI") %>% #right
-    addPolylines(lng = c(AOI@bbox[3], AOI@bbox[1]), lat = c(AOI@bbox[2], AOI@bbox[2]), group = "AOI") %>% #bottom
-    addPolylines(lng = c(AOI@bbox[1], AOI@bbox[1]), lat = c(AOI@bbox[2], AOI@bbox[4]), group = "AOI")     #left
+  bb <- sf::st_bbox(AOI) %>% as.numeric()
+  fitBounds(map, bb[1], bb[2], bb[3], bb[4]) %>%
+    addPolylines(lng = c(bb[1], bb[3]), lat = c(bb[4], bb[4]), group = "AOI") %>% #top
+    addPolylines(lng = c(bb[3], bb[3]), lat = c(bb[4], bb[2]), group = "AOI") %>% #right
+    addPolylines(lng = c(bb[3], bb[1]), lat = c(bb[2], bb[2]), group = "AOI") %>% #bottom
+    addPolylines(lng = c(bb[1], bb[1]), lat = c(bb[2], bb[4]), group = "AOI")     #left
 }
 
 # Add water boundaries to map
@@ -124,42 +126,6 @@ add_water_bodies <- function(map, wb) {
     return(map)
   }
 }
-
-# Add flowlines to map
-# add_non_zero_streams <- function(map, values) {
-#   
-#   positive_ids <- values$nwm %>%
-#     filter(Q_cfs > 0) %>% 
-#     select(COMID) %>% 
-#     distinct() %>% 
-#     .$COMID
-#   
-#   print(positive_ids)
-#   
-#   postive_streams <- values$flow_data$nhd %>% 
-#     filter(comid %in% positive_ids)
-#   
-#   if(values$any_flow) {
-#     addPolylines(map, data = postive_streams, color = 'blue', weight = postive_streams$streamorde,
-#                  # popup = paste(sep = " ",
-#                  #               paste0("<b><a class='open-stream'>",paste0(ifelse(is.na(values$flow_data$nhd@data$gnis_name), "", values$flow_data$nhd@data$gnis_name)),
-#                  #                      paste0(" COMID: ", values$flow_data$nhd$comid),"</a></b></br>"),
-#                  #               '<a class="stream-data"><i class="fa fa-line-chart"></i></a>',
-#                  #               '<a class="upstream-flow"><i class="fa fa-angle-double-up"></i></a>',
-#                  #               '<a class="downstream-flow"><i class="fa fa-angle-double-down"></i></a>'
-#                  # ),
-#                  options = popupOptions(className = "stream_popup"), 
-#                  group = "Positive Flowlines",
-#                  highlight = highlightOptions(
-#                    weight = 10,
-#                    color = "#666",
-#                    fillOpacity = 0.7,
-#                    bringToFront = FALSE),
-#     )
-#   } else {
-#     return(map)
-#   }
-# }
 
 
 # Add layers to a provided map
