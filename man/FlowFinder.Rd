@@ -3,7 +3,6 @@
 \docType{package}
 \name{FlowFinder}
 \alias{FlowFinder}
-\alias{FlowFinder-package}
 \title{FlowFinder}
 \description{
 \code{FlowFinder} package

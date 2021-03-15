@@ -9,8 +9,10 @@ This document will be used within a cron job to update National Water Model fore
 
 ```{r, echo = FALSE}
 library(ncdf4)
+library(leaflet)
 source("./R/get_nomads_filelist.R")
 source("./R/download_nomads_rda.R")
+source("./R/flood_risk_map.R")
 ```
 
 First, get a list of most current files on the NOMADs server:
@@ -45,7 +47,7 @@ if(all(
   message("No Download needed...")
 } else {
   file.remove(list.files("./inst/flowlinefinder/data/current_nc", full.names = T))
-  download_nomads_rda(fileList, number = 4)
+  download_nomads_rda(fileList, number = 4, dir = here::here("inst/flowfinder"))
 }
 
 

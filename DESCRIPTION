@@ -1,7 +1,7 @@
 Encoding: UTF-8
 Package: FlowFinder
 Title: Find, Vizualize and Download NWM and NHD Data in 'Shiny'
-Version: 0.1.0
+Version: 0.1.1
 Authors@R: as.person(c(
     "Mike Johnson <mike.johnson@geog.ucsb.edu> [aut, cre]", 
     "Pat Johnson <patjohns1216@gmail.com> [aut]"
@@ -45,4 +45,4 @@ Suggests:
     testthat
 License: MIT + file LICENSE
 LazyData: true
-RoxygenNote: 6.1.0
+RoxygenNote: 7.1.1

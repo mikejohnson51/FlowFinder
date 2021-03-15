@@ -21,7 +21,7 @@
 #' 
 #' @importFrom utils download.file head write.csv read.csv
 #' 
-#' @importFrom AOI getAOI getBoundingBox aoiProj geocode describe
+#' @importFrom AOI aoi_get bbox_get geocode aoi_describe
 #' 
 #' @importFrom sp SpatialPoints over
 #' 

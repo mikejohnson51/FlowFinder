@@ -1,23 +1,27 @@
 #Table 1: Station info
 station_table <- function(values) {
-  if(typeof(values) == "S4") {
-    station_data = cbind(paste0('<a href=',sprintf(
-                            "https://waterdata.usgs.gov/nwis/inventory/?site_no=%s",values$site_no),' target="_blank">',values$site_name,"</a>"),
-                         values$site_no, 
-                         round(values$da_sqkm, digits = 0)
-                         )
+  if(typeof(values) == "list") {
+    station_data = cbind(
+      paste0(
+        '<a href=',
+        sprintf(
+          "https://waterdata.usgs.gov/nwis/inventory/?site_no=%s",values$site_no),
+          ' target="_blank">', values$site_name,"</a>"
+        ),
+      values$site_no
+      # round(values$da_sqkm, digits = 0)
+    )
   } else {
-    station_data = cbind('NA', 'NA', 'NA')
+    station_data = cbind('NA', 'NA')
   }
-  colnames(station_data) = c("USGS Site", "Site No.", "Drainage Area (SqKm)")
+  colnames(station_data) = c("USGS Site", "Site No.")# "Drainage Area (SqKm)")
   return(station_data)
 }
 
 # Table 2: Flowline info 
 flowlines_table <- function(values, area, waterbodies) {
-  
-  max_order = ifelse(!is.null(values), max(values@data$streamorde), "NA")
-  stream_name = ifelse(!is.null(values), values@data$gnis_name[match(max_order, values@data$streamorde)], "NA")
+  max_order = ifelse(!is.null(values), max(values$streamorde), "NA")
+  stream_name = ifelse(!is.null(values), values$gnis_name[match(max_order, values$streamorde)], "NA")
   num_flowlines = length(values)
   unique_huc8 = ifelse(!is.null(values), paste(unique(as.numeric(na.omit(unique(substr(values$reachcode,1,8))))), collapse = ", "), "NA")
   

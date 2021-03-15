@@ -8,7 +8,9 @@ download_nomads_rda = function(fileList = NULL, number = 6, dir = NULL){
     dir <- system.file("flowfinder", package = "FlowFinder")
   }
   
-  dir.create(paste0(dir,'/data/current_nc_new'))
+  fs::dir_create(paste0(dir,'/data/current_nc_new'))
+  # dir.create(paste0(dir,'/data/current_nc_new'))
+  # fs::dir_create(paste0(dir,'/data/current_nc_new'))
   
   tmp = tempdir()
   
@@ -132,8 +134,12 @@ download_nomads_rda = function(fileList = NULL, number = 6, dir = NULL){
   create_high_flow_map(dir = dir)
   
   # Replace old data with new data
-  unlink(paste0(dir,'/data/current_nc'), recursive=TRUE)
-  file.rename(paste0(dir,'/data/current_nc_new/'), 'data/current_nc')
+  if (fs::dir_exists(paste0(dir,'/data/current_nc'))) {
+    fs::dir_delete(paste0(dir,'/data/current_nc'))
+  }
+  
+  # unlink(paste0(dir,'/data/current_nc'), recursive=TRUE)
+  file.rename(paste0(dir,'/data/current_nc_new/'), paste0(dir,'/data/current_nc/'))
   
 }
 

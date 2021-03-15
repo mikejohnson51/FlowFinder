@@ -86,7 +86,7 @@ shinyServer(function(input, output, session) {
   location <- reactive({
    get_location(place = input$place)
   })
- 
+  
   state <- reactive({
    latlong2state(lat = location()$lat, lon = location()$lon)
   })
@@ -106,31 +106,32 @@ shinyServer(function(input, output, session) {
         incProgress(1/8, detail = "Getting location information")
         if (is.null(location_information$bbox)) {
           location_information$area <- 15^2
-          AOI <- AOI::getAOI(clip = list(location()$lat, location()$lon, 15, 15))
+          AOI <- AOI::aoi_get(x = list(location()$lat, location()$lon, 15, 15))
         } else {
-          AOI <- AOI::bbox_sp(location_information$bbox)
+          AOI <- AOI::bbox_get(location_information$bbox)
         }
         incProgress(2/8, detail = "Finding nearby streams")
-        NHD <- HydroData::findNHD(AOI = AOI, ids = TRUE)
+        NHD <- nhdplusTools::get_nhdplus(AOI = AOI)
         incProgress(4/8, detail = "Finding nearby waterbodies")
-        WB <- HydroData::findWaterbodies(AOI = AOI)
+        WB <- nhdplusTools::get_waterbodies(AOI = AOI) %>% 
+          dplyr::filter(ftype != "SwampMarsh")
         incProgress(6/8, detail = "Finding nearby NWIS stations")
-        NWIS <- findNWIS(AOI = AOI)
+        NWIS <- nhdplusTools::get_nwis(AOI = AOI)
         location_information$bbox <- NULL
         flags$nwm_calculated <- FALSE
         flags$filter_initial_draw = FALSE
         flags$filterable_data = FALSE
       })
-      list(AOI = NHD$AOI, nhd = NHD$nhd, waterbodies = WB$waterbodies, nwis = NWIS$nwis)
+      list(AOI = AOI, nhd = NHD, waterbodies = WB, nwis = NWIS)
     })
   })
   
   observe({
     req(rawData())
     isolate({
-      leafletProxy("map") %>%
+      leafletProxy("map")%>%
         clearGroup(group = list("NHD Flowlines", "Location", "USGS Stations", "Water bodies", "AOI")) %>%
-        add_location(values = location()) %>% 
+        add_location(values = location()) %>%
         add_bounds(AOI = rawData()$AOI) %>%
         add_water_bodies(wb = rawData()$waterbodies) %>%
         add_flows(data = rawData()$nhd, color = "blue", opacity = 0.5) %>%
@@ -140,27 +141,28 @@ shinyServer(function(input, output, session) {
   
   # Get Downstream Values
   downstream <- reactive({
-    prep_nhd(flines = rawData()$nhd)
+    # prep_nhd(flines = rawData()$nhd)
+    nhdplusTools::prepare_nhdplus(rawData()$nhd, 0, 0, error = F)
   })
   
   # Map Downstream Flows
   observe({
     req(input$downStream)
     clearMarkers()
-    downstream() %>% 
-      filter(comid == input$downStream$comid) %>% 
+    downstream_ids <- downstream() %>% 
+      filter(COMID == input$downStream$comid) %>% 
       .$toCOMID %>% (function(df) {
-        mark_up_down(map = leafletProxy("map", session), 
-                     values = rawData(), 
-                     stream = input$downStream$comid, 
-                     data = rawData()$nhd[rawData()$nhd$comid %in% df,], 
-                     group = "down-stream", 
+        mark_up_down(map = leafletProxy("map", session),
+                     values = rawData(),
+                     stream = input$downStream$comid,
+                     data = rawData()$nhd[rawData()$nhd$comid %in% df,],
+                     group = "down-stream",
                      color = "red")
-      }) 
+      })
   })
   
   upstream <- reactive({
-    get_upstream(flines = downstream())
+    get_upstream(flines = downstream()) 
   })
   
   # Reset button
@@ -171,7 +173,7 @@ shinyServer(function(input, output, session) {
     req(input$upStream)
     clearMarkers()
     upstream() %>% 
-      filter(comid == input$upStream$comid) %>% 
+      filter(COMID == input$upStream$comid) %>% 
       .$fromCOMID %>% (function(df) {
         mark_up_down(map = leafletProxy("map", session), 
                      values = rawData(), 
@@ -197,11 +199,12 @@ shinyServer(function(input, output, session) {
       )
       
       location_information$bbox <- append(lng, lat)
+      region_info <- AOI::bbox_get(location_information$bbox) %>% 
+        AOI::aoi_describe()
+
       
-      region_info <- AOI::bbox_sp(location_information$bbox) %>% describe()
-      
-      location_information$cent_lat <- region_info$latCent
-      location_information$cent_lng <- region_info$lngCent
+      location_information$cent_lat <- region_info$lat
+      location_information$cent_lng <- region_info$lon
       location_information$area = region_info$height * region_info$width
       
       if (location_information$area < 400) {
@@ -222,7 +225,12 @@ shinyServer(function(input, output, session) {
   
   observeEvent(input$aoiconfirmation,{
     if (input$aoiconfirmation) {
-      updateTextInput(session = session, inputId =  "place", value = paste(location_information$cent_lat, location_information$cent_lng, sep = " "), placeholder = "Current Location")
+      updateTextInput(
+        session = session,
+        inputId =  "place",
+        value = paste(location_information$cent_lat, location_information$cent_lng, sep = " "), 
+        placeholder = "Current Location"
+      )
       shinyjs::click("place_search")
     } else {
       leafletProxy("map", session) %>% 
@@ -245,7 +253,7 @@ shinyServer(function(input, output, session) {
     req(input$map_draw_editstart)
     isolate({
       loc = input$map_click
-      bbox = rawData()$AOI@bbox
+      bbox = sf::st_bbox(rawData()$AOI)
       if (loc$lng < bbox[1] || loc$lng > bbox[3] || loc$lat > bbox[2] || loc$lat < bbox[4]) {
         runjs("
               var saveButton = document.getElementsByClassName('leaflet-draw-actions')[0].firstChild.firstChild;
@@ -322,11 +330,12 @@ shinyServer(function(input, output, session) {
   
   normals <- reactive({
     req(input$nav=="data" || input$nav=="filter" || input$nav=="high_flows")
-    fst::read_fst(path = month_files)
+    fst::read_fst(path = month_files) %>% 
+      as_tibble()
   })
   
   streams <- reactive({
-    rawData()$nhd@data %>%
+    rawData()$nhd %>%
       select(comid, gnis_name) %>%
       mutate(name = paste0(
         paste0(ifelse(is.na(gnis_name), "", gnis_name)),
@@ -500,7 +509,12 @@ shinyServer(function(input, output, session) {
   upstream_from <- reactive({
     req(current_id())
     upstream = data.frame(Upstream=NA)[numeric(0), ]
-    up = rawData()$nhd[rawData()$nhd$comid %in% c(upstream()[upstream()$comid == current_id(), 2]),]
+    ids <- upstream() %>% 
+      filter(COMID == current_id()) %>% 
+      pull(fromCOMID)
+    # up = rawData()$nhd[rawData()$nhd$comid %in% c(upstream()[upstream()$COMID == current_id(), 2]),]
+    up <- rawData()$nhd %>% 
+      filter(comid %in% ids)
     if (length(up) > 0) {
       upstream = data.frame(paste0(paste0(ifelse(is.na(up$gnis_name), "", up$gnis_name)), paste0(" COMID: ", up$comid)))
       colnames(upstream) = c("Upstream")
@@ -519,7 +533,11 @@ shinyServer(function(input, output, session) {
   downstream_from <- reactive({
     req(current_id())
     downstream = data.frame(Downstream=NA)[numeric(0), ]
-    down = rawData()$nhd[rawData()$nhd$comid %in% c(downstream()[downstream()$comid == current_id(), 4]),]
+    ids <- downstream() %>% 
+      filter(COMID == current_id()) %>% 
+      pull(toCOMID)
+    down <- rawData()$nhd %>% 
+      filter(comid %in% ids)
     if (length(down) > 0) {
       downstream = data.frame(paste0(paste0(ifelse(is.na(down$gnis_name), "", down$gnis_name)), paste0(" COMID: ", down$comid)))
       colnames(downstream) = c("Downstream")
@@ -551,14 +569,14 @@ shinyServer(function(input, output, session) {
   })
   
   # Activate/Deactivate buttons depending on number of COMIDs selected
-  observe({
-    elements = list("tbl_up", "tbl_down", "prevCOMID", "nextCOMID")
-    if (length(input$flow_selector) > 1) {
-      show_hide_all(elements = elements, action = "hide")
-    } else {
-      show_hide_all(elements = elements, action = "show")
-    }
-  })
+  # observe({
+  #   elements = list("tbl_up", "tbl_down", "prevCOMID", "nextCOMID")
+  #   if (length(input$flow_selector) > 1) {
+  #     show_hide_all(elements = elements, action = "hide")
+  #   } else {
+  #     show_hide_all(elements = elements, action = "show")
+  #   }
+  # })
   
   # Change download button based on whether or not any items are checked
   # Code for download handler in server_download_handler.R
@@ -728,7 +746,7 @@ shinyServer(function(input, output, session) {
           }
           
           diff_df <- data.frame(diff_matrix)
-          colnames(diff_df) <- c("comid", paste0('der_',unique(NWM$data$dateTime)[1:39]))
+          colnames(diff_df) <- c("comid", paste0('der_',unique(NWM$data$dateTime)[1:3]))
             
           filterable$data <- rawData()$nhd %>%
             inner_join(vals, by = "comid") %>% 
@@ -742,7 +760,7 @@ shinyServer(function(input, output, session) {
           values$mean_palette <- create_palette(vals = nwm_summary$mean)
           values$month_palette <- create_palette(vals = filterable$data$month_avg)
             
-          mag = max(abs(c(max(diff_matrix[,2:40], na.rm = T), min(diff_matrix[,2:40], na.rm = T))))
+          mag = max(abs(c(max(diff_matrix[,2:4], na.rm = T), min(diff_matrix[,2:4], na.rm = T))))
           values$deriv_palette <- create_palette(vals = mag, continuous = FALSE)
             
           mag = max(abs(c(max(filterable$data$mean_dif, na.rm = T), min(filterable$data$mean_dif, na.rm = T))))
@@ -853,7 +871,7 @@ shinyServer(function(input, output, session) {
   # Filterable table
   output$nhd_table <- DT::renderDataTable({
     req(filterable$data, input$nhdSelector)
-    data <- filterable$data@data %>% 
+    data <- filterable$data %>% 
       select(one_of(input$nhdSelector))
     base_table(data)
   })
@@ -904,9 +922,9 @@ shinyServer(function(input, output, session) {
     req(rawData()$nhd, filtered_data())
     values$dynamic_dic = list(
       # name = list(color, pal, legend)
-      deriv = list('filtered_data()@data$`der_', values$deriv_palette$pal, values$deriv_palette),
-      time_series = list('filtered_data()@data$`', values$palette$pal, values$palette),
-      positive = list('filtered_data()@data$`', positive_pal, list(divergent_colors(2), c('0', '>0'), "Q_cfs"))
+      deriv = list('filtered_data()$`der_', values$deriv_palette$pal, values$deriv_palette),
+      time_series = list('filtered_data()$`', values$palette$pal, values$palette),
+      positive = list('filtered_data()$`', positive_pal, list(divergent_colors(2), c('0', '>0'), "Q_cfs"))
     )
   })
   
